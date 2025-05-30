@@ -60,7 +60,7 @@
 
                     <!-- White cabin structure -->
                     <div class="absolute -top-24 left-1/2 transform -translate-x-1/2 w-80 h-40 bg-white rounded-t-2xl rounded-b-lg shadow-xl">
-                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-4 bg-gray-100 rounded-t-xl"></div>
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-6 bg-white rounded-t-xl"></div>
 
                         <!-- Windows row -->
                         <div class="flex justify-center gap-3 pt-3 mb-3">
@@ -87,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Ocean Design 3: Smooth gradient waves -->
     <div class="absolute bottom-0 left-0 right-0">
         <!-- Gradient wave bands -->
         <div class="absolute bottom-56 w-full h-12 bg-gradient-to-b from-transparent to-blue-400/20 swell-animation"></div>

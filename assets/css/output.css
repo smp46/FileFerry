@@ -285,6 +285,9 @@
   .left-40 {
     left: calc(var(--spacing) * 40);
   }
+  .z-48 {
+    z-index: 48;
+  }
   .z-49 {
     z-index: 49;
   }
@@ -314,9 +317,6 @@
   }
   .h-3 {
     height: calc(var(--spacing) * 3);
-  }
-  .h-4 {
-    height: calc(var(--spacing) * 4);
   }
   .h-6 {
     height: calc(var(--spacing) * 6);
@@ -566,9 +566,6 @@
   }
   .pt-3 {
     padding-top: calc(var(--spacing) * 3);
-  }
-  .font-\[Open_Sans\] {
-    font-family: Open Sans;
   }
   .font-\[Outfit\] {
     font-family: Outfit;

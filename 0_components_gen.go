@@ -124,7 +124,7 @@ func (c *Root) Build(vgin *vugu.BuildIn) (vgout *vugu.BuildOut) {
 							_ = vgparent
 							vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n                        "}
 							vgparent.AppendChild(vgn)
-							vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-4 bg-gray-100 rounded-t-xl"}}}
+							vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-6 bg-white rounded-t-xl"}}}
 							vgparent.AppendChild(vgn)
 							vgn.SetInnerHTML(vugu.HTML(""))
 							vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n\n                        "}
@@ -166,10 +166,6 @@ func (c *Root) Build(vgin *vugu.BuildIn) (vgout *vugu.BuildOut) {
 			vgparent.AppendChild(vgn)
 		}
 		vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n\n    "}
-		vgparent.AppendChild(vgn)
-		vgn = &vugu.VGNode{Type: vugu.VGNodeType(4), Data: " Ocean Design 3: Smooth gradient waves "}
-		vgparent.AppendChild(vgn)
-		vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n    "}
 		vgparent.AppendChild(vgn)
 		vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "absolute bottom-0 left-0 right-0"}}}
 		vgparent.AppendChild(vgn)
