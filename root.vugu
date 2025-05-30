@@ -1,20 +1,13 @@
 <div>
-    <main role="main" class="container text-center" style="height: 100vh; display: flex; justify-content: center; align-items: center;">
-    <div class="row">
-        <div class="col">
-            <h1 class="mb-4">Bootstrap 4 Button Sizes</h1>
+    <main role="main" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 bg-black">
+        <div class="py-12">
+            <h1 class="text-3xl font-bold text-gray-900">Welcome to Vugu!</h1>
+            <p class="mt-4 text-lg text-gray-700">This is a simple Vugu application.</p>
         </div>
-
-  <div class="w-100"></div>
-        <div class="col">
-            <button type="button" class="btn btn-primary btn-lg mr-2">Small button</button>
-            <button type="button" class="btn btn-primary btn-lg">Small button</button>
-        </div>
-    </div>
-
     </main>
 </div>
 
 <script type="application/x-go">
 
 </script>
+

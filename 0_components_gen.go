@@ -28,76 +28,42 @@ func (c *Root) Build(vgin *vugu.BuildIn) (vgout *vugu.BuildOut) {
 		_ = vgparent
 		vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n    "}
 		vgparent.AppendChild(vgn)
-		vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "main", Attr: []vugu.VGAttribute{{Namespace: "", Key: "role", Val: "main"}, vugu.VGAttribute{Namespace: "", Key: "class", Val: "container text-center"}, vugu.VGAttribute{Namespace: "", Key: "style", Val: "height: 100vh; display: flex; justify-content: center; align-items: center;"}}}
+		vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "main", Attr: []vugu.VGAttribute{{Namespace: "", Key: "role", Val: "main"}, vugu.VGAttribute{Namespace: "", Key: "class", Val: "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 bg-black"}}}
 		vgparent.AppendChild(vgn)
 		{
 			vgparent := vgn
 			_ = vgparent
-			vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n    "}
+			vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
 			vgparent.AppendChild(vgn)
-			vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "row"}}}
+			vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "py-12"}}}
 			vgparent.AppendChild(vgn)
 			{
 				vgparent := vgn
 				_ = vgparent
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
+				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n            "}
 				vgparent.AppendChild(vgn)
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "col"}}}
-				vgparent.AppendChild(vgn)
-				{
-					vgparent := vgn
-					_ = vgparent
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n            "}
-					vgparent.AppendChild(vgn)
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "h1", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "mb-4"}}}
-					vgparent.AppendChild(vgn)
-					{
-						vgparent := vgn
-						_ = vgparent
-						vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "Bootstrap 4 Button Sizes"}
-						vgparent.AppendChild(vgn)
-					}
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
-					vgparent.AppendChild(vgn)
-				}
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n\n  "}
-				vgparent.AppendChild(vgn)
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "w-100"}}}
-				vgparent.AppendChild(vgn)
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
-				vgparent.AppendChild(vgn)
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "div", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "col"}}}
+				vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "h1", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "text-3xl font-bold text-gray-900"}}}
 				vgparent.AppendChild(vgn)
 				{
 					vgparent := vgn
 					_ = vgparent
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n            "}
-					vgparent.AppendChild(vgn)
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "button", Attr: []vugu.VGAttribute{{Namespace: "", Key: "type", Val: "button"}, vugu.VGAttribute{Namespace: "", Key: "class", Val: "btn btn-primary btn-lg mr-2"}}}
-					vgparent.AppendChild(vgn)
-					{
-						vgparent := vgn
-						_ = vgparent
-						vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "Small button"}
-						vgparent.AppendChild(vgn)
-					}
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n            "}
-					vgparent.AppendChild(vgn)
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "button", Attr: []vugu.VGAttribute{{Namespace: "", Key: "type", Val: "button"}, vugu.VGAttribute{Namespace: "", Key: "class", Val: "btn btn-primary btn-lg"}}}
-					vgparent.AppendChild(vgn)
-					{
-						vgparent := vgn
-						_ = vgparent
-						vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "Small button"}
-						vgparent.AppendChild(vgn)
-					}
-					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
+					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "Welcome to Vugu!"}
 					vgparent.AppendChild(vgn)
 				}
-				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n    "}
+				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n            "}
+				vgparent.AppendChild(vgn)
+				vgn = &vugu.VGNode{Type: vugu.VGNodeType(3), Namespace: "", Data: "p", Attr: []vugu.VGAttribute{{Namespace: "", Key: "class", Val: "mt-4 text-lg text-gray-700"}}}
+				vgparent.AppendChild(vgn)
+				{
+					vgparent := vgn
+					_ = vgparent
+					vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "This is a simple Vugu application."}
+					vgparent.AppendChild(vgn)
+				}
+				vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n        "}
 				vgparent.AppendChild(vgn)
 			}
-			vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n\n    "}
+			vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n    "}
 			vgparent.AppendChild(vgn)
 		}
 		vgn = &vugu.VGNode{Type: vugu.VGNodeType(1), Data: "\n"}
