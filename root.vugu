@@ -1,10 +1,138 @@
-<div>
-    <main role="main" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 bg-black">
-        <div class="py-12">
-            <h1 class="text-3xl font-bold text-gray-900">Welcome to Vugu!</h1>
-            <p class="mt-4 text-lg text-gray-700">This is a simple Vugu application.</p>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        25% { transform: translateY(-8px) rotate(1deg); }
+        50% { transform: translateY(-12px) rotate(0deg); }
+        75% { transform: translateY(-8px) rotate(-1deg); }
+    }
+    @keyframes swell {
+        0%, 100% { transform: scaleY(1) translateY(0); }
+        50% { transform: scaleY(1.1) translateY(-5px); }
+    }
+    @keyframes drift {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0); }
+        50% { opacity: 1; transform: scale(1); }
+    }
+    .float-animation {
+        animation: float 4s ease-in-out infinite;
+    }
+    .swell-animation {
+        animation: swell 5s ease-in-out infinite;
+    }
+    .drift-animation {
+        animation: drift 20s linear infinite;
+    }
+    .sparkle {
+        animation: sparkle 3s ease-in-out infinite;
+    }
+</style>
+
+<div class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500 overflow-hidden relative flex items-center">
+    <div class="absolute top-8 right-12 w-24 h-24 bg-yellow-300 rounded-full shadow-2xl">
+        <div class="absolute inset-2 bg-yellow-200 rounded-full"></div>
+        <div class="absolute -inset-4 bg-yellow-300/20 rounded-full blur-xl"></div>
+    </div>
+
+    <div class="absolute top-16 left-20 w-32 h-16 bg-white rounded-full opacity-80"></div>
+    <div class="absolute top-24 left-40 w-24 h-12 bg-white rounded-full opacity-70"></div>
+    <div class="absolute top-12 right-40 w-28 h-14 bg-white rounded-full opacity-75"></div>
+
+    <h1 class="mx-auto text-6xl md:text-9xl font-bold font-[Outfit] text-white mb-40 drop-shadow-lg z-50">
+        FileFerry
+    </h1>
+
+    <div class="absolute bottom-52 z-49 left-1/2 transform -translate-x-1/2">
+        <!-- Ferry boat -->
+        <div class="float-animation mt-20">
+            <div class="relative">
+                <!-- Red boat hull -->
+                <div class="w-96 h-48 bg-red-500 rounded-b-[30%] relative shadow-2xl">
+                    <div class="absolute inset-0 bg-gradient-to-b from-red-500 to-red-700 rounded-b-[30%]"></div>
+
+                    <!-- White deck stripes -->
+                    <div class="absolute top-3 left-0 right-0 h-3 bg-white"></div>
+                    <div class="absolute top-8 left-0 right-0 h-2 bg-white/80"></div>
+
+                    <!-- White cabin structure -->
+                    <div class="absolute -top-24 left-1/2 transform -translate-x-1/2 w-80 h-40 bg-white rounded-t-2xl rounded-b-lg shadow-xl">
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-4 bg-gray-100 rounded-t-xl"></div>
+
+                        <!-- Windows row -->
+                        <div class="flex justify-center gap-3 pt-3 mb-3">
+                            <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
+                            <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
+                            <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
+                            <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="px-8 space-y-3">
+                            <button class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md text-lg flex items-center justify-center gap-2">
+                                <span class="text-xl">⚓</span> Send
+                            </button>
+                            <button class="w-full bg-orange-500 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md text-lg flex items-center justify-center gap-2">
+                                <span class="text-xl">📦</span> Receive
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white/20 rounded-full"></div>
+                </div>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Ocean Design 3: Smooth gradient waves -->
+    <div class="absolute bottom-0 left-0 right-0">
+        <!-- Gradient wave bands -->
+        <div class="absolute bottom-56 w-full h-12 bg-gradient-to-b from-transparent to-blue-400/20 swell-animation"></div>
+        <div class="absolute bottom-52 w-full h-8 bg-gradient-to-b from-transparent to-blue-500/30 swell-animation" style="animation-delay: 0.5s"></div>
+
+        <!-- Main smooth wave -->
+        <div class="absolute bottom-48 w-full overflow-hidden">
+            <div class="relative w-[200%] h-24 drift-animation">
+                <svg class="absolute w-full h-full" viewBox="0 0 2880 96" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.4" />
+                            <stop offset="100%" style="stop-color:#1e40af;stop-opacity:0.8" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,48 C240,96 480,0 720,48 C960,96 1200,0 1440,48 C1680,96 1920,0 2160,48 C2400,96 2640,0 2880,48 L2880,96 L0,96 Z" 
+                          fill="url(#waveGradient)"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Mid-level waves -->
+        <div class="absolute bottom-32 w-full h-32">
+            <svg class="w-full h-full swell-animation" viewBox="0 0 1440 128" preserveAspectRatio="none" style="animation-delay: 1s">
+                <defs>
+                    <radialGradient id="oceanGradient">
+                        <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.6" />
+                        <stop offset="100%" style="stop-color:#1e40af;stop-opacity:0.9" />
+                    </radialGradient>
+                </defs>
+                <path d="M0,32 C360,80 720,0 1080,32 C1260,48 1380,64 1440,64 L1440,128 L0,128 Z" 
+                      fill="url(#oceanGradient)"/>
+            </svg>
+        </div>
+
+        <!-- Ocean base with shimmer effect -->
+        <div class="h-48 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-900 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent drift-animation"></div>
+        </div>
+
+        <!-- Light reflections -->
+        <div class="absolute bottom-60 left-1/3 w-1 h-1 bg-white rounded-full sparkle"></div>
+        <div class="absolute bottom-58 right-1/4 w-1 h-1 bg-white rounded-full sparkle" style="animation-delay: 1s"></div>
+        <div class="absolute bottom-62 left-2/3 w-1 h-1 bg-white rounded-full sparkle" style="animation-delay: 2s"></div>
+    </div>
 </div>
 
 <script type="application/x-go">
