@@ -36,8 +36,14 @@
       >
         FileFerry
       </h1>
+      <div id="output" class="hidden"></div>
+      </div>
 
-      <div class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40">
+      <div
+        class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40"
+        style="display: none"
+        id="sendWindow"
+      >
         <div class="relative">
           <!-- Rope/chain effect -->
           <div
@@ -126,9 +132,10 @@
                 </svg>
                 <p class="text-sm mb-4">Drop and drop your files here.</p>
                 <button
+                  id="send"
                   class="bg-amber-100 text-amber-800 px-6 py-3 rounded-lg font-bold hover:bg-amber-200 transition-colors shadow-lg"
                 >
-                  Open File Picker
+                  Send
                 </button>
               </div>
             </div>
@@ -136,8 +143,11 @@
         </div>
       </div>
 
-
-      <div class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40">
+      <div
+        style="display: none"
+        class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40"
+        id="receiveWindow"
+      >
         <div class="relative">
           <!-- Rope/chain effect -->
           <div
@@ -210,7 +220,6 @@
         </div>
       </div>
 
-      <!-- Ferry boat (existing) - rest of the code remains the same -->
       <div class="absolute bottom-52 z-49 left-1/2 transform -translate-x-1/2">
         <div class="float-animation mt-20">
           <div class="relative">
@@ -236,20 +245,23 @@
                 </div>
                 <div class="px-8 space-y-3">
                   <button
-                    @click="c.State=1"
+                    id="sendButton"
+                    onclick="goSend()"
                     class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
                   >
                     <span class="text-xl">⚓</span> Send
                   </button>
                   <button
-                    @click="c.State=2"
+                    id="receiveButton"
+                    onclick="goReceive()"
                     class="w-full bg-orange-500 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
                   >
                     <span class="text-xl">📦</span> Receive
                   </button>
                   <button
-                    @click="c.State=0"
-                    class="w-full bg-gray-600 hover:bg-gray-600 text-white py-3.5 px-6 rounded-xl font-semibold shadow-md text-lg flex items-center justify-center transition-colors gap-2"
+                    id="returnButton"
+                    onclick="goHome()"
+                    class="w-full bg-gray-600 hover:bg-gray-600 text-white py-3.5 px-6 rounded-xl font-semibold shadow-md text-lg flex items-center justify-center transition-colors gap-2 hidden"
                   >
                     <span class="text-xl">↩️</span> Return
                   </button>
@@ -350,5 +362,30 @@
       </div>
     </div>
     <script type="module" src="./index.js"></script>
+    <script>
+      function goHome() {
+        document.getElementById("returnButton").style.display = "none";
+        document.getElementById("sendButton").style.display = "block";
+        document.getElementById("receiveButton").style.display = "block";
+        document.getElementById("receiveWindow").style.display = "none";
+        document.getElementById("receiveWindow").style.display = "none";
+        document.getElementById("sendWindow").style.display = "none";
+      }
+      function goSend() {
+        document.getElementById("returnButton").style.display = "block";
+        document.getElementById("sendButton").style.display = "none";
+        document.getElementById("receiveButton").style.display = "none";
+        document.getElementById("sendWindow").style.display = "block";
+        document.getElementById("receiveWindow").style.display = "none";
+        document.getElementById("sendWindow").style.display = "block";
+      }
+      function goReceive() {
+        document.getElementById("returnButton").style.display = "block";
+        document.getElementById("sendButton").style.display = "none";
+        document.getElementById("receiveButton").style.display = "none";
+        document.getElementById("receiveWindow").style.display = "block";
+        document.getElementById("sendWindow").style.display = "none";
+      }
+    </script>
   </body>
 </html>
