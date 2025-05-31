@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <title>FileFerry</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="/styles.css" rel="stylesheet" />
@@ -135,6 +136,7 @@
         </div>
       </div>
 
+
       <div class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40">
         <div class="relative">
           <!-- Rope/chain effect -->
@@ -191,11 +193,13 @@
               <div class="flex">
                 <input
                   type="text"
+                  id="phrase"
                   placeholder="e.g. 8-drunken-sailors"
                   class="flex-1 text-center bg-teal-900/50 border-2 border-teal-600 rounded-lg px-4 py-3 text-white placeholder-teal-300 focus:outline-none focus:border-teal-400 font-mono tracking-wider"
                 />
 
                 <button
+                  id="connect"
                   class="ml-3 bg-teal-100 text-teal-800 px-6 py-3 rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg"
                 >
                   Receive
@@ -345,5 +349,6 @@
         ></div>
       </div>
     </div>
+    <script type="module" src="./index.js"></script>
   </body>
 </html>

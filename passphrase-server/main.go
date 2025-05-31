@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mills.io/bitcask/v2"
 )
@@ -87,6 +89,15 @@ func main() {
 	log.Printf("Database opened successfully at %s", dbPath)
 
 	router := gin.Default()
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Allows all origins
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           1 * time.Hour,
+	}))
 
 	router.GET("/phrase/:phrase", getAddress)
 	router.POST("/phrase", addAddress)

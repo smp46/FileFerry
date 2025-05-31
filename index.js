@@ -7,246 +7,300 @@ import { webRTC } from "@libp2p/webrtc";
 import { webSockets } from "@libp2p/websockets";
 import * as filters from "@libp2p/websockets/filters";
 import { multiaddr, protocols } from "@multiformats/multiaddr";
-import { byteStream } from "it-byte-stream";
 import { createLibp2p } from "libp2p";
-import { fromString, toString } from "uint8arrays";
 
 const WEBRTC_CODE = protocols("webrtc").code;
 
 const output = document.getElementById("output");
-const sendSection = document.getElementById("send-section");
 const appendOutput = (line) => {
-  const div = document.createElement("div");
-  div.appendChild(document.createTextNode(line));
-  output.append(div);
+  if (output) {
+    const div = document.createElement("div");
+    div.appendChild(document.createTextNode(line));
+    output.append(div);
+  } else {
+    console.log(line);
+  }
 };
-const CHAT_PROTOCOL = "/libp2p/examples/chat/1.0.0";
-let ma;
-let chatStream;
 
-const node = await createLibp2p({
-  addresses: {
-    listen: ["/p2p-circuit", "/webrtc"],
-  },
-  transports: [
-    webSockets({
-      filter: filters.all,
-    }),
-    webRTC(),
-    circuitRelayTransport(),
-  ],
-  connectionEncrypters: [noise()],
-  streamMuxers: [yamux()],
-  connectionGater: {
-    denyDialMultiaddr: () => {
-      // by default we refuse to dial local addresses from the browser since they
-      // are usually sent by remote peers broadcasting undialable multiaddrs but
-      // here we are explicitly connecting to a local node so do not deny dialing
-      // any discovered address
-      return false;
-    },
-  },
-  services: {
-    identify: identify(),
-    identifyPush: identifyPush(),
-    ping: ping(),
-  },
-});
+let localPeerMultiaddrs = [];
 
-await node.start();
+const VITE_RELAY_MADDR = import.meta.env.VITE_RELAY_MADDR;
+const VITE_PHRASEBOOK_API_URL = import.meta.env.VITE_PHRASEBOOK_API_URL;
 
-function updateConnList() {
-  // Update connections list
-  const connListEls = node.getConnections().map((connection) => {
-    if (connection.remoteAddr.protoCodes().includes(WEBRTC_CODE)) {
-      ma = connection.remoteAddr;
-      sendSection.style.display = "block";
-    }
 
-    const el = document.createElement("li");
-    el.textContent = connection.remoteAddr.toString();
-    return el;
-  });
-  document.getElementById("connections").replaceChildren(...connListEls);
+let node;
+
+let isSenderWaiting = false;
+let generatedPhrase = "8-drunken-sailors";
+let isReceiverConnecting = false;
+let relayPeerIdStr = null;
+
+
+function getCircuitAddress(libp2pNode, timeout = 25000) {
+    return new Promise((resolve, reject) => {
+        let timer;
+        const listener = () => {
+            const multiaddrs = libp2pNode.getMultiaddrs();
+            const circuitAddr = multiaddrs.find(ma => ma.toString().includes('/p2p-circuit'));
+            if (circuitAddr) {
+                libp2pNode.removeEventListener("self:peer:update", listener);
+                clearTimeout(timer);
+                resolve(circuitAddr);
+            }
+        };
+
+        timer = setTimeout(() => {
+            libp2pNode.removeEventListener("self:peer:update", listener);
+            reject(new Error("Timeout: Could not obtain a circuit address via relay."));
+        }, timeout);
+
+        const initialMultiaddrs = libp2pNode.getMultiaddrs();
+        const initialCircuitAddr = initialMultiaddrs.find(ma => ma.toString().includes('/p2p-circuit'));
+        if (initialCircuitAddr) {
+            clearTimeout(timer);
+            resolve(initialCircuitAddr);
+            return;
+        }
+
+        libp2pNode.addEventListener("self:peer:update", listener);
+    });
 }
 
-node.addEventListener("connection:open", (event) => {
-  updateConnList();
-});
-node.addEventListener("connection:close", (event) => {
-  updateConnList();
-});
 
-node.addEventListener("self:peer:update", (event) => {
-  // Update multiaddrs list, only show WebRTC addresses
-  const multiaddrs = node
-    .getMultiaddrs()
-    .filter((ma) => isWebrtc(ma))
-    .map((ma) => {
-      const el = document.createElement("li");
-      el.textContent = ma.toString();
-      return el;
+async function main() {
+    node = await createLibp2p({
+        addresses: {
+            listen: ["/p2p-circuit", "/webrtc"],
+        },
+        transports: [
+            webSockets({
+                filter: filters.all,
+            }),
+            webRTC({
+                rtcConfiguration: {
+                    iceServers: [
+                        { urls: "stun:stun.l.google.com:19302" },
+                        { urls: "stun:stun1.l.google.com:19302" },
+                        { urls: "stun:stun.nextcloud.com:443" },
+                    ],
+                },
+            }),
+            circuitRelayTransport({
+            }),
+        ],
+        connectionEncryption: [noise()],
+        streamMuxers: [yamux()],
+        connectionGater: {
+            denyDialMultiaddr: async () => {
+                return false;
+            },
+        },
+        services: {
+            identify: identify(),
+            identifyPush: identifyPush(),
+            ping: ping(),
+        },
     });
-  document.getElementById("multiaddrs").replaceChildren(...multiaddrs);
-});
 
-node.handle(CHAT_PROTOCOL, async ({ stream }) => {
-  chatStream = byteStream(stream);
+    await node.start();
+    appendOutput(`Node started with Peer ID: ${node.peerId.toString()}`);
+    localPeerMultiaddrs = node.getMultiaddrs().map(ma => ma.toString());
+    appendOutput("My addresses:");
+    localPeerMultiaddrs.forEach(addr => appendOutput(`  - ${addr}`));
 
-  while (true) {
-    const buf = await chatStream.read();
-    appendOutput(`Received message '${toString(buf.subarray())}'`);
-  }
-});
+
+    if (VITE_RELAY_MADDR) {
+        try {
+            relayPeerIdStr = multiaddr(VITE_RELAY_MADDR).getPeerId();
+        } catch (e) {
+            appendOutput(`Warning: Could not parse Peer ID from VITE_RELAY_MADDR: ${VITE_RELAY_MADDR}. Relay connection distinction might fail.`);
+            console.warn("Error parsing relay PeerID from VITE_RELAY_MADDR:", e);
+        }
+    }
+
+
+    node.addEventListener("connection:open", (event) => {
+        const remotePeerId = event.detail.remotePeer.toString();
+        const remoteAddr = event.detail.remoteAddr.toString();
+        appendOutput(`Connection OPENED with: ${remotePeerId} on ${remoteAddr}`);
+
+        if (isSenderWaiting) {
+            if (relayPeerIdStr && remotePeerId === relayPeerIdStr) {
+                appendOutput("INFO: Connection to the relay server confirmed.");
+            } else {
+                appendOutput("Connected");
+                isSenderWaiting = false;
+                generatedPhrase = "8-drunken-sailors";
+            }
+        } else if (isReceiverConnecting) {
+            appendOutput("Connected");
+            isReceiverConnecting = false;
+        }
+    });
+
+    node.addEventListener("connection:close", (event) => {
+        appendOutput(`Connection CLOSED with: ${event.detail.remotePeer.toString()}`);
+        if (isSenderWaiting && event.detail.remotePeer.toString() === relayPeerIdStr) {
+            appendOutput("ERROR: Connection to relay lost while waiting for peer.");
+            isSenderWaiting = false;
+        }
+         if (isReceiverConnecting) {
+            appendOutput("INFO: Peer connection attempt failed or dropped.");
+            isReceiverConnecting = false;
+        }
+    });
+
+    node.addEventListener("self:peer:update", () => {
+        appendOutput("Node addresses updated (self:peer:update):");
+        localPeerMultiaddrs = node.getMultiaddrs().map(ma => ma.toString());
+        localPeerMultiaddrs.forEach(addr => appendOutput(`  - ${addr}`));
+    });
+}
 
 const isWebrtc = (ma) => {
-  return ma.protoCodes().includes(WEBRTC_CODE);
+    return ma.protoCodes().includes(WEBRTC_CODE);
 };
 
-window.connect.onclick = async () => {
-  const phrase = window.peer.value.trim(); // `window.peer` is the input field for the passphrase
-  if (!phrase) {
-    appendOutput("Please enter a phrase to lookup.");
-    return;
-  }
-
-  appendOutput(`Looking up passphrase '${phrase}'...`);
-  ma = null; // Reset ma
-
-  try {
-    // 1. Fetch the multiaddress from your Go API
-    const apiUrl = `http://localhost:8080/phrase/${encodeURIComponent(phrase)}`;
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      let errorMessage = `Failed to lookup passphrase '${phrase}'. Status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage += ` - ${errorData.message || "Unknown error from API"}`;
-        if (response.status === 409 && errorData.item) {
-          // Phrase used
-          appendOutput(
-            `Info: Phrase '${phrase}' is marked as used. Multiaddr: ${errorData.item.maddr}`,
-          );
-          // Decide if you want to allow connecting to "used" phrases.
-          // For now, we'll prevent connection based on the 409 status.
-          appendOutput("Connection aborted as phrase is already in use.");
-          return;
-        } else if (response.status === 404) {
-          // Phrase not found
-          appendOutput(
-            `Error: Phrase '${phrase}' not found in the address book.`,
-          );
-          return;
-        }
-      } catch (e) {
-        // Failed to parse error JSON from API, use status text
-        errorMessage += ` - ${response.statusText}`;
-      }
-      appendOutput(errorMessage);
-      return;
-    }
-
-    // 2. Parse the successful response
-    const addressData = await response.json();
-    const maddrString = addressData.maddr;
-
-    if (!maddrString) {
-      appendOutput(
-        `Phrase '${phrase}' found, but no multiaddress (maddr) was provided by the API.`,
-      );
-      return;
-    }
-
-    if (addressData.uses === true) {
-      appendOutput(
-        `Warning: Connecting to phrase '${phrase}' which is marked as 'used'. Maddr: ${maddrString}`,
-      );
-      // If API returns 200 OK but "uses:true", you might still want to connect.
-      // The Go API as designed previously would return 409 if "uses:true",
-      // so this specific path (200 OK + uses:true) might not occur with that Go code.
-      // This is a safeguard if the API logic changes.
-    }
-
-    // 3. Set the multiaddr and attempt to connect using libp2p
-    ma = multiaddr(maddrString); // `ma` is the global variable
-    appendOutput(
-      `Retrieved multiaddr: '${ma.toString()}' for phrase '${phrase}'.`,
-    );
-    appendOutput(`Attempting to connect to peer...`);
-
-    const signal = AbortSignal.timeout(10000); // Increased timeout for potentially slower WebRTC negotiation
-
-    try {
-      if (isWebrtc(ma)) {
-        appendOutput(`Pinging WebRTC peer '${ma.toString()}'...`);
-        const rtt = await node.services.ping.ping(ma, { signal });
-        appendOutput(`Ping successful to '${ma.toString()}'! RTT: ${rtt}ms`);
-        // To ensure the connection is listed and send section appears,
-        // we might need to explicitly dial even for WebRTC
-        // if ping alone doesn't keep the connection open for `updateConnList`.
-        // For many libp2p examples, ping implies connect-ability.
-        // A full dial might be needed if `updateConnList` doesn't reflect the connection.
-        appendOutput(
-          `Attempting to establish persistent connection to '${ma.toString()}'...`,
-        );
-        await node.dial(ma, { signal }); // Establish persistent connection
-        appendOutput(`Connection established to '${ma.toString()}'.`);
-      } else {
-        appendOutput(`Dialing non-WebRTC peer '${ma.toString()}'...`);
-        await node.dial(ma, { signal });
-        appendOutput(`Connected to '${ma.toString()}'.`);
-      }
-      // The 'connection:open' event handler (updateConnList) should manage UI updates like sendSection visibility
-    } catch (err) {
-      if (signal.aborted) {
-        appendOutput(`Timed out connecting to '${ma.toString()}'.`);
-      } else {
-        appendOutput(
-          `Error connecting to '${ma.toString()}': ${err.message || err}`,
-        );
-      }
-    }
-  } catch (error) {
-    // This catches errors from the fetch call itself (e.g., API server down, network issues)
-    appendOutput(
-      `Network or API error while looking up phrase '${phrase}': ${error.message || error}`,
-    );
-  }
-};
-
+window.send = {};
 window.send.onclick = async () => {
-  if (chatStream == null) {
-    appendOutput("Opening chat stream");
+    if (!node) { appendOutput("Libp2p node not initialized yet."); return; }
+    if (!VITE_RELAY_MADDR) { appendOutput("Relay address (VITE_RELAY_MADDR) is not configured."); return;}
 
-    const signal = AbortSignal.timeout(5000);
+    output.innerHTML = '';
+    isSenderWaiting = true;
+    generatedPhrase = "8-drunken-sailors" 
+
+    appendOutput(`Your passphrase: ${generatedPhrase}`);
+    appendOutput(`Attempting to connect to relay: ${VITE_RELAY_MADDR}...`);
+
+    const relayMa = multiaddr(VITE_RELAY_MADDR);
+    const dialSignal = AbortSignal.timeout(30000);
 
     try {
-      const stream = await node.dialProtocol(ma, CHAT_PROTOCOL, {
-        signal,
-      });
-      chatStream = byteStream(stream);
+        await node.dial(relayMa, { signal: dialSignal });
+        appendOutput(`Successfully connected to relay '${relayMa.toString()}'.`);
+        appendOutput("Obtaining our listen address via relay (may take a moment)...");
 
-      Promise.resolve().then(async () => {
-        while (true) {
-          const buf = await chatStream.read();
-          appendOutput(`Received message '${toString(buf.subarray())}'`);
+        const senderCircuitAddress = await getCircuitAddress(node, 25000);
+        appendOutput(`Obtained listen address: ${senderCircuitAddress.toString()}`);
+
+        appendOutput(`Registering passphrase '${generatedPhrase}' with the address book...`);
+        const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase/${encodeURIComponent(generatedPhrase)}`;
+
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            body: JSON.stringify({
+                Phrase: generatedPhrase,
+                Maddr: senderCircuitAddress.toString(),
+            }),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8",
+            },
+        });
+
+        if (response.ok) {
+            appendOutput(`Passphrase registered successfully. Waiting for a peer to connect...`);
+        } else {
+            const errorText = await response.text();
+            appendOutput(`Failed to register passphrase. Status: ${response.status}. Error: ${errorText}`);
+            isSenderWaiting = false;
+            generatedPhrase = "";
         }
-      });
     } catch (err) {
-      if (signal.aborted) {
-        appendOutput("Timed out opening chat stream");
-      } else {
-        appendOutput(`Opening chat stream failed - ${err.message}`);
-      }
-
-      return;
+        if (dialSignal.aborted && !err.message.includes("circuit address")) {
+            appendOutput(`Timed out connecting to relay '${relayMa.toString()}'.`);
+        } else {
+            appendOutput(`Error in send process: ${err.message || err}`);
+        }
+        console.error("Libp2p send process error:", err);
+        isSenderWaiting = false;
+        generatedPhrase = "";
     }
-  }
-
-  const message = window.message.value.toString().trim();
-  appendOutput(`Sending message '${message}'`);
-  chatStream.write(fromString(message)).catch((err) => {
-    appendOutput(`Error sending message - ${err.message}`);
-  });
 };
+
+window.receive = {};
+window.receive.onclick = async () => {
+    if (!node) { appendOutput("Libp2p node not initialized yet."); return; }
+
+    const phraseInput = document.getElementById("phrase");
+    if (!phraseInput) {
+        appendOutput("Phrase input field (id='phrase') not found.");
+        return;
+    }
+    const phraseValue = phraseInput.value.trim();
+
+    if (!phraseValue) {
+        appendOutput("Please enter a phrase to lookup.");
+        return;
+    }
+    output.innerHTML = '';
+    appendOutput(`Looking up passphrase '${phraseValue}'...`);
+    isReceiverConnecting = true;
+
+    try {
+        const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase/${encodeURIComponent(phraseValue)}`;
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            let apiErrorMessage = `Failed to lookup phrase '${phraseValue}'. Status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                apiErrorMessage += ` - ${errorData.message || response.statusText}`;
+                 if (response.status === 409 && errorData.item) {
+                    appendOutput(`Info: Phrase '${phraseValue}' is used by maddr: ${errorData.item.maddr}. Not connecting.`);
+                    isReceiverConnecting = false; return;
+                } else if (response.status === 404) {
+                    appendOutput(`Error: Phrase '${phraseValue}' not found.`);
+                    isReceiverConnecting = false; return;
+                }
+            } catch (e) {
+                apiErrorMessage += ` - ${response.statusText}`;
+            }
+            appendOutput(apiErrorMessage);
+            isReceiverConnecting = false;
+            return;
+        }
+
+        const addressData = await response.json();
+        const maddrString = addressData.maddr;
+
+        if (!maddrString) {
+            appendOutput(`Phrase '${phraseValue}' found, but no multiaddress (maddr) was provided.`);
+            isReceiverConnecting = false;
+            return;
+        }
+
+        const peerMa = multiaddr(maddrString);
+        appendOutput(`Retrieved multiaddr: '${peerMa.toString()}' for phrase '${phraseValue}'.`);
+        appendOutput(`Attempting to connect to peer...`);
+
+        const connectSignal = AbortSignal.timeout(30000);
+
+        try {
+            appendOutput(`Pinging peer '${peerMa.toString()}'...`);
+            const rtt = await node.services.ping.ping(peerMa, { signal: connectSignal, count: 1 });
+            appendOutput(`Ping successful to '${peerMa.toString()}'! RTT: ${rtt}ms`);
+        } catch (pingErr) {
+            appendOutput(`Ping failed to '${peerMa.toString()}': ${pingErr.message || pingErr}. Attempting dial anyway...`);
+        }
+
+        await node.dial(peerMa, { signal: connectSignal });
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+             appendOutput(`Timed out connecting to peer.`);
+        } else {
+            appendOutput(`Error in receive process: ${error.message || error}`);
+        }
+        console.error("Libp2p receive process error:", error);
+        isReceiverConnecting = false;
+    }
+};
+
+main().catch(err => {
+    console.error("Failed to initialize libp2p node:", err);
+    appendOutput(`Critical Error: Failed to initialize libp2p node - ${err.message}`);
+});
+
+document.getElementById('send').addEventListener('click', window.send.onclick);
+document.getElementById('receive').addEventListener('click', window.receive.onclick);
