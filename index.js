@@ -86,9 +86,7 @@ async function main() {
       listen: ["/p2p-circuit", "/webrtc"],
     },
     transports: [
-      webSockets({
-        filter: filters.dnsWss,
-      }),
+      webSockets({ filter: filters.all }),
       webRTC({
         rtcConfiguration: {
           iceServers: [
