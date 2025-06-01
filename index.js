@@ -34,6 +34,8 @@ let generatedPhrase = "8-drunken-sailors";
 let isReceiverConnecting = false;
 let relayPeerIdStr = null;
 
+let ma;
+
 function getCircuitAddress(libp2pNode, timeout = 25000) {
   return new Promise((resolve, reject) => {
     let timer;
@@ -90,10 +92,10 @@ async function main() {
       }),
       circuitRelayTransport({}),
     ],
-    connectionEncryption: [noise()],
+    connectionEncrypters: [noise()],
     streamMuxers: [yamux()],
     connectionGater: {
-      denyDialMultiaddr: async () => {
+      denyDialMultiaddr: () => {
         return false;
       },
     },
@@ -168,47 +170,58 @@ const isWebrtc = (ma) => {
   return ma.protoCodes().includes(WEBRTC_CODE);
 };
 
-window.send = {};
 window.send.onclick = async () => {
   if (!node) {
     appendOutput("Libp2p node not initialized yet.");
     return;
   }
+  appendOutput(`Attempting to use relay address: ${VITE_RELAY_MADDR}`);
   if (!VITE_RELAY_MADDR) {
-    appendOutput("Relay address (VITE_RELAY_MADDR) is not configured.");
+    appendOutput("ERROR: VITE_RELAY_MADDR is undefined or empty!");
+    isSenderWaiting = false;
     return;
   }
 
   output.innerHTML = "";
   isSenderWaiting = true;
-  generatedPhrase = "8-drunken-sailors";
+  generatedPhrase = "9-drunken-sailors";
 
   appendOutput(`Your passphrase: ${generatedPhrase}`);
   appendOutput(`Attempting to connect to relay: ${VITE_RELAY_MADDR}...`);
 
-  const relayMa = multiaddr(VITE_RELAY_MADDR);
-  const dialSignal = AbortSignal.timeout(30000);
+  ma = multiaddr(VITE_RELAY_MADDR);
+  const signal = AbortSignal.timeout(5000);
 
   try {
-    await node.dial(relayMa, { signal: dialSignal });
-    appendOutput(`Successfully connected to relay '${relayMa.toString()}'.`);
+    if (isWebrtc(ma)) {
+      const rtt = await node.services.ping.ping(ma, {
+        signal,
+      });
+      appendOutput(`Connected to '${ma}'`);
+      appendOutput(`RTT to ${ma.getPeerId()} was ${rtt}ms`);
+    } else {
+      await node.dial(ma, {
+        signal,
+      });
+      appendOutput("Connected to relay");
+    }
+    appendOutput(`Successfully connected to relay '${ma.toString()}'.`);
     appendOutput(
       "Obtaining our listen address via relay (may take a moment)...",
     );
-
     const senderCircuitAddress = await getCircuitAddress(node, 25000);
     appendOutput(`Obtained listen address: ${senderCircuitAddress.toString()}`);
 
     appendOutput(
       `Registering passphrase '${generatedPhrase}' with the address book...`,
     );
-    const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase/${encodeURIComponent(generatedPhrase)}`;
+    const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
       body: JSON.stringify({
-        Phrase: generatedPhrase,
         Maddr: senderCircuitAddress.toString(),
+        Phrase: generatedPhrase,
       }),
       headers: {
         "Content-type": "application/json; charset=UTF-8",
@@ -228,8 +241,8 @@ window.send.onclick = async () => {
       generatedPhrase = "";
     }
   } catch (err) {
-    if (dialSignal.aborted && !err.message.includes("circuit address")) {
-      appendOutput(`Timed out connecting to relay '${relayMa.toString()}'.`);
+    if (signal.aborted && !err.message.includes("circuit address")) {
+      appendOutput(`Timed out connecting to relay '${ma.toString()}'.`);
     } else {
       appendOutput(`Error in send process: ${err.message || err}`);
     }
