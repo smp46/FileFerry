@@ -93,6 +93,7 @@
 
             <!-- Drop zone styled as cargo net -->
             <div
+              id="drop_zone"
               class="bg-black/20 border-4 border-amber-900 rounded-lg p-10 text-center relative overflow-hidden"
             >
               <!-- Net pattern -->
@@ -133,7 +134,7 @@
                 </svg>
                 <p class="text-sm mb-4">Drop and drop your files here.</p>
                 <button
-                  id="send"
+                  id="sendModeButton"
                   class="bg-amber-100 text-amber-800 px-6 py-3 rounded-lg font-bold hover:bg-amber-200 transition-colors shadow-lg"
                 >
                   Send
@@ -142,6 +143,9 @@
             </div>
           </div>
         </div>
+        <div id="outputSend"></div>
+        <span id="fileName"></span> <span id="fileSize"></span>
+        <span id="generatedPhraseDisplay"></span>
       </div>
 
       <div
@@ -204,13 +208,13 @@
               <div class="flex">
                 <input
                   type="text"
-                  id="phrase"
+                  id="phraseInput"
                   placeholder="e.g. 8-drunken-sailors"
                   class="flex-1 text-center bg-teal-900/50 border-2 border-teal-600 rounded-lg px-4 py-3 text-white placeholder-teal-300 focus:outline-none focus:border-teal-400 font-mono tracking-wider"
                 />
 
                 <button
-                  id="receive"
+                  id="receiveModeButton"
                   class="ml-3 bg-teal-100 text-teal-800 px-6 py-3 rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg"
                 >
                   Receive
@@ -219,6 +223,8 @@
             </div>
           </div>
         </div>
+        <div id="outputReceive"></div>
+        <div id="downloads"></div>
       </div>
 
       <div class="absolute bottom-52 z-49 left-1/2 transform -translate-x-1/2">
@@ -246,14 +252,14 @@
                 </div>
                 <div class="px-8 space-y-3">
                   <button
-                    id="sendButton"
+                    id="goSendButton"
                     onclick="goSend()"
                     class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
                   >
                     <span class="text-xl">⚓</span> Send
                   </button>
                   <button
-                    id="receiveButton"
+                    id="goReceiveButton"
                     onclick="goReceive()"
                     class="w-full bg-orange-500 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
                   >
@@ -366,24 +372,24 @@
     <script>
       function goHome() {
         document.getElementById("returnButton").style.display = "none";
-        document.getElementById("sendButton").style.display = "block";
-        document.getElementById("receiveButton").style.display = "block";
+        document.getElementById("goSendButton").style.display = "block";
+        document.getElementById("goReceiveButton").style.display = "block";
         document.getElementById("receiveWindow").style.display = "none";
         document.getElementById("receiveWindow").style.display = "none";
         document.getElementById("sendWindow").style.display = "none";
       }
       function goSend() {
         document.getElementById("returnButton").style.display = "block";
-        document.getElementById("sendButton").style.display = "none";
-        document.getElementById("receiveButton").style.display = "none";
+        document.getElementById("goSendButton").style.display = "none";
+        document.getElementById("goReceiveButton").style.display = "none";
         document.getElementById("sendWindow").style.display = "block";
         document.getElementById("receiveWindow").style.display = "none";
         document.getElementById("sendWindow").style.display = "block";
       }
       function goReceive() {
         document.getElementById("returnButton").style.display = "block";
-        document.getElementById("sendButton").style.display = "none";
-        document.getElementById("receiveButton").style.display = "none";
+        document.getElementById("goSendButton").style.display = "none";
+        document.getElementById("goReceiveButton").style.display = "none";
         document.getElementById("receiveWindow").style.display = "block";
         document.getElementById("sendWindow").style.display = "none";
       }
