@@ -83,7 +83,7 @@ async function main() {
     serverNode = await createLibp2p({
       privateKey: loadedPrivateKey,
       addresses: {
-        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`],
+        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/wss`],
       },
       transports: [webSockets({ filter: filters.all })],
       connectionEncryption: [noise()],
