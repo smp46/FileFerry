@@ -39,6 +39,9 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_RELAY_MADDR: ${{ secrets.VITE_RELAY_MADDR }}
+          VITE_PHRASEBOOK_API_URL: ${{ secrets.VITE_PHRASEBOOK_API_URL }}
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
