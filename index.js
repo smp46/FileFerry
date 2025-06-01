@@ -8,6 +8,10 @@ import { webSockets } from "@libp2p/websockets";
 import * as filters from "@libp2p/websockets/filters";
 import { multiaddr, protocols } from "@multiformats/multiaddr";
 import { createLibp2p } from "libp2p";
+import * as DashPhraseModule from "dashphrase";
+
+// Then, before you use it in onclick, log it when your module loads:
+console.log("DashPhraseModule:", DashPhraseModule);
 
 const WEBRTC_CODE = protocols("webrtc").code;
 
@@ -30,10 +34,8 @@ const VITE_PHRASEBOOK_API_URL = import.meta.env.VITE_PHRASEBOOK_API_URL;
 let node;
 
 let isSenderWaiting = false;
-let generatedPhrase = "8-drunken-sailors";
 let isReceiverConnecting = false;
 let relayPeerIdStr = null;
-
 let ma;
 
 function getCircuitAddress(libp2pNode, timeout = 25000) {
@@ -134,7 +136,7 @@ async function main() {
       } else {
         appendOutput("Connected");
         isSenderWaiting = false;
-        generatedPhrase = "8-drunken-sailors";
+        generatedPhrase = "";
       }
     } else if (isReceiverConnecting) {
       appendOutput("Connected");
@@ -184,7 +186,10 @@ window.send.onclick = async () => {
 
   output.innerHTML = "";
   isSenderWaiting = true;
-  generatedPhrase = "9-drunken-sailors";
+  const randWords = await DashPhraseModule.generate(16);
+  const randomNumber = Math.floor(Math.random() * 100) + 1;
+
+  const generatedPhrase = [randomNumber, ...randWords.split(" ")].join("-");
 
   appendOutput(`Your passphrase: ${generatedPhrase}`);
   appendOutput(`Attempting to connect to relay: ${VITE_RELAY_MADDR}...`);
@@ -352,8 +357,3 @@ main().catch((err) => {
     `Critical Error: Failed to initialize libp2p node - ${err.message}`,
   );
 });
-
-document.getElementById("send").addEventListener("click", window.send.onclick);
-document
-  .getElementById("receive")
-  .addEventListener("click", window.receive.onclick);

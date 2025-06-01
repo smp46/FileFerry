@@ -11,4 +11,7 @@ export default {
     open: true,
   },
   plugins: [tailwindcss()],
+  define: {
+    global: "globalThis",
+  },
 };
