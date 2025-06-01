@@ -28,9 +28,7 @@ async function getPrivateKeyObjectFromEnv() {
   const privKeyBase64 = process.env.PRIV_KEY_BASE64;
 
   if (!privKeyBase64) {
-    console.error(
-      `Error: Environment variable ${ENV_PRIV_KEY_NAME} is not set.`,
-    );
+    console.error(`Error: Environment variable is not set.`);
     return null;
   }
 
@@ -83,10 +81,14 @@ async function main() {
     serverNode = await createLibp2p({
       privateKey: loadedPrivateKey,
       addresses: {
-        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/wss`],
+        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`],
       },
-      transports: [webSockets({ filter: filters.all })],
-      connectionEncryption: [noise()],
+      transports: [
+        webSockets({
+          filter: filters.all,
+        }),
+      ],
+      connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
       services: {
         identify: identify(),
