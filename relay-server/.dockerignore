@@ -1,0 +1,37 @@
+# Version control
+.git
+.gitignore
+
+# Node.js dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development files
+test
+coverage
+.nyc_output
+*.test.js
+*.spec.js
+
+# Environment files
+.env*
+.env.local
+.env.*.local
+
+# IDE files
+.vscode
+.idea
+
+# Documentation
+README.md
+LICENSE
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Build outputs
+dist
+build
