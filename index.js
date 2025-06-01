@@ -1,3 +1,5 @@
+const DEBUG_ENABLED = true;
+
 import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
 import { circuitRelayTransport } from "@libp2p/circuit-relay-v2";
@@ -17,14 +19,8 @@ const output = document.getElementById("output");
 const outputSend = document.getElementById("outputSend");
 const outputReceive = document.getElementById("outputReceive");
 
-const appendOutput = (line, targetElement) => {
-  const el = targetElement || output;
-  if (el) {
-    const div = document.createElement("div");
-    div.appendChild(document.createTextNode(line));
-    el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
-  } else {
+const appendOutput = (line, _targetElement) => {
+  if (DEBUG_ENABLED) {
     console.log(line);
   }
 };
@@ -210,7 +206,7 @@ async function main() {
         `Peer connected: ${remotePeerIdStr}. Old activePeerId: ${activePeerId?.toString()}`,
         targetOutput,
       );
-      activePeerId = remotePeerId; // Update active peer
+      activePeerId = remotePeerId;
     } else {
       appendOutput(
         `Re-established or additional connection to existing peer: ${remotePeerIdStr}`,
@@ -235,6 +231,8 @@ async function main() {
           outputSend,
         );
         try {
+          document.getElementById("fileInfoArea").style.display = "none";
+          document.getElementById("loadingIndicator").style.display = "block";
           const stream = await node.dialProtocol(
             activePeerId,
             FILE_TRANSFER_PROTOCOL,
@@ -263,10 +261,7 @@ async function main() {
           arrayWithHeader.append(encodedHeader);
           arrayWithHeader.append(array);
 
-          let sentBytes = 0;
-
           await activeStream.sink(arrayWithHeader);
-          sentBytes = array.length;
 
           appendOutput("Finished sending file data.", outputSend);
           await activeStream.closeWrite();
@@ -278,13 +273,18 @@ async function main() {
           activeStream = null;
           fileTransferInitiated = false;
           isSenderMode = false;
+
+          document.getElementById("loadingIndicator").style.display = "none";
+          document.getElementById("completionMessage").style.display = "block";
         } catch (err) {
           appendOutput(
             `Opening/writing file transfer stream to peer failed: ${err.message}`,
             outputSend,
           );
-          console.error("DialProtocol/Stream error (Sender):", err);
+          console.error("DialProtocol/Stream error (Sender):", err); // This console.error remains
           activeStream = null;
+          document.getElementById("loadingIndicator").style.display = "none";
+          document.getElementById("errorMessage").style.display = "block";
         }
       } else if (remoteAddrStr.includes("/p2p-circuit")) {
         appendOutput(
@@ -367,6 +367,10 @@ async function main() {
       );
     }
     activePeerId = connection.remotePeer;
+
+    document.getElementById("initialReceiveUI").style.display = "none";
+    document.getElementById("receivingLoadingIndicator").style.display =
+      "block";
 
     let receivedFileBuffer = [];
     let fileNameFromHeader = "downloaded_file";
@@ -476,28 +480,40 @@ async function main() {
         const a = document.createElement("a");
         a.href = downloadUrl;
         a.download = fileNameFromHeader;
-        a.textContent = `Download ${fileNameFromHeader} (${(receivedBytesTotal / 1024 / 1024).toFixed(2)} MB)`;
-        a.style.display = "block";
+        const fileSizeMb = `${(receivedBytesTotal / 1024 / 1024).toFixed(2)}`;
+        a.textContent = `Download ${fileSizeMb} MB)`;
+        a.style.display = "hidden";
 
-        const downloadsDiv = document.getElementById("downloads");
-        if (downloadsDiv) {
-          downloadsDiv.innerHTML = "";
-          downloadsDiv.appendChild(a);
-        } else {
-          targetOutput.appendChild(a);
-        }
-        appendOutput("Download link created.", targetOutput);
+        document.getElementById("receivingLoadingIndicator").style.display =
+          "none";
+        document.getElementById("receivedFileName").innerText =
+          fileNameFromHeader;
+        document.getElementById("receivedFileSize").innerText =
+          `${fileSizeMb} MB`;
+        document.getElementById("downloadReadyMessage").style.display = "block";
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
         appendOutput(
           "No data received in file buffer. Download will be empty.",
           targetOutput,
         );
+
+        document.getElementById("receivingLoadingIndicator").style.display =
+          "none";
+        document.getElementById("receiveErrorMessage").style.display = "block";
       }
     } catch (err) {
       appendOutput(
         `Error reading from file stream: ${err.message}`,
         targetOutput,
       );
+
+      document.getElementById("receivingLoadingIndicator").style.display =
+        "none";
+      document.getElementById("receiveErrorMessage").style.display = "block";
       console.error("Stream read error (Receiver):", err);
     } finally {
       appendOutput("Closing incoming file stream processing.", targetOutput);
@@ -512,8 +528,7 @@ async function main() {
           console.warn("Error closing stream on receiver:", e);
         }
       }
-      activeStream = null; // Reset active stream for this handler instance
-      // isReceiverMode = false; // Decide if mode should be reset
+      activeStream = null;
     }
   });
 }
@@ -538,33 +553,64 @@ function dropHandler(ev) {
       `Selected file: ${selectedFile.name} (Size: ${selectedFile.size} bytes)`,
       outputSend,
     );
-    document.getElementById("fileName").textContent = selectedFile.name; // Update UI
-    document.getElementById("fileSize").textContent =
+    document.getElementById("fileNameDisplay").textContent = selectedFile.name;
+    document.getElementById("fileSizeDisplay").textContent =
       `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
+
+    window.actions.startSendProcess();
   } else {
     appendOutput("No file selected from drop.", outputSend);
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const dropZone = document.getElementById("drop_zone");
-  if (dropZone) {
-    dropZone.addEventListener("dragover", dragOverHandler);
-    dropZone.addEventListener("drop", dropHandler);
-    appendOutput("Drag and drop handlers attached.", output);
-  } else {
-    console.error("#drop_zone element not found.");
-  }
+function copyPhrase() {
+  var copyText = document.getElementById("generatedPhraseDisplay");
+  navigator.clipboard.writeText(copyText.innerText);
+}
 
-  const sendModeButton = document.getElementById("sendModeButton");
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("phraseInput").value = "";
+
+  const dropZone = document.getElementById("drop_zone");
+  dropZone.addEventListener("dragover", dragOverHandler);
+  dropZone.addEventListener("drop", dropHandler);
+
+  const filePicker = document.getElementById("fileInput");
+
+  filePicker.addEventListener("change", (event) => {
+    if (event.target.files && event.target.files[0]) {
+      var file = event.target.files[0];
+
+      var reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = (readerEvent) => {
+        file = readerEvent.target.result;
+      };
+
+      reader.onerror = (error) => {
+        console.error("FileReader error: ", error);
+      };
+
+      selectedFile = file;
+      document.getElementById("fileNameDisplay").textContent =
+        selectedFile.name;
+      document.getElementById("fileSizeDisplay").textContent =
+        `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`;
+      window.actions.startSendProcess();
+    } else {
+      console.log("No file selected.");
+    }
+  });
+
+  const copyButton = document.getElementById("copyPhraseButton");
+  copyButton.addEventListener("click", copyPhrase);
+
+  appendOutput("handlers attached.", output);
+
   const receiveModeButton = document.getElementById("receiveModeButton");
 
-  if (sendModeButton) {
-    sendModeButton.onclick = window.actions.startSendProcess;
-  }
-  if (receiveModeButton) {
-    receiveModeButton.onclick = window.actions.startReceiveProcess;
-  }
+  receiveModeButton.onclick = window.actions.startReceiveProcess;
 });
 
 window.actions = {
@@ -584,21 +630,23 @@ window.actions = {
 
     isSenderMode = true;
     isReceiverMode = false;
-    if (outputSend) outputSend.innerHTML = ""; // Clear previous sender logs
+    if (outputSend) outputSend.innerHTML = "";
     appendOutput("Sender Mode Activated. Generating passphrase...", outputSend);
 
-    // Use .default if DashPhraseModule is the namespace import
     const randWords = await DashPhraseModule.default.generate(16);
     const randomNumber = Math.floor(Math.random() * 100) + 1;
     currentSenderPhrase = [randomNumber, ...randWords.split(" ")].join("-");
 
     document.getElementById("generatedPhraseDisplay").textContent =
-      currentSenderPhrase; // Update UI
+      currentSenderPhrase;
     appendOutput(`Your passphrase: ${currentSenderPhrase}`, outputSend);
     appendOutput(
       `Attempting to connect to relay: ${VITE_RELAY_MADDR}...`,
       outputSend,
     );
+
+    document.getElementById("initialDropUI").style.display = "none";
+    document.getElementById("fileInfoArea").style.display = "block";
 
     const relayMa = multiaddr(VITE_RELAY_MADDR);
     try {
@@ -649,7 +697,7 @@ window.actions = {
           const errorData = await response.json();
           apiErrorMessage += ` - ${errorData.message || response.statusText}`;
         } catch (e) {
-          apiErrorMessage += ` - ${response.statusText}`;
+          apiErrorMessage += ` - ${response.statusText}`; // Fallback if error response is not JSON
         }
         appendOutput(apiErrorMessage, outputReceive);
         isReceiverMode = false;
@@ -674,7 +722,7 @@ window.actions = {
         outputReceive,
       );
 
-      await node.dial(peerMa, { signal: AbortSignal.timeout(30000) });
+      await node.dial(peerMa, { signal: AbortSignal.timeout(10000) });
       appendOutput(
         "Dialing sender initiated. Waiting for connection...",
         outputReceive,
@@ -694,7 +742,7 @@ main().catch((err) => {
   console.error("Failed to initialize libp2p node:", err);
   appendOutput(
     `Critical Error: Failed to initialize libp2p node - ${err.message}`,
-    output,
+    output, // Main output div
   );
 });
 
@@ -708,10 +756,6 @@ function getByteArray(file) {
     fileReader.readAsArrayBuffer(file);
     fileReader.onload = function (ev) {
       const array = new Uint8Array(ev.target.result);
-      const fileByteArray = [];
-      for (let i = 0; i < array.length; i++) {
-        fileByteArray.push(array[i]);
-      }
       resolve(array);
     };
     fileReader.onerror = reject;
