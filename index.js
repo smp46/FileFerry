@@ -84,27 +84,59 @@ async function getClosestStunServer() {
   const HOST_URL =
     'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_hosts.txt';
   const GEO_USER_URL = 'https://ip-api.com/json/';
+  const USER_GEO_CACHE_KEY = 'userGeoData';
+  const CACHE_DURATION_MS = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+
+  let userData;
 
   try {
-    const geoLocs = await (await fetch(GEO_LOC_URL)).json();
+    const cachedUserGeo = localStorage.getItem(USER_GEO_CACHE_KEY);
+    if (cachedUserGeo) {
+      const parsedCache = JSON.parse(cachedUserGeo);
+      if (parsedCache.expiry && parsedCache.expiry > Date.now()) {
+        userData = parsedCache.data;
+        console.log('Using cached user geo data.');
+      } else {
+        localStorage.removeItem(USER_GEO_CACHE_KEY);
+        console.log('User geo cache expired or invalid.');
+      }
+    }
 
-    const geoUserResponse = await fetch(GEO_USER_URL);
-    const userData = await geoUserResponse.json();
+    if (!userData) {
+      console.log('Fetching user geo data from API.');
+      const geoUserResponse = await fetch(GEO_USER_URL);
+      if (!geoUserResponse.ok) {
+        throw new Error(
+          `Failed to fetch user geo data: ${geoUserResponse.status} ${geoUserResponse.statusText}`,
+        );
+      }
+      userData = await geoUserResponse.json();
+
+      const cacheEntry = {
+        data: userData,
+        expiry: Date.now() + CACHE_DURATION_MS,
+      };
+      localStorage.setItem(USER_GEO_CACHE_KEY, JSON.stringify(cacheEntry));
+      console.log('User geo data fetched and cached.');
+    }
+
     const latitude = userData.lat;
     const longitude = userData.lon;
+    const hostListResponse = await fetch(HOST_URL);
+    const hostListText = await hostListResponse.text();
 
-    const closestAddr = (await (await fetch(HOST_URL)).text())
+    const closestAddr = hostListText
       .trim()
       .split('\n')
       .map((addr) => {
         const serverIp = addr.split(':')[0];
         if (!geoLocs[serverIp]) {
-          console.warn(
-            `No geo location data found for STUN server IP: ${serverIp}`,
-          );
           return [addr, Infinity];
         }
         const [stunLat, stunLon] = geoLocs[serverIp];
+        if (typeof stunLat !== 'number' || typeof stunLon !== 'number') {
+          return [addr, Infinity];
+        }
         const dist =
           ((latitude - stunLat) ** 2 + (longitude - stunLon) ** 2) ** 0.5;
         return [addr, dist];
@@ -117,6 +149,8 @@ async function getClosestStunServer() {
     return closestAddr;
   } catch (error) {
     console.error('Error in getClosestStunServer:', error);
+    localStorage.removeItem(USER_GEO_CACHE_KEY);
+    return undefined;
   }
 }
 
@@ -124,6 +158,10 @@ async function main() {
   const closestStunServer = await getClosestStunServer().catch((err) => {
     appendOutput('Could not fetch closest STUN server: ' + err.message, output);
   });
+  const stunServer =
+    closestStunServer != undefined
+      ? `stun:${closestStunServer}`
+      : 'stun:l.google.com:19302';
   node = await createLibp2p({
     addresses: {
       listen: ['/p2p-circuit', '/webrtc'],
@@ -134,7 +172,7 @@ async function main() {
         rtcConfiguration: {
           iceServers: [
             {
-              urls: `stun:${closestStunServer}` || 'stun.l.google.com:19302',
+              urls: stunServer,
             },
             {
               urls: 'turn:195.114.14.137:3478?transport=udp',
@@ -278,7 +316,6 @@ async function main() {
         remoteAddrStr.includes('/webrtc') &&
         !remoteAddrStr.includes('/p2p-circuit')
       ) {
-        fileTransferInitiated = true;
         appendOutput(
           `Sender: Direct WebRTC connection to Peer ${activePeerId.toString()} active. Attempting file transfer.`,
           outputSend,
@@ -312,6 +349,8 @@ async function main() {
             `Sending file '${selectedFile.name}' (${selectedFile.size} bytes)...`,
             outputSend,
           );
+
+          fileTransferInitiated = true;
 
           const header = JSON.stringify({
             name: selectedFile.name,
@@ -388,7 +427,11 @@ async function main() {
     const targetOutput = isSenderMode ? outputSend : outputReceive;
     appendOutput(`Connection CLOSED with: ${remotePeerIdStr}`, targetOutput);
 
-    if (activePeerId && remotePeerIdStr === activePeerId.toString()) {
+    if (
+      activePeerId &&
+      remotePeerIdStr &&
+      !fileTransferInitiated === activePeerId.toString()
+    ) {
       appendOutput('Active peer connection closed.', targetOutput);
       activePeerId = null;
       activeStream = null;
@@ -413,11 +456,6 @@ async function main() {
         'Warning: A new stream is replacing an existing activeStream in receiver.',
         targetOutput,
       );
-      try {
-        if (activeStream.close) await activeStream.close();
-      } catch (_) {
-        /*ignore*/
-      }
     }
     activeStream = stream;
 
