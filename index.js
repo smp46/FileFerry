@@ -104,8 +104,8 @@ async function getClosestStunServer() {
 
 async function main() {
   const c = await getClosestStunServer().catch((err) => {
-        appendOutput("Could not fetch closest STUN server: " + err.message, output);
-  }
+    appendOutput('Could not fetch closest STUN server: ' + err.message, output);
+  });
   node = await createLibp2p({
     addresses: {
       listen: ['/p2p-circuit', '/webrtc'],
