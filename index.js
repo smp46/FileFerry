@@ -78,7 +78,34 @@ function getCircuitAddress(libp2pNode, timeout = 30000) {
   });
 }
 
+async function getClosestStunServer() {
+  const GEO_LOC_URL =
+    'https://raw.githubusercontent.com/pradt2/always-online-stun/master/geoip_cache.txt';
+  const IPV4_URL =
+    'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_ipv4s.txt';
+  const GEO_USER_URL = 'https://geolocation-db.com/json/';
+  const geoLocs = await (await fetch(GEO_LOC_URL)).json();
+  const { latitude, longitude } = await (await fetch(GEO_USER_URL)).json();
+  const closestAddr = (await (await fetch(IPV4_URL)).text())
+    .trim()
+    .split('\n')
+    .map((addr) => {
+      const [stunLat, stunLon] = geoLocs[addr.split(':')[0]];
+      const dist =
+        ((latitude - stunLat) ** 2 + (longitude - stunLon) ** 2) ** 0.5;
+      return [addr, dist];
+    })
+    .reduce(([addrA, distA], [addrB, distB]) =>
+      distA <= distB ? [addrA, distA] : [addrB, distB],
+    )[0];
+  appendOutput('Closest STUN server found: ' + closestAddr, output);
+  return closestAddr;
+}
+
 async function main() {
+  const c = await getClosestStunServer().catch((err) => {
+        appendOutput("Could not fetch closest STUN server: " + err.message, output);
+  }
   node = await createLibp2p({
     addresses: {
       listen: ['/p2p-circuit', '/webrtc'],
@@ -88,9 +115,12 @@ async function main() {
       webRTC({
         rtcConfiguration: {
           iceServers: [
+            { urls: c },
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun.nextcloud.com:443' },
+            { urls: 'turn:relay.smp46.me:3478?transport=udp' },
+            { urls: 'turn:relay.smp46.me:3478?transport=tcp' },
           ],
         },
       }),
@@ -237,6 +267,15 @@ async function main() {
             {
               signal: AbortSignal.timeout(10000),
             },
+          );
+          const rtt = await node.services.ping.ping(activePeerId);
+          appendOutput(
+            'Successfully pinged peer: ' +
+              activePeerId.toString() +
+              ' with RTT: ' +
+              rtt +
+              'ms',
+            targetOutput,
           );
           activeStream = stream;
           appendOutput(
