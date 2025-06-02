@@ -6,652 +6,702 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="/styles.css" rel="stylesheet" />
   </head>
-  <body>
+  <body class="overflow-x-hidden">
     <div
-      class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500 overflow-hidden relative flex items-center"
+      class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500 overflow-hidden relative flex flex-col pt-8 pb-[350px] sm:pb-[400px] md:pb-[450px]"
     >
-      <!-- Sun and clouds -->
       <div
-        class="absolute top-8 right-12 w-24 h-24 bg-yellow-300 rounded-full shadow-2xl"
+        class="absolute top-4 right-4 sm:top-8 sm:right-12 w-16 h-16 sm:w-24 sm:h-24 bg-yellow-300 rounded-full shadow-2xl"
       >
-        <div class="absolute inset-2 bg-yellow-200 rounded-full"></div>
         <div
-          class="absolute -inset-4 bg-yellow-300/20 rounded-full blur-xl"
+          class="absolute inset-1 sm:inset-2 bg-yellow-200 rounded-full"
+        ></div>
+        <div
+          class="absolute -inset-2 sm:-inset-4 bg-yellow-300/20 rounded-full blur-xl"
         ></div>
       </div>
 
       <div
-        class="absolute top-16 left-20 w-32 h-16 bg-white rounded-full opacity-80"
+        class="absolute top-10 left-5 sm:top-16 sm:left-20 w-24 h-12 sm:w-32 sm:h-16 bg-white rounded-full opacity-80"
       ></div>
       <div
-        class="absolute top-24 left-40 w-24 h-12 bg-white rounded-full opacity-70"
+        class="absolute top-16 left-20 sm:top-24 sm:left-40 w-20 h-10 sm:w-24 sm:h-12 bg-white rounded-full opacity-70"
       ></div>
       <div
-        class="absolute top-12 right-40 w-28 h-14 bg-white rounded-full opacity-75"
+        class="absolute top-8 right-20 sm:top-12 sm:right-40 w-22 h-11 sm:w-28 sm:h-14 bg-white rounded-full opacity-75"
       ></div>
 
-      <!-- Title -->
       <h1
-        class="mx-auto text-6xl md:text-9xl font-bold font-[Outfit] text-white mb-180 drop-shadow-lg z-50 title-moved"
+        class="mx-auto text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-bold font-[Outfit] text-white drop-shadow-lg z-10 my-8 sm:my-12 md:my-16 text-center"
       >
         FileFerry
       </h1>
 
       <iframe id="hidden_download" style="display: none"></iframe>
-
-      <iframe id="hidden_download" style="display: none"></iframe>
-
       <div
-        class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40"
-        style="display: none"
-        id="sendWindow"
+        class="relative flex-grow flex items-center justify-center z-30 px-4"
       >
-        <div class="relative">
-          <div
-            class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-600"
-          ></div>
-          <div
-            class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-600 rounded-full"
-          ></div>
-
-          <div
-            class="bg-gradient-to-br from-amber-600 to-amber-700 p-6 rounded-lg shadow-2xl w-96 border-8 border-amber-800 relative"
-          >
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-lg md:max-w-xl"
+          style="display: none"
+          id="sendWindow"
+        >
+          <div class="relative">
             <div
-              class="absolute inset-0 opacity-20 rounded-lg"
-              style="
-                background-image: repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 10px,
-                  rgba(0, 0, 0, 0.1) 10px,
-                  rgba(0, 0, 0, 0.1) 20px
-                );
-              "
+              class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-600"
+            ></div>
+            <div
+              class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-600 rounded-full"
             ></div>
 
             <div
-              class="absolute top-0 left-0 w-8 h-8 bg-gray-700 rounded-br-full"
-            ></div>
-            <div
-              class="absolute top-0 right-0 w-8 h-8 bg-gray-700 rounded-bl-full"
-            ></div>
-            <div
-              class="absolute bottom-0 left-0 w-8 h-8 bg-gray-700 rounded-tr-full"
-            ></div>
-            <div
-              class="absolute bottom-0 right-0 w-8 h-8 bg-gray-700 rounded-tl-full"
-            ></div>
-
-            <h2
-              class="text-white text-2xl font-bold mb-4 text-center relative z-10"
-            >
-              ⚓ Send Cargo
-            </h2>
-
-            <div
-              id="drop_zone"
-              class="bg-black/20 border-4 border-amber-900 rounded-lg p-6 text-center relative overflow-hidden min-h-[280px] flex flex-col justify-center items-center"
+              class="bg-gradient-to-br from-amber-600 to-amber-700 p-4 sm:p-6 rounded-lg shadow-2xl border-8 border-amber-800 relative"
             >
               <div
-                class="absolute inset-0 opacity-30"
+                class="absolute inset-0 opacity-20 rounded-lg"
                 style="
-                  background-image:
-                    repeating-linear-gradient(
-                      45deg,
-                      transparent,
-                      transparent 15px,
-                      #8b4513 15px,
-                      /* SaddleBrown for net color */ #8b4513 17px
-                    ),
-                    repeating-linear-gradient(
-                      -45deg,
-                      transparent,
-                      transparent 15px,
-                      #8b4513 15px,
-                      #8b4513 17px
-                    );
+                  background-image: repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 0, 0, 0.1) 10px,
+                    rgba(0, 0, 0, 0.1) 20px
+                  );
                 "
               ></div>
 
               <div
-                id="initialDropUI"
-                class="block relative z-10 text-amber-100 w-full"
-              >
-                <svg
-                  class="w-20 h-20 mx-auto mb-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                  ></path>
-                </svg>
+                class="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-br-full"
+              ></div>
+              <div
+                class="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-bl-full"
+              ></div>
+              <div
+                class="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tr-full"
+              ></div>
+              <div
+                class="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tl-full"
+              ></div>
 
-                <p class="text-sm mb-3 text-amber-200">
-                  Drag & drop your file here or
-                </p>
-                <input type="file" id="fileInput" class="hidden" />
-                <button
-                  id="selectFileButton"
-                  onclick="document.getElementById('fileInput').click();"
-                  class="bg-amber-100 text-amber-800 px-6 py-3 rounded-lg font-bold hover:bg-amber-200 transition-colors shadow-lg text-sm"
-                >
-                  Browse File
-                </button>
-              </div>
+              <h2
+                class="text-white text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center relative z-10"
+              >
+                ⚓ Send Cargo
+              </h2>
 
               <div
-                id="fileInfoArea"
-                class="hidden relative z-10 text-amber-100 space-y-3 w-full text-left p-4"
+                id="drop_zone"
+                class="bg-black/20 border-4 border-amber-900 rounded-lg p-4 sm:p-6 text-center relative overflow-hidden min-h-[200px] sm:min-h-[240px] md:min-h-[280px] flex flex-col justify-center items-center"
               >
-                <div>
-                  <p
-                    class="text-xs text-amber-300 uppercase tracking-wider font-semibold"
+                <div
+                  class="absolute inset-0 opacity-30"
+                  style="
+                    background-image:
+                      repeating-linear-gradient(
+                        45deg,
+                        transparent,
+                        transparent 15px,
+                        #8b4513 15px,
+                        #8b4513 17px
+                      ),
+                      repeating-linear-gradient(
+                        -45deg,
+                        transparent,
+                        transparent 15px,
+                        #8b4513 15px,
+                        #8b4513 17px
+                      );
+                  "
+                ></div>
+
+                <div
+                  id="initialDropUI"
+                  class="block relative z-10 text-amber-100 w-full"
+                >
+                  <svg
+                    class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2 sm:mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Selected Cargo:
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                    ></path>
+                  </svg>
+
+                  <p class="text-xs sm:text-sm mb-2 sm:mb-3 text-amber-200">
+                    Drag & drop your file here or
                   </p>
-                  <p
-                    id="fileNameDisplay"
-                    class="text-lg font-semibold text-white truncate"
-                    title="Filename"
+                  <input type="file" id="fileInput" class="hidden" />
+                  <button
+                    id="selectFileButton"
+                    onclick="document.getElementById('fileInput').click();"
+                    class="bg-amber-100 text-amber-800 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:bg-amber-200 transition-colors shadow-lg text-xs sm:text-sm"
                   >
-                    your-file-name.zip
+                    Browse File
+                  </button>
+                </div>
+
+                <div
+                  id="fileInfoArea"
+                  class="hidden relative z-10 text-amber-100 space-y-2 sm:space-y-3 w-full text-left p-2 sm:p-4"
+                >
+                  <div>
+                    <p
+                      class="text-[10px] sm:text-xs text-amber-300 uppercase tracking-wider font-semibold"
+                    >
+                      Selected Cargo:
+                    </p>
+                    <p
+                      id="fileNameDisplay"
+                      class="text-sm sm:text-lg font-semibold text-white truncate"
+                      title="Filename"
+                    >
+                      your-file-name.zip
+                    </p>
+                    <p
+                      id="fileSizeDisplay"
+                      class="text-[10px] sm:text-xs text-amber-300"
+                    >
+                      (1.23 MB)
+                    </p>
+                  </div>
+                  <hr class="border-amber-600/50 my-1 sm:my-2" />
+                  <div>
+                    <p
+                      class="text-[10px] sm:text-xs text-amber-300 uppercase tracking-wider font-semibold"
+                    >
+                      Shipping Phrase:
+                    </p>
+                    <div class="flex items-center gap-1 sm:gap-2 mt-1">
+                      <div
+                        id="generatedPhraseDisplay"
+                        class="flex-grow bg-amber-900/80 h-8 sm:h-10 text-white p-1 sm:p-2 rounded-md border border-amber-600 font-mono text-xs sm:text-sm focus:outline-none placeholder-amber-400"
+                      ></div>
+                      <button
+                        id="copyPhraseButton"
+                        title="Copy Phrase"
+                        class="p-1.5 sm:p-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4 sm:h-5 sm:w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z"
+                          />
+                          <path
+                            d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  id="loadingIndicator"
+                  class="hidden relative z-20 text-amber-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
+                >
+                  <div class="flex justify-center items-center mb-3">
+                    <svg
+                      class="animate-spin h-12 w-12 text-sky-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <p class="text-lg sm:text-xl font-semibold text-white">
+                    Ferrying Your Cargo...
                   </p>
-                  <p id="fileSizeDisplay" class="text-xs text-amber-300">
-                    (1.23 MB)
+                  <p class="text-xs sm:text-sm text-amber-200">
+                    Hold tight, your file is navigating the digital waves!
                   </p>
                 </div>
-                <hr class="border-amber-600/50 my-2" />
-                <div>
-                  <p
-                    class="text-xs text-amber-300 uppercase tracking-wider font-semibold"
-                  >
-                    Shipping Phrase:
-                  </p>
-                  <div class="flex items-center gap-2 mt-1">
-                    <div
-                      id="generatedPhraseDisplay"
-                      class="flex-grow bg-amber-900/80 h-10 text-white p-2 rounded-md border border-amber-600 font-mono text-sm focus:outline-none placeholder-amber-400"
-                    />
-                  </div>
-                  <button
-                    id="copyPhraseButton"
-                    title="Copy Phrase"
-                    class="p-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  >
+                <div
+                  id="completionMessage"
+                  class="hidden relative z-20 text-amber-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
+                >
+                  <div class="flex justify-center items-center mb-2">
                     <svg
+                      class="h-16 w-16 text-green-400"
                       xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
                     >
                       <path
-                        d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
+                  </div>
+                  <p class="text-xl sm:text-2xl font-bold text-white">
+                    Cargo Delivered Safely! 🫡
+                  </p>
+                  <div
+                    class="bg-amber-800/50 p-3 sm:p-4 rounded-lg shadow-inner"
+                  >
+                    <p class="text-xs sm:text-sm text-amber-200">
+                      Your file has reached its port.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  id="errorMessage"
+                  class="hidden relative z-20 text-red-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6 bg-red-800/40 rounded-lg border border-red-600/50"
+                >
+                  <div class="flex justify-center items-center mb-2">
+                    <svg
+                      class="h-16 w-16 text-red-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                      />
+                    </svg>
+                  </div>
+                  <p class="text-xl sm:text-2xl font-bold text-white">
+                    Stormy Seas! Transmission Failed.
+                  </p>
+                  <p
+                    id="detailedErrorMessage"
+                    class="text-xs sm:text-sm text-red-200"
+                  >
+                    Unfortunately, your cargo couldn't make it through. Please
+                    try again.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="display: none"
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-lg md:max-w-xl"
+          id="receiveWindow"
+        >
+          <div class="relative">
+            <div
+              class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-600"
+            ></div>
+            <div
+              class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-600 rounded-full"
+            ></div>
+
+            <div
+              class="bg-gradient-to-br from-teal-700 to-teal-800 p-4 sm:p-6 rounded-lg shadow-2xl border-8 border-teal-900 relative"
+            >
+              <div
+                class="absolute inset-0 opacity-20 rounded-lg"
+                style="
+                  background-image: repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 0, 0, 0.1) 10px,
+                    rgba(0, 0, 0, 0.1) 20px
+                  );
+                "
+              ></div>
+              <div
+                class="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-br-full"
+              ></div>
+              <div
+                class="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-bl-full"
+              ></div>
+              <div
+                class="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tr-full"
+              ></div>
+              <div
+                class="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tl-full"
+              ></div>
+
+              <h2
+                class="text-white text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center relative z-10"
+              >
+                🧭 Receive Shipment
+              </h2>
+
+              <div
+                class="bg-black/20 border-4 border-teal-900 rounded-lg p-4 sm:p-6 md:p-8 relative"
+              >
+                <div id="initialReceiveUI" class="w-full">
+                  <div class="text-teal-100 mb-3 sm:mb-4 text-center">
+                    <p class="text-base sm:text-lg mb-1 sm:mb-2">
+                      Enter receive code:
+                    </p>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                    <input
+                      type="text"
+                      id="phraseInput"
+                      placeholder="e.g. 8-drunken-sailors"
+                      class="flex-1 text-center bg-teal-900/50 border-2 border-teal-600 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-white placeholder-teal-300 focus:outline-none focus:border-teal-400 font-mono tracking-normal sm:tracking-wider text-sm sm:text-base"
+                    />
+                    <button
+                      id="receiveModeButton"
+                      class="sm:ml-3 mt-2 sm:mt-0 bg-teal-100 text-teal-800 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg text-sm sm:text-base"
+                    >
+                      Receive
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="receivingLoadingIndicator"
+                  class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
+                >
+                  <div class="flex justify-center items-center mb-3">
+                    <svg
+                      class="animate-spin h-12 w-12 text-sky-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <p class="text-lg sm:text-xl font-semibold text-white">
+                    🗺️ Charting Course to Cargo...
+                  </p>
+                  <p class="text-xs sm:text-sm text-teal-200">
+                    Verifying your coordinates and preparing for retrieval.
+                  </p>
+                </div>
+
+                <div
+                  id="downloadReadyMessage"
+                  class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-left p-3 sm:p-4 md:p-6 bg-teal-700/50 rounded-lg shadow-inner border border-teal-600/70"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row items-center justify-center sm:justify-start mb-2 sm:mb-3 gap-2 sm:gap-3 text-center sm:text-left"
+                  >
+                    <svg
+                      class="h-12 w-12 sm:h-16 sm:w-16 text-green-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3.75 6.75h16.5M3.75 6.75l1.5-1.5h13.5l1.5 1.5M3.75 6.75v10.5A2.25 2.25 0 006 19.5h12a2.25 2.25 0 002.25-2.25V6.75m-16.5 0l3-3h10.5l3 3"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 6.75V9.75"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9.75v5.25m0 0l-2.25-2.25m2.25 2.25l2.25-2.25"
+                      />
+                    </svg>
+                    <p class="text-xl sm:text-2xl font-bold text-white">
+                      Cargo Secured!
+                    </p>
+                  </div>
+                  <div
+                    class="border-t border-teal-600/50 pt-3 sm:pt-4 space-y-2"
+                  >
+                    <div class="bg-black/20 p-2 sm:p-3 rounded-md">
+                      <p>
+                        <strong
+                          class="text-white font-medium text-xs sm:text-sm"
+                          >Filename:</strong
+                        >
+                        <span
+                          id="receivedFileName"
+                          class="block text-sm sm:text-lg text-sky-200 break-all"
+                          >example_file.dat</span
+                        >
+                      </p>
+                      <p class="mt-1">
+                        <strong
+                          class="text-white font-medium text-xs sm:text-sm"
+                          >Size:</strong
+                        >
+                        <span
+                          id="receivedFileSize"
+                          class="text-sky-200 text-xs sm:text-sm"
+                          >0.00 MB</span
+                        >
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  id="receiveErrorMessage"
+                  class="hidden text-red-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6 bg-red-800/40 rounded-lg border border-red-600/50"
+                >
+                  <div class="flex justify-center items-center mb-2">
+                    <svg
+                      class="h-16 w-16 text-red-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                        class="opacity-50"
+                      />
+                    </svg>
+                  </div>
+                  <p class="text-xl sm:text-2xl font-bold text-white">
+                    Lost at Sea!
+                  </p>
+                  <p
+                    id="receiveDetailedErrorMessage"
+                    class="text-xs sm:text-sm text-red-200"
+                  >
+                    The shipping iternary (code) seems invalid or the cargo is
+                    no longer available. Please verify and try again.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 md:p-5">
+        <div class="float-animation">
+          <div class="relative">
+            <div
+              class="w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto h-36 sm:h-40 md:h-48 bg-red-500 rounded-b-[20%] sm:rounded-b-[30%] relative shadow-2xl"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-b from-red-500 to-red-700 rounded-b-[20%] sm:rounded-b-[30%]"
+              ></div>
+              <div
+                class="absolute top-2 sm:top-3 left-0 right-0 h-2 sm:h-3 bg-white"
+              ></div>
+              <div
+                class="absolute top-5 sm:top-8 left-0 right-0 h-1 sm:h-2 bg-white/80"
+              ></div>
+              <div
+                class="absolute -top-16 sm:-top-20 md:-top-24 left-1/2 transform -translate-x-1/2 w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm md:max-w-md h-32 sm:h-36 md:h-40 bg-white rounded-t-xl sm:rounded-t-2xl rounded-b-md sm:rounded-b-lg shadow-xl"
+              >
+                <div
+                  class="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 w-11/12 h-4 sm:h-6 bg-white rounded-t-lg sm:rounded-t-xl"
+                ></div>
+                <div
+                  class="flex justify-center gap-1 sm:gap-2 md:gap-3 pt-2 sm:pt-3 mb-2 sm:mb-3"
+                >
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                </div>
+                <div class="px-3 sm:px-4 md:px-8 space-y-2 sm:space-y-3">
+                  <button
+                    id="goSendButton"
+                    onclick="goSend()"
+                    class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                  >
+                    <span class="text-lg sm:text-xl">⚓</span> Send
+                  </button>
+                  <button
+                    id="goReceiveButton"
+                    onclick="goReceive()"
+                    class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                  >
+                    <span class="text-lg sm:text-xl">📦</span> Receive
+                  </button>
+                  <button
+                    id="returnButton"
+                    onclick="goHome()"
+                    class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold shadow-md text-sm sm:text-base md:text-lg flex items-center justify-center transition-colors gap-1 sm:gap-2 hidden"
+                  >
+                    <span class="text-lg sm:text-xl">↩️</span> Return
                   </button>
                 </div>
               </div>
-            </div>
-            <div
-              id="loadingIndicator"
-              class="hidden relative z-20 text-amber-100 space-y-4 w-full text-center p-6"
-            >
-              <div class="flex justify-center items-center mb-3">
-                <svg
-                  class="animate-spin h-12 w-12 text-sky-300"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </div>
-              <p class="text-xl font-semibold text-white">
-                Ferrying Your Cargo...
-              </p>
-              <p class="text-sm text-amber-200">
-                Hold tight, your file is navigating the digital waves!
-              </p>
-            </div>
-
-            <div
-              id="completionMessage"
-              class="hidden relative z-20 text-amber-100 space-y-4 w-full text-center p-6"
-            >
-              <div class="flex justify-center items-center mb-2">
-                <svg
-                  class="h-16 w-16 text-green-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <p class="text-2xl font-bold text-white">
-                Cargo Delivered Safely! 🫡
-              </p>
-              <div class="bg-amber-800/50 p-4 rounded-lg shadow-inner">
-                <p class="text-sm text-amber-200">
-                  Your file has reached its port.
-                </p>
-              </div>
-            </div>
-
-            <div
-              id="errorMessage"
-              class="hidden relative z-20 text-red-100 space-y-4 w-full text-center p-6 bg-red-800/40 rounded-lg border border-red-600/50"
-            >
-              <div class="flex justify-center items-center mb-2">
-                <svg
-                  class="h-16 w-16 text-red-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                  />
-                </svg>
-              </div>
-              <p class="text-2xl font-bold text-white">
-                Stormy Seas! Transmission Failed.
-              </p>
-              <p id="detailedErrorMessage" class="text-sm text-red-200">
-                Unfortunately, your cargo couldn't make it through. Please try
-                again.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      style="display: none"
-      class="absolute top-60 left-1/2 transform -translate-x-1/2 z-40"
-      id="receiveWindow"
-    >
-      <div class="relative">
-        <!-- Rope/chain effect -->
-        <div
-          class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-600"
-        ></div>
-        <div
-          class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-600 rounded-full"
-        ></div>
-
-        <div
-          class="bg-gradient-to-br from-teal-700 to-teal-800 p-6 rounded-lg shadow-2xl w-140 border-8 border-teal-900 relative"
-        >
-          <!-- Wood texture overlay -->
-          <div
-            class="absolute inset-0 opacity-20 rounded-lg"
-            style="
-              background-image: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 10px,
-                rgba(0, 0, 0, 0.1) 10px,
-                rgba(0, 0, 0, 0.1) 20px
-              );
-            "
-          ></div>
-
-          <!-- Metal corners -->
-          <div
-            class="absolute top-0 left-0 w-8 h-8 bg-gray-700 rounded-br-full"
-          ></div>
-          <div
-            class="absolute top-0 right-0 w-8 h-8 bg-gray-700 rounded-bl-full"
-          ></div>
-          <div
-            class="absolute bottom-0 left-0 w-8 h-8 bg-gray-700 rounded-tr-full"
-          ></div>
-          <div
-            class="absolute bottom-0 right-0 w-8 h-8 bg-gray-700 rounded-tl-full"
-          ></div>
-
-          <h2
-            class="text-white text-2xl font-bold mb-4 text-center relative z-10"
-          >
-            🧭 Receive Shipment
-          </h2>
-
-          <div
-            class="bg-black/20 border-4 border-teal-900 rounded-lg p-8 relative"
-          >
-            <div id="initialReceiveUI" class="w-full">
-              <div class="text-teal-100 mb-4 text-center">
-                <p class="text-lg mb-2">Enter receive code:</p>
-              </div>
-              <div class="flex">
-                <input
-                  type="text"
-                  id="phraseInput"
-                  placeholder="e.g. 8-drunken-sailors"
-                  class="flex-1 text-center bg-teal-900/50 border-2 border-teal-600 rounded-lg px-4 py-3 text-white placeholder-teal-300 focus:outline-none focus:border-teal-400 font-mono tracking-wider"
-                />
-                <button
-                  id="receiveModeButton"
-                  class="ml-3 bg-teal-100 text-teal-800 px-6 py-3 rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg"
-                >
-                  Receive
-                </button>
-              </div>
-            </div>
-
-            <div
-              id="receivingLoadingIndicator"
-              class="hidden text-teal-100 space-y-4 w-full text-center p-6"
-            >
-              <div class="flex justify-center items-center mb-3">
-                <svg
-                  class="animate-spin h-12 w-12 text-sky-300"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </div>
-              <p class="text-xl font-semibold text-white">
-                🗺️ Charting Course to Cargo...
-              </p>
-              <p class="text-sm text-teal-200">
-                Verifying your coordinates and preparing for retrieval.
-              </p>
-            </div>
-
-            <div
-              id="downloadReadyMessage"
-              class="hidden text-teal-100 space-y-4 w-full text-left p-6 bg-teal-700/50 rounded-lg shadow-inner border border-teal-600/70"
-            >
               <div
-                class="flex flex-col sm:flex-row items-center justify-center sm:justify-start mb-3 gap-3 text-center sm:text-left"
-              >
-                <svg
-                  class="h-16 w-16 text-green-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3.75 6.75h16.5M3.75 6.75l1.5-1.5h13.5l1.5 1.5M3.75 6.75v10.5A2.25 2.25 0 006 19.5h12a2.25 2.25 0 002.25-2.25V6.75m-16.5 0l3-3h10.5l3 3"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 6.75V9.75"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 9.75v5.25m0 0l-2.25-2.25m2.25 2.25l2.25-2.25"
-                  />
-                </svg>
-                <p class="text-2xl font-bold text-white">Cargo Secured!</p>
-              </div>
-              <div class="border-t border-teal-600/50 pt-4 space-y-2">
-                <div class="bg-black/20 p-3 rounded-md">
-                  <p>
-                    <strong class="text-white font-medium">Filename:</strong>
-                    <span
-                      id="receivedFileName"
-                      class="block text-lg text-sky-200 break-all"
-                      >example_file.dat</span
-                    >
-                  </p>
-                  <p class="mt-1">
-                    <strong class="text-white font-medium">Size:</strong>
-                    <span id="receivedFileSize" class="text-sky-200"
-                      >0.00 MB</span
-                    >
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              id="receiveErrorMessage"
-              class="hidden text-red-100 space-y-4 w-full text-center p-6 bg-red-800/40 rounded-lg border border-red-600/50"
-            >
-              <div class="flex justify-center items-center mb-2">
-                <svg
-                  class="h-16 w-16 text-red-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                    class="opacity-50"
-                  />
-                </svg>
-              </div>
-              <p class="text-2xl font-bold text-white">Lost at Sea!</p>
-              <p id="receiveDetailedErrorMessage" class="text-sm text-red-200">
-                The shipping iternary (code) seems invalid or the cargo is no
-                longer available. Please verify and try again.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="absolute bottom-52 z-10 left-1/2 transform -translate-x-1/2">
-      <div class="float-animation mt-20">
-        <div class="relative">
-          <div class="w-96 h-48 bg-red-500 rounded-b-[30%] relative shadow-2xl">
-            <div
-              class="absolute inset-0 bg-gradient-to-b from-red-500 to-red-700 rounded-b-[30%]"
-            ></div>
-            <div class="absolute top-3 left-0 right-0 h-3 bg-white"></div>
-            <div class="absolute top-8 left-0 right-0 h-2 bg-white/80"></div>
-            <div
-              class="absolute -top-24 left-1/2 transform -translate-x-1/2 w-80 h-40 bg-white rounded-t-2xl rounded-b-lg shadow-xl"
-            >
-              <div
-                class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-72 h-6 bg-white rounded-t-xl"
+                class="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/20 rounded-full"
               ></div>
-              <div class="flex justify-center gap-3 pt-3 mb-3">
-                <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
-                <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
-                <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
-                <div class="w-10 h-6 bg-sky-400 rounded-sm"></div>
-              </div>
-              <div class="px-8 space-y-3">
-                <button
-                  id="goSendButton"
-                  onclick="goSend()"
-                  class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
-                >
-                  <span class="text-xl">⚓</span> Send
-                </button>
-                <button
-                  id="goReceiveButton"
-                  onclick="goReceive()"
-                  class="w-full bg-orange-500 text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md text-lg flex items-center justify-center gap-2"
-                >
-                  <span class="text-xl">📦</span> Receive
-                </button>
-                <button
-                  id="returnButton"
-                  onclick="goHome()"
-                  class="w-full bg-gray-600 hover:bg-gray-600 text-white py-3.5 px-6 rounded-xl font-semibold shadow-md text-lg flex items-center justify-center transition-colors gap-2 hidden"
-                >
-                  <span class="text-xl">↩️</span> Return
-                </button>
-              </div>
             </div>
-            <div
-              class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white/20 rounded-full"
-            ></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Ocean remains the same -->
-    <div class="absolute bottom-0 left-0 right-0">
       <div
-        class="absolute bottom-56 w-full h-12 bg-gradient-to-b from-transparent to-blue-400/20 swell-animation"
-      ></div>
-      <div
-        class="absolute bottom-52 w-full h-8 bg-gradient-to-b from-transparent to-blue-500/30 swell-animation"
-        style="animation-delay: 0.5s"
-      ></div>
-      <div class="absolute bottom-48 w-full overflow-hidden">
-        <div class="relative w-[200%] h-24 drift-animation">
+        class="absolute bottom-0 left-0 right-0 h-[300px] sm:h-[350px] md:h-[400px] z-2"
+      >
+        <div
+          class="absolute bottom-[calc(48px+128px)] sm:bottom-[calc(56px+128px)] md:bottom-[calc(60px+128px)] w-full h-12 bg-gradient-to-b from-transparent to-blue-400/20 swell-animation"
+        ></div>
+        <div
+          class="absolute bottom-[calc(40px+128px)] sm:bottom-[calc(48px+128px)] md:bottom-[calc(52px+128px)] w-full h-8 bg-gradient-to-b from-transparent to-blue-500/30 swell-animation"
+          style="animation-delay: 0.5s"
+        ></div>
+        <div
+          class="absolute bottom-[128px] sm:bottom-[128px] md:bottom-[128px] w-full overflow-hidden h-24 z-2"
+        >
+          <div class="relative w-[200%] h-full drift-animation z-2">
+            <svg
+              class="absolute w-full h-full"
+              viewBox="0 0 2880 96"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient
+                  id="waveGradient"
+                  x1="0%"
+                  y1="0%"
+                  x2="0%"
+                  y2="100%"
+                >
+                  <stop
+                    offset="0%"
+                    style="stop-color: #3b82f6; stop-opacity: 0.4"
+                  />
+                  <stop
+                    offset="100%"
+                    style="stop-color: #1e40af; stop-opacity: 0.8"
+                  />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,48 C240,96 480,0 720,48 C960,96 1200,0 1440,48 C1680,96 1920,0 2160,48 C2400,96 2640,0 2880,48 L2880,96 L0,96 Z"
+                fill="url(#waveGradient)"
+              />
+            </svg>
+          </div>
+        </div>
+        <div class="absolute bottom-0 w-full h-32 sm:h-40 md:h-48 z-2">
           <svg
-            class="absolute w-full h-full"
-            viewBox="0 0 2880 96"
+            class="w-full h-full swell-animation"
+            viewBox="0 0 1440 128"
             preserveAspectRatio="none"
+            style="animation-delay: 1s"
           >
             <defs>
-              <linearGradient
-                id="waveGradient"
-                x1="0%"
-                y1="0%"
-                x2="0%"
-                y2="100%"
-              >
+              <radialGradient id="oceanGradient">
                 <stop
                   offset="0%"
-                  style="stop-color: #3b82f6; stop-opacity: 0.4"
+                  style="stop-color: #2563eb; stop-opacity: 0.6"
                 />
                 <stop
                   offset="100%"
-                  style="stop-color: #1e40af; stop-opacity: 0.8"
+                  style="stop-color: #1e40af; stop-opacity: 0.9"
                 />
-              </linearGradient>
+              </radialGradient>
             </defs>
             <path
-              d="M0,48 C240,96 480,0 720,48 C960,96 1200,0 1440,48 C1680,96 1920,0 2160,48 C2400,96 2640,0 2880,48 L2880,96 L0,96 Z"
-              fill="url(#waveGradient)"
+              d="M0,32 C360,80 720,0 1080,32 C1260,48 1380,64 1440,64 L1440,128 L0,128 Z"
+              fill="url(#oceanGradient)"
             />
           </svg>
         </div>
-      </div>
-      <div class="absolute bottom-32 w-full h-32">
-        <svg
-          class="w-full h-full swell-animation"
-          viewBox="0 0 1440 128"
-          preserveAspectRatio="none"
-          style="animation-delay: 1s"
-        >
-          <defs>
-            <radialGradient id="oceanGradient">
-              <stop
-                offset="0%"
-                style="stop-color: #2563eb; stop-opacity: 0.6"
-              />
-              <stop
-                offset="100%"
-                style="stop-color: #1e40af; stop-opacity: 0.9"
-              />
-            </radialGradient>
-          </defs>
-          <path
-            d="M0,32 C360,80 720,0 1080,32 C1260,48 1380,64 1440,64 L1440,128 L0,128 Z"
-            fill="url(#oceanGradient)"
-          />
-        </svg>
-      </div>
-      <div
-        class="h-48 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-900 relative"
-      >
+
         <div
-          class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent drift-animation"
+          class="absolute bottom-[140px] sm:bottom-[150px] left-1/3 w-1 h-1 bg-white rounded-full sparkle z-2"
+        ></div>
+        <div
+          class="absolute bottom-[135px] sm:bottom-[145px] right-1/4 w-1 h-1 bg-white rounded-full sparkle z-2"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute bottom-[145px] sm:bottom-[155px] left-2/3 w-1 h-1 bg-white rounded-full sparkle z-2"
+          style="animation-delay: 2s"
+        ></div>
+        <div
+          class="absolute bottom-0 left-0 right-0 h-32 z-1 sm:h-40 md:h-48 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-900"
         ></div>
       </div>
-      <div
-        class="absolute bottom-60 left-1/3 w-1 h-1 bg-white rounded-full sparkle"
-      ></div>
-      <div
-        class="absolute bottom-58 right-1/4 w-1 h-1 bg-white rounded-full sparkle"
-        style="animation-delay: 1s"
-      ></div>
-      <div
-        class="absolute bottom-62 left-2/3 w-1 h-1 bg-white rounded-full sparkle"
-        style="animation-delay: 2s"
-      ></div>
     </div>
+
     <script type="module" src="./index.js"></script>
     <script>
+      const sendWindowEl = document.getElementById("sendWindow");
+      const receiveWindowEl = document.getElementById("receiveWindow");
+      const returnButtonEl = document.getElementById("returnButton");
+      const goSendButtonEl = document.getElementById("goSendButton");
+      const goReceiveButtonEl = document.getElementById("goReceiveButton");
+
       function goHome() {
+        sendWindowEl.style.display = "none";
+        receiveWindowEl.style.display = "none";
+        returnButtonEl.style.display = "none";
+        goSendButtonEl.style.display = "flex";
+        goReceiveButtonEl.style.display = "flex";
+
         window.location.reload();
       }
       function goSend() {
-        document.getElementById("returnButton").style.display = "block";
-        document.getElementById("goSendButton").style.display = "none";
-        document.getElementById("goReceiveButton").style.display = "none";
-        document.getElementById("sendWindow").style.display = "block";
-        document.getElementById("receiveWindow").style.display = "none";
-        document.getElementById("sendWindow").style.display = "block";
+        returnButtonEl.style.display = "flex";
+        goSendButtonEl.style.display = "none";
+        goReceiveButtonEl.style.display = "none";
+        sendWindowEl.style.display = "block";
+        receiveWindowEl.style.display = "none";
       }
       function goReceive() {
-        document.getElementById("returnButton").style.display = "block";
-        document.getElementById("goSendButton").style.display = "none";
-        document.getElementById("goReceiveButton").style.display = "none";
-        document.getElementById("receiveWindow").style.display = "block";
-        document.getElementById("sendWindow").style.display = "none";
+        returnButtonEl.style.display = "flex";
+        goSendButtonEl.style.display = "none";
+        goReceiveButtonEl.style.display = "none";
+        receiveWindowEl.style.display = "block";
+        sendWindowEl.style.display = "none";
       }
     </script>
   </body>
