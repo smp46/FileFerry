@@ -121,7 +121,7 @@ async function getClosestStunServer() {
 }
 
 async function main() {
-  const cloestStunServer = await getClosestStunServer().catch((err) => {
+  const closestStunServer = await getClosestStunServer().catch((err) => {
     appendOutput('Could not fetch closest STUN server: ' + err.message, output);
   });
   node = await createLibp2p({
@@ -133,8 +133,7 @@ async function main() {
       webRTC({
         rtcConfiguration: {
           iceServers: [
-            { urls: c },
-            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: closestStunServer || 'stun:stun.l.google.com:19302' },
             {
               urls: 'turn:195.114.14.137:3478?transport=udp',
               username: 'ferryCaptain',
@@ -322,7 +321,8 @@ async function main() {
           arrayWithHeader.append(encodedHeader);
           arrayWithHeader.append(array);
 
-          await activeStream.sink(arrayWithHeader);
+          await activeStream.sink(encodedHeader);
+          await activeStream.sink(array);
 
           appendOutput('Finished sending file data.', outputSend);
           await activeStream.closeWrite();
