@@ -744,7 +744,79 @@
         ></div>
       </div>
     </div>
-
+    <div
+      id="errorWindow"
+      class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center
+        justify-center z-49"
+    >
+      <div
+        id="errorMessageContainer"
+        class="relative w-full max-w-md mx-auto bg-amber-50/90 p-4 rounded-xl shadow-2xl
+          border-2 border-amber-700/50"
+      >
+        <div class="absolute top-0 -left-1 w-11 h-12 opacity-30">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1"
+            class="text-amber-700 transform rotate-[-15deg]"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+        </div>
+        <div class="text-center px-4 py-2">
+          <h3
+            class="text-lg font-bold text-amber-900 mb-2 flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 mr-2 text-amber-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20.923 17.5H3.077c-1.362 0-2.156-1.431-1.408-2.59L9.077 3.09C9.826 1.931 11.248 1 12 1s2.174.931 2.923 2.09l7.408 11.82C23.079 16.069 22.285 17.5 20.923 17.5z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 7v5"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 14.5h.01"
+              />
+            </svg>
+            Abandon Ship!
+          </h3>
+          <p id="errorMessageText" class="text-sm text-amber-800 mb-4">
+            The parchment is smudged, Captain.
+          </p>
+          <button
+            id="closeErrorButton"
+            class="bg-amber-600 text-white px-5 py-2 rounded-lg text-sm font-medium
+              hover:bg-amber-700 transition-colors shadow-lg focus:outline-none focus:ring-2
+              focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-amber-50"
+          >
+            Aye, Understood
+          </button>
+        </div>
+        <div
+          class="absolute -bottom-2 -right-2 w-10 h-10 bg-amber-700/20 rounded-full blur-md -z-10"
+        ></div>
+      </div>
+    </div>
     <script type="module" src="./index.js"></script>
     <script>
       const sendWindowEl = document.getElementById('sendWindow');

@@ -17,7 +17,7 @@ const output = document.getElementById('output');
 const outputSend = document.getElementById('outputSend');
 const outputReceive = document.getElementById('outputReceive');
 
-const appendOutput = (line, _targetElement) => {
+const log = (line, _targetElement) => {
   if (DEBUG_ENABLED) {
     console.log(line);
   }
@@ -42,7 +42,7 @@ let activeStream = null; // The active stream for file transfer
 let isSenderMode = false; // Is the current instance acting as a sender?
 let isReceiverMode = false; // Is the current instance acting as a receiver?
 
-let fileTransferInitiated = false;
+let fileTransferring = false;
 
 function getCircuitAddress(libp2pNode, timeout = 30000) {
   return new Promise((resolve, reject) => {
@@ -145,7 +145,7 @@ async function getClosestStunServer() {
         distA <= distB ? [addrA, distA] : [addrB, distB],
       )[0];
 
-    appendOutput('Closest STUN server found: ' + closestAddr, output);
+    log('Closest STUN server found: ' + closestAddr, output);
     return closestAddr;
   } catch (error) {
     console.error('Error in getClosestStunServer:', error);
@@ -156,12 +156,13 @@ async function getClosestStunServer() {
 
 async function main() {
   const closestStunServer = await getClosestStunServer().catch((err) => {
-    appendOutput('Could not fetch closest STUN server: ' + err.message, output);
+    log('Could not fetch closest STUN server: ' + err.message, output);
   });
   const stunServer =
     closestStunServer != undefined
       ? `stun:${closestStunServer}`
       : 'stun:l.google.com:19302';
+
   node = await createLibp2p({
     addresses: {
       listen: ['/p2p-circuit', '/webrtc'],
@@ -209,16 +210,16 @@ async function main() {
   });
 
   await node.start();
-  appendOutput(`Node started with Peer ID: ${node.peerId.toString()}`, output);
+  log(`Node started with Peer ID: ${node.peerId.toString()}`, output);
   localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
-  appendOutput('My addresses:', output);
-  localPeerMultiaddrs.forEach((addr) => appendOutput(`  - ${addr}`, output));
+  log('My addresses:', output);
+  localPeerMultiaddrs.forEach((addr) => log(`  - ${addr}`, output));
 
   if (VITE_RELAY_MADDR) {
     try {
       relayPeerIdStr = multiaddr(VITE_RELAY_MADDR).getPeerId();
     } catch (e) {
-      appendOutput(
+      log(
         `Warning: Could not parse Peer ID from VITE_RELAY_MADDR: ${VITE_RELAY_MADDR}.`,
         output,
       );
@@ -235,27 +236,23 @@ async function main() {
     const remoteAddrStr = connection.remoteAddr.toString();
     const targetOutput = isSenderMode ? outputSend : outputReceive;
 
-    appendOutput(
+    let errorMessage = '';
+
+    log(
       `Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`,
       targetOutput,
     );
 
     if (remotePeerIdStr === relayPeerIdStr) {
-      appendOutput(
-        'INFO: Connection to the relay server confirmed.',
-        targetOutput,
-      );
+      log('INFO: Connection to the relay server confirmed.', targetOutput);
       if (isSenderMode && !activePeerId) {
         try {
           const senderCircuitAddress = await getCircuitAddress(node);
-          appendOutput(
+          log(
             `Obtained listen address: ${senderCircuitAddress.toString()}`,
             outputSend,
           );
-          appendOutput(
-            `Registering passphrase '${currentSenderPhrase}'...`,
-            outputSend,
-          );
+          log(`Registering passphrase '${currentSenderPhrase}'...`, outputSend);
 
           const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase`;
           const response = await fetch(apiUrl, {
@@ -268,38 +265,40 @@ async function main() {
           });
 
           if (response.ok) {
-            appendOutput(
+            log(
               'Passphrase registered. Waiting for peer to connect...',
               outputSend,
             );
           } else {
-            const errorText = await response.text();
-            appendOutput(
-              `Failed to register passphrase. Status: ${response.status}. Error: ${errorText}`,
-              outputSend,
-            );
+            const errorText =
+              await `Failed to register passphrase. Status: ${response.status}. Error: ${await response.text()}`;
+            log(errorText, outputSend);
+            errorMessage = errorText;
             isSenderMode = false;
           }
         } catch (err) {
-          appendOutput(
-            `Error during sender setup after relay connect: ${err.message}`,
-            outputSend,
-          );
+          const errorText = `Error during sender setup after relay connect: ${err.message}`;
+          log(errorText, outputSend);
+          errorMessage = errorText;
           isSenderMode = false;
         }
+      }
+      if (errorMessage != '') {
+        showErrorPopup(errorMessage);
+        errorMessage = '';
       }
       return;
     }
 
     // If it's not the relay, it's a peer
     if (!activePeerId || activePeerId.toString() !== remotePeerIdStr) {
-      appendOutput(
+      log(
         `Peer connected: ${remotePeerIdStr}. Old activePeerId: ${activePeerId?.toString()}`,
         targetOutput,
       );
       activePeerId = remotePeerId;
     } else {
-      appendOutput(
+      log(
         `Re-established or additional connection to existing peer: ${remotePeerIdStr}`,
         targetOutput,
       );
@@ -310,13 +309,13 @@ async function main() {
       activePeerId &&
       activePeerId.toString() === remotePeerIdStr &&
       selectedFile &&
-      !fileTransferInitiated
+      !fileTransferring
     ) {
       if (
         remoteAddrStr.includes('/webrtc') &&
         !remoteAddrStr.includes('/p2p-circuit')
       ) {
-        appendOutput(
+        log(
           `Sender: Direct WebRTC connection to Peer ${activePeerId.toString()} active. Attempting file transfer.`,
           outputSend,
         );
@@ -331,7 +330,7 @@ async function main() {
             },
           );
           const rtt = await node.services.ping.ping(activePeerId);
-          appendOutput(
+          log(
             'Successfully pinged peer: ' +
               activePeerId.toString() +
               ' with RTT: ' +
@@ -340,17 +339,14 @@ async function main() {
             targetOutput,
           );
           activeStream = stream;
-          appendOutput(
-            'File transfer stream opened to peer (via WebRTC).',
-            outputSend,
-          );
+          log('File transfer stream opened to peer (via WebRTC).', outputSend);
 
-          appendOutput(
+          log(
             `Sending file '${selectedFile.name}' (${selectedFile.size} bytes)...`,
             outputSend,
           );
 
-          fileTransferInitiated = true;
+          fileTransferring = true;
 
           const header = JSON.stringify({
             name: selectedFile.name,
@@ -364,36 +360,28 @@ async function main() {
 
           await activeStream.sink(arrayWithHeader);
 
-          appendOutput('Finished sending file data.', outputSend);
+          log('Finished sending file data.', outputSend);
           await activeStream.closeWrite();
-          appendOutput(
-            'File sent completely. Closed stream for writing.',
-            outputSend,
-          );
+          log('File sent completely. Closed stream for writing.', outputSend);
           selectedFile = null;
           activeStream = null;
-          fileTransferInitiated = false;
+          fileTransferring = false;
           isSenderMode = false;
 
           document.getElementById('loadingIndicator').style.display = 'none';
           document.getElementById('completionMessage').style.display = 'block';
         } catch (err) {
-          appendOutput(
-            `Opening/writing file transfer stream to peer failed: ${err.message}`,
-            outputSend,
-          );
-          console.error('DialProtocol/Stream error (Sender):', err); // This console.error remains
+          errorMessage = `Opening/writing file transfer stream to peer failed: ${err.message}`;
+          log(errorMessage, outputSend);
           activeStream = null;
-          document.getElementById('loadingIndicator').style.display = 'none';
-          document.getElementById('errorMessage').style.display = 'block';
         }
       } else if (remoteAddrStr.includes('/p2p-circuit')) {
-        appendOutput(
+        log(
           `Sender: Relayed connection to Peer ${activePeerId.toString()} established (${remoteAddrStr}). Waiting for potential direct WebRTC upgrade before transferring.`,
           outputSend,
         );
       } else {
-        appendOutput(
+        log(
           `Sender: Peer connection via other transport (${remoteAddrStr}). File transfer logic currently prioritizes direct WebRTC.`,
           outputSend,
         );
@@ -403,7 +391,7 @@ async function main() {
       activePeerId &&
       activePeerId.toString() === remotePeerIdStr
     ) {
-      appendOutput(
+      log(
         `Receiver: Connected to sender peer (${remoteAddrStr}). Waiting for incoming file stream.`,
         outputReceive,
       );
@@ -411,13 +399,20 @@ async function main() {
       isSenderMode &&
       activePeerId &&
       selectedFile &&
-      fileTransferInitiated &&
+      fileTransferring &&
       activeStream
     ) {
-      appendOutput(
+      log(
         `Sender: File transfer already initiated for ${selectedFile.name}. Current stream active.`,
         outputSend,
       );
+    }
+
+    if (errorMessage != '') {
+      showErrorPopup(errorMessage);
+      document.getElementById('loadingIndicator').style.display = 'none';
+      document.getElementById('errorMessage').style.display = 'block';
+      errorMessage = '';
     }
   });
 
@@ -425,18 +420,18 @@ async function main() {
   node.addEventListener('connection:close', (event) => {
     const remotePeerIdStr = event.detail.remotePeer.toString();
     const targetOutput = isSenderMode ? outputSend : outputReceive;
-    appendOutput(`Connection CLOSED with: ${remotePeerIdStr}`, targetOutput);
+    log(`Connection CLOSED with: ${remotePeerIdStr}`, targetOutput);
 
     if (
       activePeerId &&
       remotePeerIdStr &&
-      !fileTransferInitiated === activePeerId.toString()
+      !fileTransferring === activePeerId.toString()
     ) {
-      appendOutput('Active peer connection closed.', targetOutput);
+      log('Active peer connection closed.', targetOutput);
       activePeerId = null;
       activeStream = null;
     } else if (remotePeerIdStr === relayPeerIdStr) {
-      appendOutput('Connection to relay closed.', targetOutput);
+      log('Connection to relay closed.', targetOutput);
     }
   });
 
@@ -446,32 +441,26 @@ async function main() {
 
   node.handle(FILE_TRANSFER_PROTOCOL, async ({ stream, connection }) => {
     const targetOutput = outputReceive;
-    appendOutput(
+
+    log(
       `Incoming file transfer stream from ${connection.remotePeer.toString()}`,
       targetOutput,
     );
 
     if (activeStream && activeStream !== stream) {
-      appendOutput(
+      log(
         'Warning: A new stream is replacing an existing activeStream in receiver.',
         targetOutput,
       );
     }
     activeStream = stream;
-
-    if (!isReceiverMode) {
-      isReceiverMode = true;
-      appendOutput(
-        'Switched to Receiver mode due to incoming stream.',
-        targetOutput,
-      );
-    }
     activePeerId = connection.remotePeer;
 
     document.getElementById('initialReceiveUI').style.display = 'none';
     document.getElementById('receivingLoadingIndicator').style.display =
       'block';
 
+    let errorMessage = '';
     let receivedFileBuffer = [];
     let fileNameFromHeader = 'downloaded_file';
     let fileSizeFromHeader = 0;
@@ -482,7 +471,7 @@ async function main() {
     try {
       for await (const ualistChunk of activeStream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
-          appendOutput('Received an empty or null chunk.', targetOutput);
+          log('Received an empty or null chunk.', targetOutput);
           continue;
         }
 
@@ -514,13 +503,13 @@ async function main() {
                 fileTypeFromHeader =
                   parsedHeaderObject.type || fileTypeFromHeader;
 
-                appendOutput(
+                log(
                   `Receiving file: ${fileNameFromHeader} (Size: ${fileSizeFromHeader} bytes, Type: ${fileTypeFromHeader})`,
                   targetOutput,
                 );
                 headerReceived = true;
               } catch (e) {
-                appendOutput(
+                log(
                   `Could not parse file header JSON: "${headerJsonString}". Error: ${e.message}. Treating chunk as data.`,
                   targetOutput,
                 );
@@ -528,7 +517,7 @@ async function main() {
                 bodyStartIndex = 0;
               }
             } else {
-              appendOutput(
+              log(
                 'No newline for header in this chunk. Assuming no header or all data.',
                 targetOutput,
               );
@@ -536,7 +525,7 @@ async function main() {
               bodyStartIndex = 0;
             }
           } catch (decodeError) {
-            appendOutput(
+            log(
               `Error decoding chunk for header: ${decodeError.message}. Treating as raw data.`,
               targetOutput,
             );
@@ -544,29 +533,27 @@ async function main() {
             bodyStartIndex = 0;
           }
 
-          // Process the remainder of the current chunk (if any) after the header
           if (bodyStartIndex < dataChunk.byteLength) {
             const actualBodyData = dataChunk.subarray(bodyStartIndex);
             if (actualBodyData.length > 0) {
               receivedFileBuffer.push(actualBodyData);
               receivedBytesTotal += actualBodyData.length;
-              appendOutput(
+              log(
                 `Received ${receivedBytesTotal} bytes (from first chunk's body)...`,
                 targetOutput,
               );
             }
           }
         } else {
-          // Header has already been processed, this entire chunk is file data
           receivedFileBuffer.push(dataChunk);
           receivedBytesTotal += dataChunk.length;
-          appendOutput(
+          log(
             `Received ${receivedBytesTotal} bytes... (Expected: ${fileSizeFromHeader > 0 ? fileSizeFromHeader : 'N/A'})`,
             targetOutput,
           );
         }
       }
-      appendOutput(
+      log(
         `File stream source ended. Total bytes received in buffer: ${receivedBytesTotal}`,
         targetOutput,
       );
@@ -596,27 +583,15 @@ async function main() {
         a.click();
         document.body.removeChild(a);
       } else {
-        appendOutput(
-          'No data received in file buffer. Download will be empty.',
-          targetOutput,
-        );
-
-        document.getElementById('receivingLoadingIndicator').style.display =
-          'none';
-        document.getElementById('receiveErrorMessage').style.display = 'block';
+        errorMessage =
+          'No data received in file buffer. Download will be empty.';
+        log(errorMessage, targetOutput);
       }
     } catch (err) {
-      appendOutput(
-        `Error reading from file stream: ${err.message}`,
-        targetOutput,
-      );
-
-      document.getElementById('receivingLoadingIndicator').style.display =
-        'none';
-      document.getElementById('receiveErrorMessage').style.display = 'block';
-      console.error('Stream read error (Receiver):', err);
+      errorMessage = `Error reading from file stream: ${err.message}`;
+      log(errorMessage, targetOutput);
     } finally {
-      appendOutput('Closing incoming file stream processing.', targetOutput);
+      log('Closing incoming file stream processing.', targetOutput);
       if (activeStream) {
         try {
           if (typeof activeStream.close === 'function') {
@@ -625,12 +600,18 @@ async function main() {
             await activeStream.abort();
           }
         } catch (e) {
-          console.warn('Error closing stream on receiver:', e);
+          errorMessage = `Error closing stream: ${e.message}`;
+          log('Error closing stream on receiver:', e);
         }
       }
       activeStream = null;
     }
   });
+
+  if (errorMessage != '') {
+    document.getElementById('receivingLoadingIndicator').style.display = 'none';
+    document.getElementById('receiveErrorMessage').style.display = 'block';
+  }
 }
 function dragOverHandler(ev) {
   ev.preventDefault();
@@ -649,7 +630,7 @@ function dropHandler(ev) {
   }
 
   if (selectedFile) {
-    appendOutput(
+    log(
       `Selected file: ${selectedFile.name} (Size: ${selectedFile.size} bytes)`,
       outputSend,
     );
@@ -659,7 +640,7 @@ function dropHandler(ev) {
 
     window.actions.startSendProcess();
   } else {
-    appendOutput('No file selected from drop.', outputSend);
+    log('No file selected from drop.', outputSend);
   }
 }
 
@@ -706,32 +687,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyButton = document.getElementById('copyPhraseButton');
   copyButton.addEventListener('click', copyPhrase);
 
-  appendOutput('handlers attached.', output);
+  log('handlers attached.', output);
 
   const receiveModeButton = document.getElementById('receiveModeButton');
 
   receiveModeButton.onclick = window.actions.startReceiveProcess;
+
+  const errorWindow = document.getElementById('errorWindow');
+  const errorMessageContainer = document.getElementById(
+    'errorMessageContainer',
+  );
+
+  const closeErrorButton = document.getElementById('closeErrorButton');
+
+  errorWindow.addEventListener('click', function (event) {
+    if (event.target === errorWindow) {
+      goHome();
+      hideErrorPopup();
+    }
+  });
+
+  errorMessageContainer.addEventListener('click', function (event) {
+    event.stopPropagation();
+  });
+
+  closeErrorButton.addEventListener('click', function () {
+    hideErrorPopup();
+    goHome();
+  });
 });
 
 window.actions = {
   startSendProcess: async () => {
     if (!node) {
-      appendOutput('Libp2p node not initialized yet.', outputSend);
+      log('Libp2p node not initialized yet.', outputSend);
       return;
     }
     if (!VITE_RELAY_MADDR) {
-      appendOutput('Relay address not configured.', outputSend);
+      log('Relay address not configured.', outputSend);
       return;
     }
     if (!selectedFile) {
-      appendOutput('Please select a file to send first.', outputSend);
+      log('Please select a file to send first.', outputSend);
       return;
     }
 
     isSenderMode = true;
     isReceiverMode = false;
     if (outputSend) outputSend.innerHTML = '';
-    appendOutput('Sender Mode Activated. Generating passphrase...', outputSend);
+    log('Sender Mode Activated. Generating passphrase...', outputSend);
 
     const randWords = await DashPhraseModule.default.generate(16);
     const randomNumber = Math.floor(Math.random() * 100) + 1;
@@ -739,11 +743,8 @@ window.actions = {
 
     document.getElementById('generatedPhraseDisplay').textContent =
       currentSenderPhrase;
-    appendOutput(`Your passphrase: ${currentSenderPhrase}`, outputSend);
-    appendOutput(
-      `Attempting to connect to relay: ${VITE_RELAY_MADDR}...`,
-      outputSend,
-    );
+    log(`Your passphrase: ${currentSenderPhrase}`, outputSend);
+    log(`Attempting to connect to relay: ${VITE_RELAY_MADDR}...`, outputSend);
 
     document.getElementById('initialDropUI').style.display = 'none';
     document.getElementById('fileInfoArea').style.display = 'block';
@@ -751,12 +752,9 @@ window.actions = {
     const relayMa = multiaddr(VITE_RELAY_MADDR);
     try {
       await node.dial(relayMa, { signal: AbortSignal.timeout(5000) });
-      appendOutput(
-        'Dialing relay initiated. Waiting for connection...',
-        outputSend,
-      );
+      log('Dialing relay initiated. Waiting for connection...', outputSend);
     } catch (err) {
-      appendOutput(`Error dialing relay: ${err.message || err}`, outputSend);
+      log(`Error dialing relay: ${err.message || err}`, outputSend);
       console.error('Relay dial error:', err);
       isSenderMode = false;
     }
@@ -764,28 +762,25 @@ window.actions = {
 
   startReceiveProcess: async () => {
     if (!node) {
-      appendOutput('Libp2p node not initialized yet.', outputReceive);
+      log('Libp2p node not initialized yet.', outputReceive);
       return;
     }
 
     isReceiverMode = true;
     isSenderMode = false;
     if (outputReceive) outputReceive.innerHTML = '';
-    appendOutput(
-      'Receiver Mode Activated. Enter passphrase to connect.',
-      outputReceive,
-    );
+    log('Receiver Mode Activated. Enter passphrase to connect.', outputReceive);
 
     const phraseInput = document.getElementById('phraseInput');
     const phraseValue = phraseInput.value.trim();
 
     if (!phraseValue) {
-      appendOutput('Please enter a phrase to lookup.', outputReceive);
+      log('Please enter a phrase to lookup.', outputReceive);
       isReceiverMode = false;
       return;
     }
 
-    appendOutput(`Looking up passphrase '${phraseValue}'...`, outputReceive);
+    log(`Looking up passphrase '${phraseValue}'...`, outputReceive);
 
     try {
       const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase/${encodeURIComponent(phraseValue)}`;
@@ -799,7 +794,7 @@ window.actions = {
         } catch (_) {
           apiErrorMessage += ` - ${response.statusText}`; // Fallback if error response is not JSON
         }
-        appendOutput(apiErrorMessage, outputReceive);
+        log(apiErrorMessage, outputReceive);
         isReceiverMode = false;
         return;
       }
@@ -808,31 +803,21 @@ window.actions = {
       const maddrString = addressData.maddr;
 
       if (!maddrString) {
-        appendOutput(
-          `Phrase found, but no multiaddress provided.`,
-          outputReceive,
-        );
+        log(`Phrase found, but no multiaddress provided.`, outputReceive);
         isReceiverMode = false;
         return;
       }
 
       const peerMa = multiaddr(maddrString);
-      appendOutput(
+      log(
         `Retrieved sender address: '${peerMa.toString()}'. Attempting to connect...`,
         outputReceive,
       );
 
       await node.dial(peerMa, { signal: AbortSignal.timeout(10000) });
-      appendOutput(
-        'Dialing sender initiated. Waiting for connection...',
-        outputReceive,
-      );
+      log('Dialing sender initiated. Waiting for connection...', outputReceive);
     } catch (error) {
-      appendOutput(
-        `Error in receive process: ${error.message || error}`,
-        outputReceive,
-      );
-      console.error('Receive process error:', error);
+      log(`Error in receive process: ${error.message || error}`, outputReceive);
       isReceiverMode = false;
     }
   },
@@ -840,7 +825,7 @@ window.actions = {
 
 main().catch((err) => {
   console.error('Failed to initialize libp2p node:', err);
-  appendOutput(
+  log(
     `Critical Error: Failed to initialize libp2p node - ${err.message}`,
     output, // Main output div
   );
@@ -856,4 +841,16 @@ function getByteArray(file) {
     };
     fileReader.onerror = reject;
   });
+}
+
+function showErrorPopup(message) {
+  const errorMessageText = document.getElementById('errorMessageText');
+  const errorWindow = document.getElementById('errorWindow');
+  errorMessageText.textContent = message;
+  errorWindow.classList.remove('hidden');
+}
+
+function hideErrorPopup() {
+  const errorWindow = document.getElementById('errorWindow');
+  errorWindow.classList.add('hidden');
 }
