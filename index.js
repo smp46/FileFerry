@@ -81,8 +81,8 @@ function getCircuitAddress(libp2pNode, timeout = 30000) {
 async function getClosestStunServer() {
   const GEO_LOC_URL =
     'https://raw.githubusercontent.com/pradt2/always-online-stun/master/geoip_cache.txt';
-  const IPV4_URL =
-    'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_ipv4s.txt';
+  const HOST_URL =
+    'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_hosts.txt';
   const GEO_USER_URL = 'https://ip-api.com/json/';
 
   try {
@@ -93,7 +93,7 @@ async function getClosestStunServer() {
     const latitude = userData.lat;
     const longitude = userData.lon;
 
-    const closestAddr = (await (await fetch(IPV4_URL)).text())
+    const closestAddr = (await (await fetch(HOST_URL)).text())
       .trim()
       .split('\n')
       .map((addr) => {
@@ -133,7 +133,9 @@ async function main() {
       webRTC({
         rtcConfiguration: {
           iceServers: [
-            { urls: closestStunServer || 'stun:stun.l.google.com:19302' },
+            {
+              urls: `stun:${closestStunServer}` || 'stun.l.google.com:19302',
+            },
             {
               urls: 'turn:195.114.14.137:3478?transport=udp',
               username: 'ferryCaptain',
@@ -321,8 +323,7 @@ async function main() {
           arrayWithHeader.append(encodedHeader);
           arrayWithHeader.append(array);
 
-          await activeStream.sink(encodedHeader);
-          await activeStream.sink(array);
+          await activeStream.sink(arrayWithHeader);
 
           appendOutput('Finished sending file data.', outputSend);
           await activeStream.closeWrite();
