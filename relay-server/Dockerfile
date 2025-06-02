@@ -2,7 +2,7 @@ FROM node:lts-alpine
 
 WORKDIR /usr/src/app
 
-copy package*.json ./
+COPY package*.json ./
 
 RUN npm i
 

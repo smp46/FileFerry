@@ -4,19 +4,19 @@ WORKDIR /usr/src/app
 
 COPY ./passphrase-server .
 
+RUN chmod +x ./passphrase-server
+
 EXPOSE 8080
 
-ARG USER=default
-ENV HOME /home/$USER
+ARG APP_USER_NAME=dbuser
+ENV APP_USER_HOME /home/$APP_USER_NAME
 
-# install sudo as root
-RUN apk add --update sudo
+RUN adduser -D -h $APP_USER_HOME $APP_USER_NAME
 
-# add new user
-RUN adduser -D $USER \
-&& echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
-&& chmod 0440 /etc/sudoers.d/$USER
+RUN chown -R $APP_USER_NAME:$APP_USER_NAME /usr/src/app
 
-USER $USER
+USER $APP_USER_NAME
+
+ENV SERVER_PORT="8080"
 
 CMD ["./passphrase-server"]
