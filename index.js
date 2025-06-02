@@ -103,9 +103,9 @@ async function getClosestStunServer() {
 }
 
 async function main() {
-  const c = await getClosestStunServer().catch((err) => {
-    appendOutput('Could not fetch closest STUN server: ' + err.message, output);
-  });
+  // const c = await getClosestStunServer().catch((err) => {
+  //   appendOutput('Could not fetch closest STUN server: ' + err.message, output);
+  // });
   node = await createLibp2p({
     addresses: {
       listen: ['/p2p-circuit', '/webrtc'],
@@ -115,12 +115,19 @@ async function main() {
       webRTC({
         rtcConfiguration: {
           iceServers: [
-            { urls: c },
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun.nextcloud.com:443' },
-            { urls: 'turn:relay.smp46.me:3478?transport=udp' },
-            { urls: 'turn:relay.smp46.me:3478?transport=tcp' },
+            {
+              urls: 'turn:195.114.14.137:3478?transport=udp',
+              username: 'ferryCaptain',
+              credential: 'i^YV13eTPOHdVzWm#2t5',
+            },
+            {
+              urls: 'turn:195.114.14.137:3478?transport=tcp',
+              username: 'ferryCaptain', // Yes I am aware this is plaintext
+              credential: 'i^YV13eTPOHdVzWm#2t5',
+            },
           ],
         },
       }),
@@ -268,15 +275,15 @@ async function main() {
               signal: AbortSignal.timeout(10000),
             },
           );
-          const rtt = await node.services.ping.ping(activePeerId);
-          appendOutput(
-            'Successfully pinged peer: ' +
-              activePeerId.toString() +
-              ' with RTT: ' +
-              rtt +
-              'ms',
-            targetOutput,
-          );
+          // const rtt = await node.services.ping.ping(activePeerId);
+          // appendOutput(
+          //   'Successfully pinged peer: ' +
+          //     activePeerId.toString() +
+          //     ' with RTT: ' +
+          //     rtt +
+          //     'ms',
+          //   targetOutput,
+          // );
           activeStream = stream;
           appendOutput(
             'File transfer stream opened to peer (via WebRTC).',
