@@ -73,9 +73,6 @@
 .sparkle {
   animation: sparkle 3s ease-in-out infinite;
 }
-.title-moved {
-  animation: slideUp 0.3s ease-out forwards;
-}
 .swing {
   animation: swing 3s ease-in-out infinite;
 }
