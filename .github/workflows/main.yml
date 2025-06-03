@@ -1,54 +1,58 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Workflow for deploying static content to GitHub Pages
+name: Deploy Static Content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ['main']
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches:
+      - main
+      - staging
   workflow_dispatch:
 
-# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Allow one concurrent deployment
 concurrency:
-  group: 'pages'
+  group: 'pages-${{ github.ref }}'
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Node
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
-      - name: Build
+
+      - name: Build for Staging Branch
+        if: github.ref == 'refs/heads/staging'
+        run: npm run build:staging
+        env:
+          VITE_RELAY_MADDR:
+            ${{ secrets.VITE_STAGING_RELAY_MADDR || secrets.VITE_RELAY_MADDR }}
+          VITE_PHRASEBOOK_API_URL:
+            ${{ secrets.VITE_STAGING_PHRASEBOOK_API_URL ||
+            secrets.VITE_PHRASEBOOK_API_URL }}
+
+      - name: Build for Main Branch (Production)
+        if: github.ref == 'refs/heads/main'
         run: npm run build
         env:
           VITE_RELAY_MADDR: ${{ secrets.VITE_RELAY_MADDR }}
           VITE_PHRASEBOOK_API_URL: ${{ secrets.VITE_PHRASEBOOK_API_URL }}
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages (gh-pages branch)
+        uses: JamesIves/github-pages-deploy-action@v4.7.3
         with:
-          # Upload dist folder
-          path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: dist
+          target-folder:
+            ${{ github.ref == 'refs/heads/staging' && 'staging' || '.' }}
+          clean: true
