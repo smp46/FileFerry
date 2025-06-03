@@ -1,0 +1,63 @@
+networks:
+  coturn-net:
+    driver: bridge
+    name: coturn-net
+  passphrase-net:
+    driver: bridge
+    name: passphrase-net
+  relay-net:
+    driver: bridge
+    name: relay-net
+
+services:
+  coturn:
+    image: coturn/coturn
+    container_name: fileferry-coturn
+    restart: always
+    ports:
+      - '3478:3478/tcp'
+      - '3478:3478/udp'
+      - '49152-49352:49152-49352/udp'
+    volumes:
+      - /home/smp/FileFerry/relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
+    tmpfs:
+      - /var/lib/coturn
+    read_only: true
+    networks:
+      - coturn-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1536M
+
+  passphrase-server:
+    image: passphrase-server
+    container_name: fileferry-passphrase-server
+    restart: always
+    ports:
+      - '8081:8080/tcp'
+    networks:
+      - passphrase-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  relay-server:
+    image: relay-server
+    container_name: fileferry-relay-server
+    restart: always
+    ports:
+      - '41337:41337'
+    env_file:
+      - /home/smp/FileFerry/relay-server/.env
+    networks:
+      - relay-net
+    read_only: true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
