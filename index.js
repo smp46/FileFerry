@@ -299,7 +299,7 @@ async function main() {
       activePeerId = remotePeerId;
     } else {
       log(
-        `Re-established or additional connection to existing peer: ${remotePeerIdStr}`,
+        `Re-established or additional cohttps://fileferry.smp46.me/nnection to existing peer: ${remotePeerIdStr}`,
         targetOutput,
       );
     }
@@ -609,8 +609,7 @@ async function main() {
   });
 
   if (errorMessage != '') {
-    document.getElementById('receivingLoadingIndicator').style.display = 'none';
-    document.getElementById('receiveErrorMessage').style.display = 'block';
+    log(errorMessage)
   }
 }
 function dragOverHandler(ev) {
