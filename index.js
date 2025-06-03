@@ -862,3 +862,19 @@ function goHome() {
 
   window.location.reload();
 }
+
+function goSend() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('sendWindow').style.display = 'block';
+  document.getElementById('receiveWindow').style.display = 'none';
+}
+
+function goReceive() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('receiveWindow').style.display = 'block';
+  document.getElementById('sendWindow').style.display = 'none';
+}
