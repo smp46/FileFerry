@@ -25,8 +25,9 @@ const log = (line, _targetElement) => {
 
 let localPeerMultiaddrs = [];
 
-const VITE_RELAY_MADDR = import.meta.env.VITE_RELAY_MADDR;
-const VITE_PHRASEBOOK_API_URL = import.meta.env.VITE_PHRASEBOOK_API_URL;
+const VITE_RELAY_MADDR =
+  '/dns4/relay.smp46.me/tcp/443/tls/ws/p2p/12D3KooWPUXghsjtba2yaKbxJAPUpCgZ1UzciEdCPzohBQi7wiPg';
+const VITE_PHRASEBOOK_API_URL = 'https://exchange.smp46.me';
 
 let node;
 let relayPeerIdStr = null;
@@ -90,20 +91,21 @@ async function getClosestStunServer() {
   let userData;
 
   try {
+    const geoLocs = await (await fetch(GEO_LOC_URL)).json();
     const cachedUserGeo = localStorage.getItem(USER_GEO_CACHE_KEY);
     if (cachedUserGeo) {
       const parsedCache = JSON.parse(cachedUserGeo);
       if (parsedCache.expiry && parsedCache.expiry > Date.now()) {
         userData = parsedCache.data;
-        console.log('Using cached user geo data.');
+        log('Using cached user geo data.');
       } else {
         localStorage.removeItem(USER_GEO_CACHE_KEY);
-        console.log('User geo cache expired or invalid.');
+        log('User geo cache expired or invalid.');
       }
     }
 
     if (!userData) {
-      console.log('Fetching user geo data from API.');
+      log('Fetching user geo data from API.');
       const geoUserResponse = await fetch(GEO_USER_URL);
       if (!geoUserResponse.ok) {
         throw new Error(
@@ -117,7 +119,7 @@ async function getClosestStunServer() {
         expiry: Date.now() + CACHE_DURATION_MS,
       };
       localStorage.setItem(USER_GEO_CACHE_KEY, JSON.stringify(cacheEntry));
-      console.log('User geo data fetched and cached.');
+      log('User geo data fetched and cached.');
     }
 
     const latitude = userData.lat;
@@ -148,13 +150,14 @@ async function getClosestStunServer() {
     log('Closest STUN server found: ' + closestAddr, output);
     return closestAddr;
   } catch (error) {
-    console.error('Error in getClosestStunServer:', error);
+    log('Error in getClosestStunServer:', error);
     localStorage.removeItem(USER_GEO_CACHE_KEY);
     return undefined;
   }
 }
 
 async function main() {
+  let errorMessage = '';
   const closestStunServer = await getClosestStunServer().catch((err) => {
     log('Could not fetch closest STUN server: ' + err.message, output);
   });
@@ -176,12 +179,12 @@ async function main() {
               urls: stunServer,
             },
             {
-              urls: 'turn:195.114.14.137:3478?transport=udp',
+              urls: 'turn:relay.smp46.me:3478?transport=udp',
               username: 'ferryCaptain',
               credential: 'i^YV13eTPOHdVzWm#2t5',
             },
             {
-              urls: 'turn:195.114.14.137:3478?transport=tcp',
+              urls: 'turn:relay.smp46.me:3478?transport=tcp',
               username: 'ferryCaptain', // Yes I am aware this is plaintext
               credential: 'i^YV13eTPOHdVzWm#2t5',
             },
@@ -460,7 +463,6 @@ async function main() {
     document.getElementById('receivingLoadingIndicator').style.display =
       'block';
 
-    let errorMessage = '';
     let receivedFileBuffer = [];
     let fileNameFromHeader = 'downloaded_file';
     let fileSizeFromHeader = 0;
@@ -609,7 +611,7 @@ async function main() {
   });
 
   if (errorMessage != '') {
-    log(errorMessage)
+    log(errorMessage);
   }
 }
 function dragOverHandler(ev) {
@@ -843,13 +845,36 @@ function getByteArray(file) {
 }
 
 function showErrorPopup(message) {
-  const errorMessageText = document.getElementById('errorMessageText');
-  const errorWindow = document.getElementById('errorWindow');
-  errorMessageText.textContent = message;
-  errorWindow.classList.remove('hidden');
+  document.getElementById('errorMessageText').textContent = message;
+  document.getElementById('errorWindow').classList.remove('hidden');
 }
 
 function hideErrorPopup() {
-  const errorWindow = document.getElementById('errorWindow');
-  errorWindow.classList.add('hidden');
+  document.getElementById('errorWindow').classList.add('hidden');
+}
+
+function goHome() {
+  document.getElementById('sendWindow').style.display = 'none';
+  document.getElementById('receiveWindow').style.display = 'none';
+  document.getElementById('returnButton').style.display = 'none';
+  document.getElementById('goSendButton').style.display = 'flex';
+  document.getElementById('goReceiveButton').style.display = 'flex';
+
+  window.location.reload();
+}
+
+function goSend() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('sendWindow').style.display = 'block';
+  document.getElementById('receiveWindow').style.display = 'none';
+}
+
+function goReceive() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('receiveWindow').style.display = 'block';
+  document.getElementById('sendWindow').style.display = 'none';
 }

@@ -34,19 +34,10 @@ jobs:
       - name: Build for Staging Branch
         if: github.ref == 'refs/heads/staging'
         run: npm run build:staging
-        env:
-          VITE_RELAY_MADDR:
-            ${{ secrets.VITE_STAGING_RELAY_MADDR || secrets.VITE_RELAY_MADDR }}
-          VITE_PHRASEBOOK_API_URL:
-            ${{ secrets.VITE_STAGING_PHRASEBOOK_API_URL ||
-            secrets.VITE_PHRASEBOOK_API_URL }}
 
       - name: Build for Main Branch (Production)
         if: github.ref == 'refs/heads/main'
         run: npm run build
-        env:
-          VITE_RELAY_MADDR: ${{ secrets.VITE_RELAY_MADDR }}
-          VITE_PHRASEBOOK_API_URL: ${{ secrets.VITE_PHRASEBOOK_API_URL }}
 
       - name: Deploy to GitHub Pages (gh-pages branch)
         uses: JamesIves/github-pages-deploy-action@v4.7.3

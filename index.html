@@ -38,6 +38,7 @@
       ></div>
 
       <h1
+        id="title"
         class="mx-auto text-7xl sm:text-7xl md:text-9xl lg:text-10xl font-bold text-white
           drop-shadow-xl z-10 my-16 text-center"
       >
@@ -819,34 +820,34 @@
     </div>
     <script type="module" src="./index.js"></script>
     <script>
-      const sendWindowEl = document.getElementById('sendWindow');
-      const receiveWindowEl = document.getElementById('receiveWindow');
-      const returnButtonEl = document.getElementById('returnButton');
-      const goSendButtonEl = document.getElementById('goSendButton');
-      const goReceiveButtonEl = document.getElementById('goReceiveButton');
+      if (window.location.href.includes('staging')) {
+        document.getElementById('title').innerText = 'Staging';
+      }
 
       function goHome() {
-        sendWindowEl.style.display = 'none';
-        receiveWindowEl.style.display = 'none';
-        returnButtonEl.style.display = 'none';
-        goSendButtonEl.style.display = 'flex';
-        goReceiveButtonEl.style.display = 'flex';
+        document.getElementById('sendWindow').style.display = 'none';
+        document.getElementById('receiveWindow').style.display = 'none';
+        document.getElementById('returnButton').style.display = 'none';
+        document.getElementById('goSendButton').style.display = 'flex';
+        document.getElementById('goReceiveButton').style.display = 'flex';
 
         window.location.reload();
       }
+
       function goSend() {
-        returnButtonEl.style.display = 'flex';
-        goSendButtonEl.style.display = 'none';
-        goReceiveButtonEl.style.display = 'none';
-        sendWindowEl.style.display = 'block';
-        receiveWindowEl.style.display = 'none';
+        document.getElementById('returnButton').style.display = 'flex';
+        document.getElementById('goSendButton').style.display = 'none';
+        document.getElementById('goReceiveButton').style.display = 'none';
+        document.getElementById('sendWindow').style.display = 'block';
+        document.getElementById('receiveWindow').style.display = 'none';
       }
+
       function goReceive() {
-        returnButtonEl.style.display = 'flex';
-        goSendButtonEl.style.display = 'none';
-        goReceiveButtonEl.style.display = 'none';
-        receiveWindowEl.style.display = 'block';
-        sendWindowEl.style.display = 'none';
+        document.getElementById('returnButton').style.display = 'flex';
+        document.getElementById('goSendButton').style.display = 'none';
+        document.getElementById('goReceiveButton').style.display = 'none';
+        document.getElementById('receiveWindow').style.display = 'block';
+        document.getElementById('sendWindow').style.display = 'none';
       }
     </script>
   </body>
