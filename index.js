@@ -90,6 +90,7 @@ async function getClosestStunServer() {
   let userData;
 
   try {
+    const geoLocs = await (await fetch(GEO_LOC_URL)).json();
     const cachedUserGeo = localStorage.getItem(USER_GEO_CACHE_KEY);
     if (cachedUserGeo) {
       const parsedCache = JSON.parse(cachedUserGeo);
@@ -155,6 +156,7 @@ async function getClosestStunServer() {
 }
 
 async function main() {
+  let errorMessage = '';
   const closestStunServer = await getClosestStunServer().catch((err) => {
     log('Could not fetch closest STUN server: ' + err.message, output);
   });
@@ -176,12 +178,12 @@ async function main() {
               urls: stunServer,
             },
             {
-              urls: 'turn:195.114.14.137:3478?transport=udp',
+              urls: 'turn:relay.smp46.me:3478?transport=udp',
               username: 'ferryCaptain',
               credential: 'i^YV13eTPOHdVzWm#2t5',
             },
             {
-              urls: 'turn:195.114.14.137:3478?transport=tcp',
+              urls: 'turn:relay.smp46.me:3478?transport=tcp',
               username: 'ferryCaptain', // Yes I am aware this is plaintext
               credential: 'i^YV13eTPOHdVzWm#2t5',
             },
@@ -460,7 +462,6 @@ async function main() {
     document.getElementById('receivingLoadingIndicator').style.display =
       'block';
 
-    let errorMessage = '';
     let receivedFileBuffer = [];
     let fileNameFromHeader = 'downloaded_file';
     let fileSizeFromHeader = 0;
@@ -609,7 +610,7 @@ async function main() {
   });
 
   if (errorMessage != '') {
-    log(errorMessage)
+    log(errorMessage);
   }
 }
 function dragOverHandler(ev) {
@@ -843,13 +844,36 @@ function getByteArray(file) {
 }
 
 function showErrorPopup(message) {
-  const errorMessageText = document.getElementById('errorMessageText');
-  const errorWindow = document.getElementById('errorWindow');
-  errorMessageText.textContent = message;
-  errorWindow.classList.remove('hidden');
+  document.getElementById('errorMessageText').textContent = message;
+  document.getElementById('errorWindow').classList.remove('hidden');
 }
 
 function hideErrorPopup() {
-  const errorWindow = document.getElementById('errorWindow');
-  errorWindow.classList.add('hidden');
+  document.getElementById('errorWindow').classList.add('hidden');
+}
+
+function goHome() {
+  document.getElementById('sendWindow').style.display = 'none';
+  document.getElementById('receiveWindow').style.display = 'none';
+  document.getElementById('returnButton').style.display = 'none';
+  document.getElementById('goSendButton').style.display = 'flex';
+  document.getElementById('goReceiveButton').style.display = 'flex';
+
+  window.location.reload();
+}
+
+function goSend() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('sendWindow').style.display = 'block';
+  document.getElementById('receiveWindow').style.display = 'none';
+}
+
+function goReceive() {
+  document.getElementById('returnButton').style.display = 'flex';
+  document.getElementById('goSendButton').style.display = 'none';
+  document.getElementById('goReceiveButton').style.display = 'none';
+  document.getElementById('receiveWindow').style.display = 'block';
+  document.getElementById('sendWindow').style.display = 'none';
 }
