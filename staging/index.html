@@ -1,0 +1,853 @@
+<!doctype html>
+<html>
+  <head>
+    <title>FileFerry</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="module" crossorigin src="/staging/assets/index-CbL3PGBZ.js"></script>
+    <link rel="stylesheet" crossorigin href="/staging/assets/index-zH2RVW6l.css">
+  </head>
+  <body class="overflow-x-hidden font-[Outfit]">
+    <div
+      class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500
+        overflow-hidden relative flex flex-col pt-8 pb-[350px] sm:pb-[400px]
+        md:pb-[450px]"
+    >
+      <div
+        class="absolute top-4 right-4 sm:top-8 sm:right-12 w-16 h-16 sm:w-24 sm:h-24
+          bg-yellow-300 rounded-full shadow-2xl"
+      >
+        <div
+          class="absolute inset-1 sm:inset-2 bg-yellow-200 rounded-full"
+        ></div>
+        <div
+          class="absolute -inset-2 sm:-inset-4 bg-yellow-300/20 rounded-full blur-xl"
+        ></div>
+      </div>
+
+      <div
+        class="absolute top-10 left-5 sm:top-16 sm:left-20 w-24 h-12 sm:w-32 sm:h-16 bg-white
+          rounded-full opacity-80"
+      ></div>
+      <div
+        class="absolute top-16 left-20 sm:top-24 sm:left-40 w-20 h-10 sm:w-24 sm:h-12 bg-white
+          rounded-full opacity-70"
+      ></div>
+      <div
+        class="absolute top-8 right-20 sm:top-12 sm:right-40 w-22 h-11 sm:w-28 sm:h-14 bg-white
+          rounded-full opacity-75"
+      ></div>
+
+      <h1
+        class="mx-auto text-7xl sm:text-7xl md:text-9xl lg:text-10xl font-bold text-white
+          drop-shadow-xl z-10 my-16 text-center"
+      >
+        FileFerry_Staging
+      </h1>
+
+      <iframe id="hidden_download" style="display: none"></iframe>
+      <div
+        class="relative flex-grow flex items-center justify-center z-30 px-4"
+      >
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40
+            w-11/12 max-w-lg md:max-w-xl"
+          style="display: none"
+          id="sendWindow"
+        >
+          <div class="relative group">
+            <div
+              class="bg-orange-200 p-1 rounded-lg shadow-2xl border-2 border-transparent relative
+                overflow-hidden"
+              style="
+                box-shadow:
+                  0 0 0 3px #6b4226,
+                  0 0 0 6px #8c5a32,
+                  0 0 15px 8px rgba(0, 0, 0, 0.5),
+                  inset 0 0 15px rgba(0, 0, 0, 0.3);
+              "
+            >
+              <div
+                class="absolute inset-0 bg-repeat opacity-20 pointer-events-none"
+                style="
+                  background-image: url(&quot;data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23713f12' fill-opacity='0.2'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);
+                  background-size: 40px 40px;
+                "
+              ></div>
+              <div
+                class="bg-amber-100 p-3 sm:p-5 rounded-sm relative border-4 border-amber-700"
+                style="
+                  background-image: radial-gradient(
+                    ellipse at center,
+                    rgba(245, 222, 179, 0.8) 0%,
+                    rgba(210, 180, 140, 0.9) 100%
+                  );
+                  box-shadow:
+                    inset 0 0 10px rgba(101, 67, 33, 0.5),
+                    0 0 5px rgba(0, 0, 0, 0.2);
+                "
+              >
+                <div
+                  class="absolute -inset-1 opacity-40 rounded-sm pointer-events-none"
+                  style="
+                    background-image:
+                      repeating-linear-gradient(
+                        45deg,
+                        transparent,
+                        transparent 10px,
+                        rgba(139, 69, 19, 0.05) 10px,
+                        rgba(139, 69, 19, 0.05) 12px
+                      ),
+                      repeating-linear-gradient(
+                        -45deg,
+                        transparent,
+                        transparent 10px,
+                        rgba(139, 69, 19, 0.05) 10px,
+                        rgba(139, 69, 19, 0.05) 12px
+                      );
+                    mix-blend-mode: multiply;
+                  "
+                ></div>
+
+                <h2
+                  class="text-stone-800 text-xl sm:text-2xl mb-3 sm:mb-4 text-center relative z-10"
+                >
+                  Chart Your Course
+                </h2>
+
+                <div
+                  id="drop_zone"
+                  class="bg-amber-50/60 border-2 border-dashed border-amber-800/70 rounded p-4 sm:p-6
+                    text-center relative overflow-hidden min-h-[200px] sm:min-h-[240px]
+                    md:min-h-[280px] flex flex-col justify-center items-center shadow-inner"
+                  style="
+                    background-image:
+                      linear-gradient(
+                        rgba(255, 255, 255, 0.05) 1px,
+                        transparent 1px
+                      ),
+                      linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0.05) 1px,
+                        transparent 1px
+                      );
+                    background-size: 15px 15px;
+                  "
+                >
+                  <div
+                    class="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors
+                      duration-300 pointer-events-none"
+                  ></div>
+                  <div
+                    id="initialDropUI"
+                    class="block relative z-10 text-stone-700 w-full"
+                  >
+                    <svg
+                      class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2 sm:mb-3 text-amber-700"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 12m-8 0a8 8 0 1016 0 8 8 0 10-16 0"
+                      ></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 10.5 L12 4 M12 13.5 L12 20 M10.5 12 L4 12 M13.5 12 L20 12 M10.939 10.939 L6.343 6.343 M13.061 10.939 L17.657 6.343 M10.939 13.061 L6.343 17.657 M13.061 13.061 L17.657 17.657"
+                      ></path>
+                    </svg>
+                    <p
+                      class="text-xs sm:text-sm mb-2 sm:mb-3 text-stone-600 font-medium"
+                    >
+                      Drag and drop your file here or
+                    </p>
+                    <input type="file" id="fileInput" class="hidden" />
+                    <button
+                      id="selectFileButton"
+                      onclick="document.getElementById('fileInput').click();"
+                      class="bg-amber-700 text-amber-50 px-4 py-2 sm:px-6 sm:py-3 rounded text-sm
+                        sm:text-base hover:bg-amber-800 transition-colors shadow-md focus:outline-none
+                        focus:ring-2 focus:ring-amber-600 focus:ring-offset-2
+                        focus:ring-offset-amber-100"
+                    >
+                      Browse Files
+                    </button>
+                  </div>
+
+                  <div
+                    id="fileInfoArea"
+                    class="hidden relative z-10 text-stone-800 space-y-2 sm:space-y-3 w-full p-2 sm:p-4
+                      mx-auto justify-center items-center"
+                  >
+                    <div>
+                      <p
+                        class="text-[10px] sm:text-xs text-stone-600 uppercase tracking-wider font-semibold"
+                      >
+                        File Details:
+                      </p>
+                      <p
+                        id="fileNameDisplay"
+                        class="text-sm sm:text-lg font-semibold text-stone-900 truncate"
+                        title="Filename"
+                      >
+                        old-sea-chart.jpg
+                      </p>
+                      <p
+                        id="fileSizeDisplay"
+                        class="text-[10px] sm:text-xs text-stone-600"
+                      >
+                        (1.23 MB)
+                      </p>
+                    </div>
+                    <hr
+                      class="border-stone-500/30 my-1 sm:my-2 items-center text-center mx-auto"
+                    />
+                    <div>
+                      <p
+                        class="text-[10px] sm:text-xs text-stone-600 uppercase tracking-wider font-semibold"
+                      >
+                        Phrase:
+                      </p>
+                      <div class="flex items-center gap-1 sm:gap-2 mt-1">
+                        <div
+                          id="generatedPhraseDisplay"
+                          class="flex bg-amber-50/80 h-8 sm:h-10 text-stone-900 p-1 sm:p-2 rounded border
+                            border-stone-600/50 font-mono text-xs sm:text-sm focus:outline-none ml-auto
+                            placeholder-stone-500"
+                        ></div>
+                        <button
+                          id="copyPhraseButton"
+                          title="Copy Phrase"
+                          class="p-1.5 sm:p-2 bg-amber-700 text-amber-50 rounded hover:bg-amber-800
+                            focus:outline-none focus:ring-2 focus:ring-amber-600 mr-auto"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4 sm:h-5 sm:w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z"
+                            />
+                            <path
+                              d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    id="loadingIndicator"
+                    class="hidden relative z-20 text-stone-700 space-y-3 sm:space-y-4 w-full text-center
+                      p-4 sm:p-6"
+                  >
+                    <div class="flex justify-center items-center mb-3">
+                      <svg
+                        class="animate-spin h-12 w-12 text-amber-700"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        ></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <p class="text-lg sm:text-xl font-semibold text-stone-800">
+                      Navigating the Seas...
+                    </p>
+                    <p class="text-xs sm:text-sm text-stone-600">
+                      Consulting the stars, this may take a moment!
+                    </p>
+                  </div>
+                  <div
+                    id="completionMessage"
+                    class="hidden relative z-20 text-green-700 space-y-3 sm:space-y-4 w-full text-center
+                      p-4 sm:p-6"
+                  >
+                    <div class="flex justify-center items-center mb-2">
+                      <svg
+                        class="h-16 w-16 text-green-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <p class="text-xl sm:text-2xl font-bold text-green-800">
+                      Land Ho! File has reached its port! 📜
+                    </p>
+                    <div
+                      class="bg-green-100/70 p-3 sm:p-4 rounded shadow-inner border border-green-600/40"
+                    >
+                      <p class="text-xs sm:text-sm text-green-700">
+                        Your file has been safely delivered.
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    id="errorMessage"
+                    class="hidden relative z-20 text-red-700 space-y-3 sm:space-y-4 w-full text-center p-4
+                      sm:p-6 bg-red-100/70 rounded border border-red-600/60"
+                  >
+                    <div class="flex justify-center items-center mb-2">
+                      <svg
+                        class="h-16 w-16 text-red-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                        />
+                      </svg>
+                    </div>
+                    <p class="text-xl sm:text-2xl font-bold text-red-800">
+                      Sunk by a Squall!
+                    </p>
+                    <p
+                      id="detailedErrorMessage"
+                      class="text-xs sm:text-sm text-red-700"
+                    >
+                      Drat! The map was smudged. Best try sending it again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          style="display: none"
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40
+            w-11/12 max-w-lg md:max-w-xl"
+          id="receiveWindow"
+        >
+          <div class="relative">
+            <div
+              class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-600"
+            ></div>
+            <div
+              class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-600
+                rounded-full"
+            ></div>
+
+            <div
+              class="bg-gradient-to-br from-teal-700 to-teal-800 p-4 sm:p-6 rounded-lg shadow-2xl
+                border-8 border-teal-900 relative"
+            >
+              <div
+                class="absolute inset-0 opacity-20 rounded-lg"
+                style="
+                  background-image: repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 0, 0, 0.1) 10px,
+                    rgba(0, 0, 0, 0.1) 20px
+                  );
+                "
+              ></div>
+              <div
+                class="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-br-full"
+              ></div>
+              <div
+                class="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-bl-full"
+              ></div>
+              <div
+                class="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tr-full"
+              ></div>
+              <div
+                class="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-gray-700 rounded-tl-full"
+              ></div>
+
+              <h2
+                class="text-white text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center relative z-10"
+              >
+                🧭 Receive Shipment
+              </h2>
+
+              <div
+                class="bg-black/20 border-4 border-teal-900 rounded-lg p-4 sm:p-6 md:p-8 relative"
+              >
+                <div id="initialReceiveUI" class="w-full">
+                  <div class="text-teal-100 mb-3 sm:mb-4 text-center">
+                    <p class="text-base sm:text-lg mb-1 sm:mb-2">
+                      Enter receive code:
+                    </p>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                    <input
+                      type="text"
+                      id="phraseInput"
+                      placeholder="e.g. 8-drunken-sailors"
+                      class="flex-1 text-center bg-teal-900/50 border-2 border-teal-600 rounded-lg px-3 py-2
+                        sm:px-4 sm:py-3 text-white placeholder-teal-300 focus:outline-none
+                        focus:border-teal-400 font-mono tracking-normal sm:tracking-wider text-sm
+                        sm:text-base"
+                    />
+                    <button
+                      id="receiveModeButton"
+                      class="sm:ml-3 mt-2 sm:mt-0 bg-teal-100 text-teal-800 px-4 py-2 sm:px-6 sm:py-3
+                        rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg text-sm
+                        sm:text-base"
+                    >
+                      Receive
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="receivingLoadingIndicator"
+                  class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
+                >
+                  <div class="flex justify-center items-center mb-3">
+                    <svg
+                      class="animate-spin h-12 w-12 text-sky-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <p class="text-lg sm:text-xl font-semibold text-white">
+                    🗺️ Charting Course to Cargo...
+                  </p>
+                  <p class="text-xs sm:text-sm text-teal-200">
+                    Verifying your coordinates and preparing for retrieval.
+                  </p>
+                </div>
+
+                <div
+                  id="downloadReadyMessage"
+                  class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-left p-3 sm:p-4 md:p-6
+                    bg-teal-700/50 rounded-lg shadow-inner border border-teal-600/70"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row items-center justify-center sm:justify-start mb-2
+                      sm:mb-3 gap-2 sm:gap-3 text-center sm:text-left"
+                  >
+                    <svg
+                      class="h-12 w-12 sm:h-16 sm:w-16 text-green-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3.75 6.75h16.5M3.75 6.75l1.5-1.5h13.5l1.5 1.5M3.75 6.75v10.5A2.25 2.25 0 006 19.5h12a2.25 2.25 0 002.25-2.25V6.75m-16.5 0l3-3h10.5l3 3"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 6.75V9.75"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9.75v5.25m0 0l-2.25-2.25m2.25 2.25l2.25-2.25"
+                      />
+                    </svg>
+                    <p class="text-xl sm:text-2xl font-bold text-white">
+                      Cargo Secured!
+                    </p>
+                  </div>
+                  <div
+                    class="border-t border-teal-600/50 pt-3 sm:pt-4 space-y-2"
+                  >
+                    <div class="bg-black/20 p-2 sm:p-3 rounded-md">
+                      <p>
+                        <strong
+                          class="text-white font-medium text-xs sm:text-sm"
+                          >Filename:</strong
+                        >
+                        <span
+                          id="receivedFileName"
+                          class="block text-sm sm:text-lg text-sky-200 break-all"
+                          >example_file.dat</span
+                        >
+                      </p>
+                      <p class="mt-1">
+                        <strong
+                          class="text-white font-medium text-xs sm:text-sm"
+                          >Size:</strong
+                        >
+                        <span
+                          id="receivedFileSize"
+                          class="text-sky-200 text-xs sm:text-sm"
+                          >0.00 MB</span
+                        >
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  id="receiveErrorMessage"
+                  class="hidden text-red-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6
+                    bg-red-800/40 rounded-lg border border-red-600/50"
+                >
+                  <div class="flex justify-center items-center mb-2">
+                    <svg
+                      class="h-16 w-16 text-red-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                        class="opacity-50"
+                      />
+                    </svg>
+                  </div>
+                  <p class="text-xl sm:text-2xl font-bold text-white">
+                    Lost at Sea!
+                  </p>
+                  <p
+                    id="receiveDetailedErrorMessage"
+                    class="text-xs sm:text-sm text-red-200"
+                  >
+                    The shipping iternary (code) seems invalid or the cargo is
+                    no longer available. Please verify and try again.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 md:p-5">
+        <div class="float-animation">
+          <div class="relative">
+            <div
+              class="w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto h-36 sm:h-40 md:h-48 bg-red-500
+                rounded-b-[20%] sm:rounded-b-[30%] relative shadow-2xl"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-b from-red-500 to-red-700 rounded-b-[20%]
+                  sm:rounded-b-[30%]"
+              ></div>
+              <div
+                class="absolute top-2 sm:top-3 left-0 right-0 h-2 sm:h-3 bg-white"
+              ></div>
+              <div
+                class="absolute top-5 sm:top-8 left-0 right-0 h-1 sm:h-2 bg-white/80"
+              ></div>
+              <div
+                class="absolute -top-16 sm:-top-20 md:-top-24 left-1/2 transform -translate-x-1/2
+                  w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm md:max-w-md h-32 sm:h-36 md:h-40
+                  bg-white rounded-t-xl sm:rounded-t-2xl rounded-b-md sm:rounded-b-lg shadow-xl"
+              >
+                <div
+                  class="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 w-11/12 h-4 sm:h-6
+                    bg-white rounded-t-lg sm:rounded-t-xl"
+                ></div>
+                <div
+                  class="flex justify-center gap-1 sm:gap-2 md:gap-3 pt-2 sm:pt-3 mb-2 sm:mb-3"
+                >
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                  <div
+                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
+                  ></div>
+                </div>
+                <div class="px-3 sm:px-4 md:px-8 space-y-2 sm:space-y-3">
+                  <button
+                    id="goSendButton"
+                    onclick="goSend()"
+                    class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
+                      sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md
+                      text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                  >
+                    <span class="text-lg sm:text-xl">⚓</span> Send
+                  </button>
+                  <button
+                    id="goReceiveButton"
+                    onclick="goReceive()"
+                    class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
+                      sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md
+                      text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                  >
+                    <span class="text-lg sm:text-xl">📦</span> Receive
+                  </button>
+                  <button
+                    id="returnButton"
+                    onclick="goHome()"
+                    class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4
+                      sm:px-6 rounded-lg sm:rounded-xl font-semibold shadow-md text-sm sm:text-base
+                      md:text-lg flex items-center justify-center transition-colors gap-1 sm:gap-2
+                      hidden"
+                  >
+                    <span class="text-lg sm:text-xl">↩️</span> Return
+                  </button>
+                </div>
+              </div>
+              <div
+                class="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2
+                  w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/20 rounded-full"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="absolute bottom-0 left-0 right-0 h-[300px] sm:h-[350px] md:h-[400px] z-2"
+      >
+        <div
+          class="absolute bottom-[calc(48px+128px)] sm:bottom-[calc(56px+128px)]
+            md:bottom-[calc(60px+128px)] w-full h-12 bg-gradient-to-b from-transparent
+            to-blue-400/20 swell-animation"
+        ></div>
+        <div
+          class="absolute bottom-[calc(40px+128px)] sm:bottom-[calc(48px+128px)]
+            md:bottom-[calc(52px+128px)] w-full h-8 bg-gradient-to-b from-transparent
+            to-blue-500/30 swell-animation"
+          style="animation-delay: 0.5s"
+        ></div>
+        <div
+          class="absolute bottom-[128px] sm:bottom-[128px] md:bottom-[128px] w-full
+            overflow-hidden h-24 z-2"
+        >
+          <div class="relative w-[200%] h-full drift-animation z-2">
+            <svg
+              class="absolute w-full h-full"
+              viewBox="0 0 2880 96"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient
+                  id="waveGradient"
+                  x1="0%"
+                  y1="0%"
+                  x2="0%"
+                  y2="100%"
+                >
+                  <stop
+                    offset="0%"
+                    style="stop-color: #3b82f6; stop-opacity: 0.4"
+                  />
+                  <stop
+                    offset="100%"
+                    style="stop-color: #1e40af; stop-opacity: 0.8"
+                  />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,48 C240,96 480,0 720,48 C960,96 1200,0 1440,48 C1680,96 1920,0 2160,48 C2400,96 2640,0 2880,48 L2880,96 L0,96 Z"
+                fill="url(#waveGradient)"
+              />
+            </svg>
+          </div>
+        </div>
+        <div class="absolute bottom-0 w-full h-32 sm:h-40 md:h-48 z-2">
+          <svg
+            class="w-full h-full swell-animation"
+            viewBox="0 0 1440 128"
+            preserveAspectRatio="none"
+            style="animation-delay: 1s"
+          >
+            <defs>
+              <radialGradient id="oceanGradient">
+                <stop
+                  offset="0%"
+                  style="stop-color: #2563eb; stop-opacity: 0.6"
+                />
+                <stop
+                  offset="100%"
+                  style="stop-color: #1e40af; stop-opacity: 0.9"
+                />
+              </radialGradient>
+            </defs>
+            <path
+              d="M0,32 C360,80 720,0 1080,32 C1260,48 1380,64 1440,64 L1440,128 L0,128 Z"
+              fill="url(#oceanGradient)"
+            />
+          </svg>
+        </div>
+
+        <div
+          class="absolute bottom-[140px] sm:bottom-[150px] left-1/3 w-1 h-1 bg-white rounded-full
+            sparkle z-2"
+        ></div>
+        <div
+          class="absolute bottom-[135px] sm:bottom-[145px] right-1/4 w-1 h-1 bg-white
+            rounded-full sparkle z-2"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute bottom-[145px] sm:bottom-[155px] left-2/3 w-1 h-1 bg-white rounded-full
+            sparkle z-2"
+          style="animation-delay: 2s"
+        ></div>
+        <div
+          class="absolute bottom-0 left-0 right-0 h-32 z-1 sm:h-40 md:h-48 bg-gradient-to-b
+            from-blue-600 via-blue-700 to-blue-900"
+        ></div>
+      </div>
+    </div>
+    <div
+      id="errorWindow"
+      class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center
+        justify-center z-49"
+    >
+      <div
+        id="errorMessageContainer"
+        class="relative w-full max-w-md mx-auto bg-amber-50/90 p-4 rounded-xl shadow-2xl
+          border-2 border-amber-700/50"
+      >
+        <div class="absolute top-0 -left-1 w-11 h-12 opacity-30">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1"
+            class="text-amber-700 transform rotate-[-15deg]"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+        </div>
+        <div class="text-center px-4 py-2">
+          <h3
+            class="text-lg font-bold text-amber-900 mb-2 flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 mr-2 text-amber-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20.923 17.5H3.077c-1.362 0-2.156-1.431-1.408-2.59L9.077 3.09C9.826 1.931 11.248 1 12 1s2.174.931 2.923 2.09l7.408 11.82C23.079 16.069 22.285 17.5 20.923 17.5z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 7v5"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 14.5h.01"
+              />
+            </svg>
+            Abandon Ship!
+          </h3>
+          <p id="errorMessageText" class="text-sm text-amber-800 mb-4">
+            The parchment is smudged, Captain.
+          </p>
+          <button
+            id="closeErrorButton"
+            class="bg-amber-600 text-white px-5 py-2 rounded-lg text-sm font-medium
+              hover:bg-amber-700 transition-colors shadow-lg focus:outline-none focus:ring-2
+              focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-amber-50"
+          >
+            Aye, Understood
+          </button>
+        </div>
+        <div
+          class="absolute -bottom-2 -right-2 w-10 h-10 bg-amber-700/20 rounded-full blur-md -z-10"
+        ></div>
+      </div>
+    </div>
+    <script>
+      const sendWindowEl = document.getElementById('sendWindow');
+      const receiveWindowEl = document.getElementById('receiveWindow');
+      const returnButtonEl = document.getElementById('returnButton');
+      const goSendButtonEl = document.getElementById('goSendButton');
+      const goReceiveButtonEl = document.getElementById('goReceiveButton');
+
+      function goHome() {
+        sendWindowEl.style.display = 'none';
+        receiveWindowEl.style.display = 'none';
+        returnButtonEl.style.display = 'none';
+        goSendButtonEl.style.display = 'flex';
+        goReceiveButtonEl.style.display = 'flex';
+
+        window.location.reload();
+      }
+      function goSend() {
+        returnButtonEl.style.display = 'flex';
+        goSendButtonEl.style.display = 'none';
+        goReceiveButtonEl.style.display = 'none';
+        sendWindowEl.style.display = 'block';
+        receiveWindowEl.style.display = 'none';
+      }
+      function goReceive() {
+        returnButtonEl.style.display = 'flex';
+        goSendButtonEl.style.display = 'none';
+        goReceiveButtonEl.style.display = 'none';
+        receiveWindowEl.style.display = 'block';
+        sendWindowEl.style.display = 'none';
+      }
+    </script>
+  </body>
+</html>
