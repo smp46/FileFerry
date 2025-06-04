@@ -84,7 +84,7 @@ async function getClosestStunServer() {
     'https://raw.githubusercontent.com/pradt2/always-online-stun/master/geoip_cache.txt';
   const HOST_URL =
     'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_hosts.txt';
-  const GEO_USER_URL = 'https://ip-api.com/json/';
+  const GEO_USER_URL = 'http://ip-api.com/json/';
   const USER_GEO_CACHE_KEY = 'userGeoData';
   const CACHE_DURATION_MS = 48 * 60 * 60 * 1000;
 
