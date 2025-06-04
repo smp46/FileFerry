@@ -425,40 +425,6 @@
                 </div>
 
                 <div
-                  id="receivingLoadingIndicator"
-                  class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
-                >
-                  <div class="flex justify-center items-center mb-3">
-                    <svg
-                      class="animate-spin h-12 w-12 text-sky-300"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  </div>
-                  <p class="text-lg sm:text-xl font-semibold text-white">
-                    🗺️ Charting Course to Cargo...
-                  </p>
-                  <p class="text-xs sm:text-sm text-teal-200">
-                    Verifying your coordinates and preparing for retrieval.
-                  </p>
-                </div>
-
-                <div
                   id="downloadReadyMessage"
                   class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-left p-3 sm:p-4 md:p-6
                     bg-teal-700/50 rounded-lg shadow-inner border border-teal-600/70"
@@ -524,7 +490,6 @@
                     </div>
                   </div>
                 </div>
-
                 <div
                   id="receiveErrorMessage"
                   class="hidden text-red-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6
@@ -571,9 +536,39 @@
       <div class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 md:p-5">
         <div class="float-animation">
           <div class="relative">
+            <!-- Cabin (behind hull) -->
+            <div
+              class="absolute -top-16 sm:-top-20 md:-top-24 left-1/2 transform -translate-x-1/2
+                w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm md:max-w-md h-32 sm:h-36 md:h-40
+                bg-white rounded-t-xl sm:rounded-t-2xl rounded-b-md sm:rounded-b-lg shadow-xl
+                z-10"
+            >
+              <!-- Roof -->
+              <div
+                class="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 w-11/12 h-4 sm:h-6
+                  bg-gray-100 rounded-t-lg sm:rounded-t-xl border-2 border-gray-200"
+              ></div>
+
+              <!-- Chimney -->
+              <div
+                class="absolute -top-8 sm:-top-10 left-1/4 w-6 sm:w-8 h-10 sm:h-12 bg-gray-800
+                  rounded-t-sm"
+              >
+                <!-- Steam Animation -->
+                <div
+                  class="absolute -top-4 left-1/2 transform -translate-x-1/2"
+                >
+                  <div class="steam-puff"></div>
+                  <div class="steam-puff animation-delay-1"></div>
+                  <div class="steam-puff animation-delay-2"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hull (in front) -->
             <div
               class="w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto h-36 sm:h-40 md:h-48 bg-red-500
-                rounded-b-[20%] sm:rounded-b-[30%] relative shadow-2xl"
+                rounded-b-[20%] sm:rounded-b-[30%] relative shadow-2xl z-20"
             >
               <div
                 class="absolute inset-0 bg-gradient-to-b from-red-500 to-red-700 rounded-b-[20%]
@@ -585,66 +580,42 @@
               <div
                 class="absolute top-5 sm:top-8 left-0 right-0 h-1 sm:h-2 bg-white/80"
               ></div>
-              <div
-                class="absolute -top-16 sm:-top-20 md:-top-24 left-1/2 transform -translate-x-1/2
-                  w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm md:max-w-md h-32 sm:h-36 md:h-40
-                  bg-white rounded-t-xl sm:rounded-t-2xl rounded-b-md sm:rounded-b-lg shadow-xl"
+            </div>
+
+            <!-- Buttons (on top of everything) -->
+            <div
+              class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-3
+                sm:px-4 md:px-8 space-y-2 sm:space-y-3 w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm
+                md:max-w-md z-30"
+            >
+              <button
+                id="goSendButton"
+                onclick="goSend()"
+                class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
+                  sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md
+                  text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
               >
-                <div
-                  class="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 w-11/12 h-4 sm:h-6
-                    bg-white rounded-t-lg sm:rounded-t-xl"
-                ></div>
-                <div
-                  class="flex justify-center gap-1 sm:gap-2 md:gap-3 pt-2 sm:pt-3 mb-2 sm:mb-3"
-                >
-                  <div
-                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
-                  ></div>
-                  <div
-                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
-                  ></div>
-                  <div
-                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
-                  ></div>
-                  <div
-                    class="w-6 h-4 sm:w-8 sm:h-5 md:w-10 md:h-6 bg-sky-400 rounded-sm"
-                  ></div>
-                </div>
-                <div class="px-3 sm:px-4 md:px-8 space-y-2 sm:space-y-3">
-                  <button
-                    id="goSendButton"
-                    onclick="goSend()"
-                    class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
-                      sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md
-                      text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
-                  >
-                    <span class="text-lg sm:text-xl">⚓</span> Send
-                  </button>
-                  <button
-                    id="goReceiveButton"
-                    onclick="goReceive()"
-                    class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
-                      sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md
-                      text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
-                  >
-                    <span class="text-lg sm:text-xl">📦</span> Receive
-                  </button>
-                  <button
-                    id="returnButton"
-                    onclick="goHome()"
-                    class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4
-                      sm:px-6 rounded-lg sm:rounded-xl font-semibold shadow-md text-sm sm:text-base
-                      md:text-lg flex items-center justify-center transition-colors gap-1 sm:gap-2
-                      hidden"
-                  >
-                    <span class="text-lg sm:text-xl">↩️</span> Return
-                  </button>
-                </div>
-              </div>
-              <div
-                class="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2
-                  w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/20 rounded-full"
-              ></div>
+                <span class="text-lg sm:text-xl">⚓</span> Send
+              </button>
+              <button
+                id="goReceiveButton"
+                onclick="goReceive()"
+                class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
+                  sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md
+                  text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+              >
+                <span class="text-lg sm:text-xl">📦</span> Receive
+              </button>
+              <button
+                id="returnButton"
+                onclick="goHome()"
+                class="hidden w-full bg-green-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6
+                  rounded-lg sm:rounded-xl font-semibold hover:bg-green-800 transition-colors
+                  shadow-md text-sm sm:text-base md:text-lg flex items-center justify-center gap-1
+                  sm:gap-2"
+              >
+                <span class="text-lg sm:text-xl">🔙</span> Return
+              </button>
             </div>
           </div>
         </div>
@@ -849,6 +820,7 @@
         document.getElementById('receiveWindow').style.display = 'block';
         document.getElementById('sendWindow').style.display = 'none';
       }
+
     </script>
   </body>
 </html>

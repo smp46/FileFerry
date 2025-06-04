@@ -459,10 +459,6 @@ async function main() {
     activeStream = stream;
     activePeerId = connection.remotePeer;
 
-    document.getElementById('initialReceiveUI').style.display = 'none';
-    document.getElementById('receivingLoadingIndicator').style.display =
-      'block';
-
     let receivedFileBuffer = [];
     let fileNameFromHeader = 'downloaded_file';
     let fileSizeFromHeader = 0;
@@ -767,6 +763,10 @@ window.actions = {
       return;
     }
 
+    document.getElementById('initialReceiveUI').style.display = 'none';
+    document.getElementById('receivingLoadingIndicator').style.display =
+      'block';
+
     isReceiverMode = true;
     isSenderMode = false;
     if (outputReceive) outputReceive.innerHTML = '';
@@ -828,7 +828,7 @@ main().catch((err) => {
   console.error('Failed to initialize libp2p node:', err);
   log(
     `Critical Error: Failed to initialize libp2p node - ${err.message}`,
-    output, // Main output div
+    output,
   );
 });
 
