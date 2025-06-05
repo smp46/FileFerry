@@ -45,6 +45,439 @@ let isReceiverMode = false;
 
 let fileTransferring = false;
 
+async function main() {
+  let errorMessage = '';
+  const closestStunServer = await getClosestStunServer().catch((err) => {
+    log('Could not fetch closest STUN server: ' + err.message, output);
+  });
+  const stunServer =
+    closestStunServer != undefined
+      ? `stun:${closestStunServer}`
+      : 'stun:l.google.com:19302';
+
+  node = await createLibp2p({
+    addresses: {
+      listen: ['/p2p-circuit', '/webrtc'],
+    },
+    transports: [
+      webSockets({ filter: filters.all }),
+      webRTC({
+        rtcConfiguration: {
+          iceServers: [
+            {
+              urls: stunServer,
+            },
+            {
+              urls: 'turn:relay.smp46.me:3478?transport=udp',
+              username: 'ferryCaptain',
+              credential: 'i^YV13eTPOHdVzWm#2t5',
+            },
+            {
+              urls: 'turn:relay.smp46.me:3478?transport=tcp',
+              username: 'ferryCaptain',
+              credential: 'i^YV13eTPOHdVzWm#2t5',
+            },
+          ],
+        },
+        dataChannel: {
+          bufferedAmountLowThreshold: 512 * 1024,
+          maxMessageSize: 256 * 1024,
+        },
+      }),
+      circuitRelayTransport({
+        discoverRelays: 0,
+      }),
+    ],
+    connectionEncrypters: [noise()],
+    streamMuxers: [
+      yamux({
+        maxStreamWindowSize: 1024 * 1024 * 2,
+        maxMessageSize: 1024 * 1024,
+      }),
+    ],
+    connectionGater: {
+      denyDialMultiaddr: () => false,
+    },
+    services: {
+      identify: identify(),
+      identifyPush: identifyPush(),
+      ping: ping({
+        protocolPrefix: 'ipfs',
+        maxInboundStreams: 1,
+        maxOutboundStreams: 1,
+        runOnTransientConnection: false,
+        timeout: 30000,
+      }),
+    },
+    connectionManager: {
+      maxConnections: 10,
+      minConnections: 0,
+      pollInterval: 30000,
+      inboundConnectionThreshold: 5,
+      maxIncomingPendingConnections: 5,
+    },
+  });
+
+  await node.start();
+  log(`Node started with Peer ID: ${node.peerId.toString()}`, output);
+  localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
+  log('My addresses:', output);
+  localPeerMultiaddrs.forEach((addr) => log(`  - ${addr}`, output));
+
+  if (VITE_RELAY_MADDR) {
+    try {
+      relayPeerIdStr = multiaddr(VITE_RELAY_MADDR).getPeerId();
+    } catch (e) {
+      log(
+        `Warning: Could not parse Peer ID from VITE_RELAY_MADDR: ${VITE_RELAY_MADDR}.`,
+        output,
+      );
+      console.warn('Error parsing relay PeerID:', e);
+    }
+  }
+
+  node.addEventListener('connection:open', async (event) => {
+    const connection = event.detail;
+    const remotePeerId = connection.remotePeer;
+    const remotePeerIdStr = remotePeerId.toString();
+    const remoteAddr = connection.remoteAddr.toString();
+    const targetOutput = isSenderMode ? outputSend : outputReceive;
+
+    let errorMessage = '';
+
+    log(
+      `Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`,
+      targetOutput,
+    );
+
+    activeConnections.set(remotePeerIdStr, connection);
+
+    if (remotePeerIdStr === relayPeerIdStr) {
+      log('INFO: Connection to the relay server confirmed.', targetOutput);
+      if (isSenderMode && !activePeerId) {
+        try {
+          const senderCircuitAddress = await getCircuitAddress(node);
+          log(
+            `Obtained listen address: ${senderCircuitAddress.toString()}`,
+            outputSend,
+          );
+          log(`Registering passphrase '${currentSenderPhrase}'...`, outputSend);
+
+          const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase`;
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+              Maddr: senderCircuitAddress.toString(),
+              Phrase: currentSenderPhrase,
+            }),
+            headers: { 'Content-type': 'application/json; charset=UTF-8' },
+          });
+
+          if (response.ok) {
+            log(
+              'Passphrase registered. Waiting for peer to connect...',
+              outputSend,
+            );
+          } else {
+            const errorText = `Failed to register passphrase. Status: ${response.status}. Error: ${await response.text()}`;
+            log(errorText, outputSend);
+            errorMessage = errorText;
+            isSenderMode = false;
+          }
+        } catch (err) {
+          const errorText = `Error during sender setup after relay connect: ${err.message}`;
+          log(errorText, outputSend);
+          errorMessage = errorText;
+          isSenderMode = false;
+        }
+      }
+      if (errorMessage != '') {
+        showErrorPopup(errorMessage);
+        errorMessage = '';
+      }
+      return;
+    }
+
+    if (!activePeerId || activePeerId.toString() !== remotePeerIdStr) {
+      log(
+        `Peer connected: ${remotePeerIdStr}. Old activePeerId: ${activePeerId?.toString()}`,
+        targetOutput,
+      );
+      activePeerId = remotePeerId;
+    } else {
+      log(
+        `Re-established or additional connection to existing peer: ${remotePeerIdStr}`,
+        targetOutput,
+      );
+    }
+
+    if (
+      isSenderMode &&
+      activePeerId &&
+      activePeerId.toString() === remotePeerIdStr &&
+      selectedFile &&
+      !fileTransferring
+    ) {
+      if (
+        remoteAddr.includes('/webrtc') &&
+        !remoteAddr.includes('/p2p-circuit')
+      ) {
+        log(
+          `Sender: Direct WebRTC connection to Peer ${activePeerId.toString()} active. Attempting file transfer.`,
+          outputSend,
+        );
+
+        try {
+          document.getElementById('fileInfoArea').style.display = 'none';
+          document.getElementById('loadingIndicator').style.display = 'block';
+
+          const stream = await node.dialProtocol(
+            activePeerId,
+            FILE_TRANSFER_PROTOCOL,
+            {
+              signal: AbortSignal.timeout(30000),
+            },
+          );
+
+          activeStream = stream;
+          log('File transfer stream opened to peer (via WebRTC).', outputSend);
+
+          log(
+            `Sending file '${selectedFile.name}' (${selectedFile.size} bytes)...`,
+            outputSend,
+          );
+
+          fileTransferring = true;
+
+          await sendFileToStream(stream, selectedFile);
+
+          log('File sent completely.', outputSend);
+          selectedFile = null;
+          activeStream = null;
+          fileTransferring = false;
+          isSenderMode = false;
+
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('completionMessage').style.display = 'block';
+        } catch (err) {
+          errorMessage = `File transfer failed: ${err.message}`;
+          log(errorMessage, outputSend);
+          activeStream = null;
+          fileTransferring = false;
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('errorMessage').style.display = 'block';
+        }
+      } else if (remoteAddr.includes('/p2p-circuit')) {
+        log(
+          `Sender: Relayed connection to Peer ${activePeerId.toString()} established (${remoteAddr}). Waiting for potential direct WebRTC upgrade before transferring.`,
+          outputSend,
+        );
+      } else {
+        log(
+          `Sender: Peer connection via other transport (${remoteAddr}). File transfer logic currently prioritizes direct WebRTC.`,
+          outputSend,
+        );
+      }
+    } else if (
+      isReceiverMode &&
+      activePeerId &&
+      activePeerId.toString() === remotePeerIdStr
+    ) {
+      log(
+        `Receiver: Connected to sender peer (${remoteAddr}). Waiting for incoming file stream.`,
+        outputReceive,
+      );
+    }
+
+    if (errorMessage != '') {
+      showErrorPopup(errorMessage);
+      errorMessage = '';
+    }
+  });
+
+  node.addEventListener('connection:close', (event) => {
+    const remotePeerIdStr = event.detail.remotePeer.toString();
+    const targetOutput = isSenderMode ? outputSend : outputReceive;
+    log(`Connection CLOSED with: ${remotePeerIdStr}`, targetOutput);
+
+    activeConnections.delete(remotePeerIdStr);
+  });
+
+  // node.addEventListener('self:peer:update', () => {
+  //   localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
+  // });
+
+  node.handle(FILE_TRANSFER_PROTOCOL, async ({ stream, connection }) => {
+    log(
+      `Incoming file transfer stream from ${connection.remotePeer.toString()}`,
+      outputReceive,
+    );
+
+    if (activeStream && activeStream !== stream) {
+      log(
+        'Warning: A new stream is replacing an existing activeStream in receiver.',
+        outputReceive,
+      );
+    }
+    activeStream = stream;
+    activePeerId = connection.remotePeer;
+
+    let receivedFileBuffer = [];
+    let fileNameFromHeader = 'downloaded_file';
+    let fileSizeFromHeader = 0;
+    let fileTypeFromHeader = 'application/octet-stream';
+    let headerReceived = false;
+    let receivedBytesTotal = 0;
+
+    try {
+      for await (const ualistChunk of activeStream.source) {
+        if (!ualistChunk || ualistChunk.length === 0) {
+          log('Received an empty or null chunk.', targetOutput);
+          continue;
+        }
+
+        const dataChunk = ualistChunk.subarray();
+
+        if (!headerReceived) {
+          let headerJsonString = '';
+          let bodyStartIndex = 0;
+
+          try {
+            const potentialHeaderText = new TextDecoder('utf-8', {
+              fatal: false,
+            }).decode(dataChunk);
+            const newlineIndex = potentialHeaderText.indexOf('\n');
+
+            if (newlineIndex !== -1) {
+              headerJsonString = potentialHeaderText.substring(0, newlineIndex);
+              const encodedHeaderWithNewlineLength = new TextEncoder().encode(
+                headerJsonString + '\n',
+              ).byteLength;
+              bodyStartIndex = encodedHeaderWithNewlineLength;
+
+              try {
+                const parsedHeaderObject = JSON.parse(headerJsonString);
+                fileNameFromHeader =
+                  parsedHeaderObject.name || fileNameFromHeader;
+                fileSizeFromHeader =
+                  parsedHeaderObject.size || fileSizeFromHeader;
+                fileTypeFromHeader =
+                  parsedHeaderObject.type || fileTypeFromHeader;
+
+                log(
+                  `Receiving file: ${fileNameFromHeader} (Size: ${fileSizeFromHeader} bytes, Type: ${fileTypeFromHeader})`,
+                  outputReceive,
+                );
+                headerReceived = true;
+              } catch (e) {
+                log(
+                  `Could not parse file header JSON: "${headerJsonString}". Error: ${e.message}. Treating chunk as data.`,
+                  outputReceive,
+                );
+                headerReceived = true;
+                bodyStartIndex = 0;
+              }
+            } else {
+              log(
+                'No newline for header in this chunk. Assuming no header or all data.',
+                outputReceive,
+              );
+              headerReceived = true;
+              bodyStartIndex = 0;
+            }
+          } catch (decodeError) {
+            log(
+              `Error decoding chunk for header: ${decodeError.message}. Treating as raw data.`,
+              outputReceive,
+            );
+            headerReceived = true;
+            bodyStartIndex = 0;
+          }
+
+          if (bodyStartIndex < dataChunk.byteLength) {
+            const actualBodyData = dataChunk.subarray(bodyStartIndex);
+            if (actualBodyData.length > 0) {
+              receivedFileBuffer.push(actualBodyData);
+              receivedBytesTotal += actualBodyData.length;
+              log(
+                `Received ${receivedBytesTotal} bytes (from first chunk's body)...`,
+                outputReceive,
+              );
+            }
+          }
+        } else {
+          receivedFileBuffer.push(dataChunk);
+          receivedBytesTotal += dataChunk.length;
+          log(
+            `Received ${receivedBytesTotal} bytes... (Expected: ${fileSizeFromHeader > 0 ? fileSizeFromHeader : 'N/A'})`,
+            outputReceive,
+          );
+        }
+      }
+
+      log(
+        `File stream source ended. Total bytes received in buffer: ${receivedBytesTotal}`,
+        outputReceive,
+      );
+
+      if (fileSizeFromHeader != receivedBytesTotal) {
+        showErrorPopup(
+          'File size mismatch, received ' +
+            (receivedBytesTotal / 1024 / 1024).toFixed(2) +
+            ' MB, expected ' +
+            (fileSizeFromHeader / 1024 / 1024).toFixed(2) +
+            ' MB.',
+        );
+        stream.close();
+        return;
+      }
+
+      if (receivedBytesTotal > 0) {
+        const completeFileBlob = new Blob(receivedFileBuffer, {
+          type: fileTypeFromHeader,
+        });
+
+        const downloadUrl = URL.createObjectURL(completeFileBlob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = fileNameFromHeader;
+        const fileSizeMb = `${(receivedBytesTotal / 1024 / 1024).toFixed(2)}`;
+        a.textContent = `Download ${fileSizeMb} MB)`;
+        a.style.display = 'hidden';
+
+        document.getElementById('receivingLoadingIndicator').style.display =
+          'none';
+        document.getElementById('receivedFileName').innerText =
+          fileNameFromHeader;
+        document.getElementById('receivedFileSize').innerText =
+          `${fileSizeMb} MB`;
+        document.getElementById('downloadReadyMessage').style.display = 'block';
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+      } else {
+        errorMessage =
+          'No data received in file buffer. Download will be empty.';
+        log(errorMessage, outputReceive);
+      }
+    } catch (err) {
+      errorMessage = `Error reading from file stream: ${err.message}`;
+      log(errorMessage, outputReceive);
+    } finally {
+      log('Closing incoming file stream processing.', outputReceive);
+      activeStream = null;
+      stream.close();
+    }
+  });
+
+  if (errorMessage != '') {
+    log(errorMessage);
+  }
+}
+
 function getCircuitAddress(libp2pNode, timeout = 30000) {
   return new Promise((resolve, reject) => {
     let timer;
@@ -156,7 +589,7 @@ async function getClosestStunServer() {
   }
 }
 
-async function sendFileToStream(stream, file, chunkSize = 1024 * 1024) {
+async function sendFileToStream(stream, file, chunkSize = 64 * 1024) {
   try {
     const header = JSON.stringify({
       name: file.name,
@@ -166,30 +599,85 @@ async function sendFileToStream(stream, file, chunkSize = 1024 * 1024) {
     const encodedHeader = new TextEncoder().encode(header + '\n');
 
     let bytesSent = 0;
+    let lastUpdateTime = Date.now();
+    let lastBytesSent = 0;
+    let currentDelay = 1;
+
+    const updateProgress = (bytes, totalBytes, forceUpdate = false) => {
+      const currentTime = Date.now();
+      const timeSinceLastUpdate = currentTime - lastUpdateTime;
+
+      if (!forceUpdate && timeSinceLastUpdate < 250) {
+        return;
+      }
+
+      const timeDiffSeconds = timeSinceLastUpdate / 1000;
+      const bytesDiff = bytes - lastBytesSent;
+
+      let mbitsPerSecond = 0;
+      if (timeDiffSeconds > 0 && bytesDiff > 0) {
+        const bytesPerSecond = bytesDiff / timeDiffSeconds;
+        mbitsPerSecond = (bytesPerSecond * 8) / (1024 * 1024);
+      }
+
+      const progressPercent = (bytes / totalBytes) * 100;
+      const sentMB = (bytes / (1024 * 1024)).toFixed(2);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(2);
+
+      log(
+        'Transfer progress: ' +
+          progressPercent.toFixed(2) +
+          '% (' +
+          sentMB +
+          ' MB / ' +
+          totalMB +
+          ' MB)',
+        outputSend,
+      );
+
+      updateTransferUI(progressPercent, sentMB, totalMB, mbitsPerSecond);
+
+      lastUpdateTime = currentTime;
+      lastBytesSent = bytes;
+    };
 
     async function* fileChunks() {
       yield new Uint8ArrayList(encodedHeader);
+      await new Promise((resolve) => setTimeout(resolve, 1));
 
       for (let offset = 0; offset < file.size; offset += chunkSize) {
+        const chunkStart = Date.now();
+
         const slice = file.slice(
           offset,
           Math.min(offset + chunkSize, file.size),
         );
         const chunk = new Uint8Array(await slice.arrayBuffer());
+
         yield new Uint8ArrayList(chunk);
 
-        bytesSent += chunk.length;
-        const progress = ((bytesSent / file.size) * 100).toFixed(1);
-        log(
-          `Progress: ${progress}% (${bytesSent}/${file.size} bytes)`,
-          outputSend,
+        const chunkWriteTime = Date.now() - chunkStart;
+        if (chunkWriteTime > 100) {
+          currentDelay = Math.min(currentDelay, 200);
+          log(
+            `Chunk write took ${chunkWriteTime}ms, increasing delay`,
+            outputSend,
+          );
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.floor(currentDelay)),
         );
+
+        bytesSent += chunk.length;
+        updateProgress(bytesSent, file.size);
       }
     }
 
     await stream.sink(fileChunks());
     await stream.close();
 
+    updateProgress(file.size, file.size, true);
     log('File sent completely.', outputSend);
     return true;
   } catch (error) {
@@ -203,431 +691,18 @@ async function sendFileToStream(stream, file, chunkSize = 1024 * 1024) {
   }
 }
 
-async function main() {
-  let errorMessage = '';
-  const closestStunServer = await getClosestStunServer().catch((err) => {
-    log('Could not fetch closest STUN server: ' + err.message, output);
-  });
-  const stunServer =
-    closestStunServer != undefined
-      ? `stun:${closestStunServer}`
-      : 'stun:l.google.com:19302';
+function updateTransferUI(progressPercent, sentMB, totalMB, mbps) {
+  const progressBar = document.getElementById('transferProgressBar');
+  const progressText = document.getElementById('transferProgressText');
+  const transferRate = document.getElementById('transferRate');
 
-  node = await createLibp2p({
-    addresses: {
-      listen: ['/p2p-circuit', '/webrtc'],
-    },
-    transports: [
-      webSockets({ filter: filters.all }),
-      webRTC({
-        rtcConfiguration: {
-          iceServers: [
-            {
-              urls: stunServer,
-            },
-            {
-              urls: 'turn:relay.smp46.me:3478?transport=udp',
-              username: 'ferryCaptain',
-              credential: 'i^YV13eTPOHdVzWm#2t5',
-            },
-            {
-              urls: 'turn:relay.smp46.me:3478?transport=tcp',
-              username: 'ferryCaptain',
-              credential: 'i^YV13eTPOHdVzWm#2t5',
-            },
-          ],
-        },
-      }),
-      circuitRelayTransport({
-        discoverRelays: 0,
-      }),
-    ],
-    connectionEncrypters: [noise()],
-    streamMuxers: [yamux()],
-    connectionGater: {
-      denyDialMultiaddr: () => false,
-    },
-    services: {
-      identify: identify(),
-      identifyPush: identifyPush(),
-      ping: ping(),
-    },
-    connectionManager: {
-      maxConnections: Infinity,
-      minConnections: 0,
-      pollInterval: 5000,
-    },
-  });
+  progressBar.style.width = `${progressPercent}%`;
+  progressText.textContent = `${sentMB} MB / ${totalMB} MB`;
 
-  await node.start();
-  log(`Node started with Peer ID: ${node.peerId.toString()}`, output);
-  localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
-  log('My addresses:', output);
-  localPeerMultiaddrs.forEach((addr) => log(`  - ${addr}`, output));
-
-  if (VITE_RELAY_MADDR) {
-    try {
-      relayPeerIdStr = multiaddr(VITE_RELAY_MADDR).getPeerId();
-    } catch (e) {
-      log(
-        `Warning: Could not parse Peer ID from VITE_RELAY_MADDR: ${VITE_RELAY_MADDR}.`,
-        output,
-      );
-      console.warn('Error parsing relay PeerID:', e);
-    }
-  }
-
-  node.addEventListener('connection:open', async (event) => {
-    const connection = event.detail;
-    const remotePeerId = connection.remotePeer;
-    const remotePeerIdStr = remotePeerId.toString();
-    const remoteAddr = connection.remoteAddr.toString();
-    const targetOutput = isSenderMode ? outputSend : outputReceive;
-
-    let errorMessage = '';
-
-    log(
-      `Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`,
-      targetOutput,
-    );
-
-    activeConnections.set(remotePeerIdStr, connection);
-
-    if (remotePeerIdStr === relayPeerIdStr) {
-      log('INFO: Connection to the relay server confirmed.', targetOutput);
-      if (isSenderMode && !activePeerId) {
-        try {
-          const senderCircuitAddress = await getCircuitAddress(node);
-          log(
-            `Obtained listen address: ${senderCircuitAddress.toString()}`,
-            outputSend,
-          );
-          log(`Registering passphrase '${currentSenderPhrase}'...`, outputSend);
-
-          const apiUrl = `${VITE_PHRASEBOOK_API_URL}/phrase`;
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-              Maddr: senderCircuitAddress.toString(),
-              Phrase: currentSenderPhrase,
-            }),
-            headers: { 'Content-type': 'application/json; charset=UTF-8' },
-          });
-
-          if (response.ok) {
-            log(
-              'Passphrase registered. Waiting for peer to connect...',
-              outputSend,
-            );
-          } else {
-            const errorText =
-              await `Failed to register passphrase. Status: ${response.status}. Error: ${await response.text()}`;
-            log(errorText, outputSend);
-            errorMessage = errorText;
-            isSenderMode = false;
-          }
-        } catch (err) {
-          const errorText = `Error during sender setup after relay connect: ${err.message}`;
-          log(errorText, outputSend);
-          errorMessage = errorText;
-          isSenderMode = false;
-        }
-      }
-      if (errorMessage != '') {
-        showErrorPopup(errorMessage);
-        errorMessage = '';
-      }
-      return;
-    }
-
-    if (!activePeerId || activePeerId.toString() !== remotePeerIdStr) {
-      log(
-        `Peer connected: ${remotePeerIdStr}. Old activePeerId: ${activePeerId?.toString()}`,
-        targetOutput,
-      );
-      activePeerId = remotePeerId;
-    } else {
-      log(
-        `Re-established or additional connection to existing peer: ${remotePeerIdStr}`,
-        targetOutput,
-      );
-    }
-
-    if (
-      isSenderMode &&
-      activePeerId &&
-      activePeerId.toString() === remotePeerIdStr &&
-      selectedFile &&
-      !fileTransferring
-    ) {
-      if (
-        remoteAddr.includes('/webrtc') &&
-        !remoteAddr.includes('/p2p-circuit')
-      ) {
-        log(
-          `Sender: Direct WebRTC connection to Peer ${activePeerId.toString()} active. Attempting file transfer.`,
-          outputSend,
-        );
-
-        try {
-          document.getElementById('fileInfoArea').style.display = 'none';
-          document.getElementById('loadingIndicator').style.display = 'block';
-
-          const rtt = await node.services.ping.ping(activePeerId);
-          log(
-            'Successfully pinged peer: ' +
-              activePeerId.toString() +
-              ' with RTT: ' +
-              rtt +
-              'ms',
-            targetOutput,
-          );
-
-          const stream = await node.dialProtocol(
-            activePeerId,
-            FILE_TRANSFER_PROTOCOL,
-            {
-              signal: AbortSignal.timeout(30000),
-            },
-          );
-
-          activeStream = stream;
-          log('File transfer stream opened to peer (via WebRTC).', outputSend);
-
-          log(
-            `Sending file '${selectedFile.name}' (${selectedFile.size} bytes)...`,
-            outputSend,
-          );
-
-          fileTransferring = true;
-
-          await sendFileToStream(stream, selectedFile);
-
-          log('File sent completely.', outputSend);
-          selectedFile = null;
-          activeStream = null;
-          fileTransferring = false;
-          isSenderMode = false;
-
-          document.getElementById('loadingIndicator').style.display = 'none';
-          document.getElementById('completionMessage').style.display = 'block';
-        } catch (err) {
-          errorMessage = `File transfer failed: ${err.message}`;
-          log(errorMessage, outputSend);
-          activeStream = null;
-          fileTransferring = false;
-          document.getElementById('loadingIndicator').style.display = 'none';
-          document.getElementById('errorMessage').style.display = 'block';
-        }
-      } else if (remoteAddr.includes('/p2p-circuit')) {
-        log(
-          `Sender: Relayed connection to Peer ${activePeerId.toString()} established (${remoteAddr}). Waiting for potential direct WebRTC upgrade before transferring.`,
-          outputSend,
-        );
-      } else {
-        log(
-          `Sender: Peer connection via other transport (${remoteAddr}). File transfer logic currently prioritizes direct WebRTC.`,
-          outputSend,
-        );
-      }
-    } else if (
-      isReceiverMode &&
-      activePeerId &&
-      activePeerId.toString() === remotePeerIdStr
-    ) {
-      log(
-        `Receiver: Connected to sender peer (${remoteAddr}). Waiting for incoming file stream.`,
-        outputReceive,
-      );
-    }
-
-    if (errorMessage != '') {
-      showErrorPopup(errorMessage);
-      errorMessage = '';
-    }
-  });
-
-  node.addEventListener('connection:close', (event) => {
-    const remotePeerIdStr = event.detail.remotePeer.toString();
-    const targetOutput = isSenderMode ? outputSend : outputReceive;
-    log(`Connection CLOSED with: ${remotePeerIdStr}`, targetOutput);
-
-    activeConnections.delete(remotePeerIdStr);
-
-    if (
-      activePeerId &&
-      remotePeerIdStr === activePeerId.toString() &&
-      !fileTransferring
-    ) {
-      log('Active peer connection closed.', targetOutput);
-      activePeerId = null;
-      activeStream = null;
-    } else if (remotePeerIdStr === relayPeerIdStr) {
-      log('Connection to relay closed.', targetOutput);
-    }
-  });
-
-  node.addEventListener('self:peer:update', () => {
-    localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
-  });
-
-  node.handle(FILE_TRANSFER_PROTOCOL, async ({ stream, connection }) => {
-    const targetOutput = outputReceive;
-
-    log(
-      `Incoming file transfer stream from ${connection.remotePeer.toString()}`,
-      targetOutput,
-    );
-
-    if (activeStream && activeStream !== stream) {
-      log(
-        'Warning: A new stream is replacing an existing activeStream in receiver.',
-        targetOutput,
-      );
-    }
-    activeStream = stream;
-    activePeerId = connection.remotePeer;
-
-    let receivedFileBuffer = [];
-    let fileNameFromHeader = 'downloaded_file';
-    let fileSizeFromHeader = 0;
-    let fileTypeFromHeader = 'application/octet-stream';
-    let headerReceived = false;
-    let receivedBytesTotal = 0;
-
-    try {
-      for await (const ualistChunk of activeStream.source) {
-        if (!ualistChunk || ualistChunk.length === 0) {
-          log('Received an empty or null chunk.', targetOutput);
-          continue;
-        }
-
-        const dataChunk = ualistChunk.subarray();
-
-        if (!headerReceived) {
-          let headerJsonString = '';
-          let bodyStartIndex = 0;
-
-          try {
-            const potentialHeaderText = new TextDecoder('utf-8', {
-              fatal: false,
-            }).decode(dataChunk);
-            const newlineIndex = potentialHeaderText.indexOf('\n');
-
-            if (newlineIndex !== -1) {
-              headerJsonString = potentialHeaderText.substring(0, newlineIndex);
-              const encodedHeaderWithNewlineLength = new TextEncoder().encode(
-                headerJsonString + '\n',
-              ).byteLength;
-              bodyStartIndex = encodedHeaderWithNewlineLength;
-
-              try {
-                const parsedHeaderObject = JSON.parse(headerJsonString);
-                fileNameFromHeader =
-                  parsedHeaderObject.name || fileNameFromHeader;
-                fileSizeFromHeader =
-                  parsedHeaderObject.size || fileSizeFromHeader;
-                fileTypeFromHeader =
-                  parsedHeaderObject.type || fileTypeFromHeader;
-
-                log(
-                  `Receiving file: ${fileNameFromHeader} (Size: ${fileSizeFromHeader} bytes, Type: ${fileTypeFromHeader})`,
-                  targetOutput,
-                );
-                headerReceived = true;
-              } catch (e) {
-                log(
-                  `Could not parse file header JSON: "${headerJsonString}". Error: ${e.message}. Treating chunk as data.`,
-                  targetOutput,
-                );
-                headerReceived = true;
-                bodyStartIndex = 0;
-              }
-            } else {
-              log(
-                'No newline for header in this chunk. Assuming no header or all data.',
-                targetOutput,
-              );
-              headerReceived = true;
-              bodyStartIndex = 0;
-            }
-          } catch (decodeError) {
-            log(
-              `Error decoding chunk for header: ${decodeError.message}. Treating as raw data.`,
-              targetOutput,
-            );
-            headerReceived = true;
-            bodyStartIndex = 0;
-          }
-
-          if (bodyStartIndex < dataChunk.byteLength) {
-            const actualBodyData = dataChunk.subarray(bodyStartIndex);
-            if (actualBodyData.length > 0) {
-              receivedFileBuffer.push(actualBodyData);
-              receivedBytesTotal += actualBodyData.length;
-              log(
-                `Received ${receivedBytesTotal} bytes (from first chunk's body)...`,
-                targetOutput,
-              );
-            }
-          }
-        } else {
-          receivedFileBuffer.push(dataChunk);
-          receivedBytesTotal += dataChunk.length;
-          log(
-            `Received ${receivedBytesTotal} bytes... (Expected: ${fileSizeFromHeader > 0 ? fileSizeFromHeader : 'N/A'})`,
-            targetOutput,
-          );
-        }
-      }
-
-      log(
-        `File stream source ended. Total bytes received in buffer: ${receivedBytesTotal}`,
-        targetOutput,
-      );
-
-      if (receivedBytesTotal > 0) {
-        const completeFileBlob = new Blob(receivedFileBuffer, {
-          type: fileTypeFromHeader,
-        });
-
-        const downloadUrl = URL.createObjectURL(completeFileBlob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = fileNameFromHeader;
-        const fileSizeMb = `${(receivedBytesTotal / 1024 / 1024).toFixed(2)}`;
-        a.textContent = `Download ${fileSizeMb} MB)`;
-        a.style.display = 'hidden';
-
-        document.getElementById('receivingLoadingIndicator').style.display =
-          'none';
-        document.getElementById('receivedFileName').innerText =
-          fileNameFromHeader;
-        document.getElementById('receivedFileSize').innerText =
-          `${fileSizeMb} MB`;
-        document.getElementById('downloadReadyMessage').style.display = 'block';
-
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
-      } else {
-        errorMessage =
-          'No data received in file buffer. Download will be empty.';
-        log(errorMessage, targetOutput);
-      }
-    } catch (err) {
-      errorMessage = `Error reading from file stream: ${err.message}`;
-      log(errorMessage, targetOutput);
-    } finally {
-      log('Closing incoming file stream processing.', targetOutput);
-      activeStream = null;
-    }
-  });
-
-  if (errorMessage != '') {
-    log(errorMessage);
+  if (progressPercent >= 100) {
+    transferRate.textContent = 'Complete';
+  } else {
+    transferRate.textContent = `${mbps.toFixed(2)} Mbps`;
   }
 }
 
@@ -841,18 +916,6 @@ main().catch((err) => {
   );
 });
 
-function getByteArray(file) {
-  return new Promise(function (resolve, reject) {
-    let fileReader = new FileReader();
-    fileReader.readAsArrayBuffer(file);
-    fileReader.onload = function (ev) {
-      const array = new Uint8Array(ev.target.result);
-      resolve(array);
-    };
-    fileReader.onerror = reject;
-  });
-}
-
 function showErrorPopup(message) {
   document.getElementById('errorMessageText').textContent = message;
   document.getElementById('errorWindow').classList.remove('hidden');
@@ -870,20 +933,4 @@ function goHome() {
   document.getElementById('goReceiveButton').style.display = 'flex';
 
   window.location.reload();
-}
-
-function goSend() {
-  document.getElementById('returnButton').style.display = 'flex';
-  document.getElementById('goSendButton').style.display = 'none';
-  document.getElementById('goReceiveButton').style.display = 'none';
-  document.getElementById('sendWindow').style.display = 'block';
-  document.getElementById('receiveWindow').style.display = 'none';
-}
-
-function goReceive() {
-  document.getElementById('returnButton').style.display = 'flex';
-  document.getElementById('goSendButton').style.display = 'none';
-  document.getElementById('goReceiveButton').style.display = 'none';
-  document.getElementById('receiveWindow').style.display = 'block';
-  document.getElementById('sendWindow').style.display = 'none';
 }
