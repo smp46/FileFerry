@@ -4,8 +4,8 @@
     <title>FileFerry</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module" crossorigin src="/staging/assets/index-G-OKIuVf.js"></script>
-    <link rel="stylesheet" crossorigin href="/staging/assets/index-BbpV_LsN.css">
+    <script type="module" crossorigin src="/staging/assets/index-CiyKQUT6.js"></script>
+    <link rel="stylesheet" crossorigin href="/staging/assets/index-BcwksVgQ.css">
   </head>
   <body class="overflow-x-hidden font-[Outfit]">
     <div
@@ -243,38 +243,38 @@
                       </div>
                     </div>
                   </div>
+
                   <div
                     id="loadingIndicator"
-                    class="hidden relative z-20 text-stone-700 space-y-3 sm:space-y-4 w-full text-center
-                      p-4 sm:p-6"
+                    class="hidden relative z-20 text-stone-700 space-y-4 w-full text-center p-4 sm:p-6"
                   >
-                    <div class="flex justify-center items-center mb-3">
-                      <svg
-                        class="animate-spin h-12 w-12 text-amber-700"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                    <div class="space-y-2">
+                      <p
+                        class="text-lg sm:text-xl font-semibold text-stone-800"
                       >
-                        <circle
-                          class="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          stroke-width="4"
-                        ></circle>
-                        <path
-                          class="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
+                        Transferring File...
+                      </p>
+
+                      <div
+                        class="w-full bg-stone-200 rounded-full h-3 overflow-hidden"
+                      >
+                        <div
+                          id="transferProgressBar"
+                          class="bg-amber-600 h-full rounded-full transition-all duration-300 ease-out"
+                          style="width: 0%"
+                        ></div>
+                      </div>
+
+                      <div
+                        class="flex justify-between items-center text-sm text-stone-600"
+                      >
+                        <span id="transferProgressText">0 MB / 0 MB</span>
+                        <span id="transferRate">0 Mbps</span>
+                      </div>
                     </div>
-                    <p class="text-lg sm:text-xl font-semibold text-stone-800">
-                      Navigating the Seas...
-                    </p>
+
                     <p class="text-xs sm:text-sm text-stone-600">
-                      Consulting the stars, this may take a moment!
+                      Navigating the digital seas...
                     </p>
                   </div>
                   <div
