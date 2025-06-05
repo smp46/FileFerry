@@ -303,10 +303,6 @@ async function main() {
     activeConnections.delete(remotePeerIdStr);
   });
 
-  // node.addEventListener('self:peer:update', () => {
-  //   localPeerMultiaddrs = node.getMultiaddrs().map((ma) => ma.toString());
-  // });
-
   node.handle(FILE_TRANSFER_PROTOCOL, async ({ stream, connection }) => {
     log(
       `Incoming file transfer stream from ${connection.remotePeer.toString()}`,
@@ -329,10 +325,52 @@ async function main() {
     let headerReceived = false;
     let receivedBytesTotal = 0;
 
+    let lastUpdateTime = Date.now();
+    let lastBytesReceived = 0;
+    const updateInterval = 250;
+
+    const updateProgress = (bytes, totalBytes, forceUpdate = false) => {
+      const currentTime = Date.now();
+      const timeSinceLastUpdate = currentTime - lastUpdateTime;
+
+      if (!forceUpdate && timeSinceLastUpdate < updateInterval) {
+        return;
+      }
+
+      const timeDiffSeconds = timeSinceLastUpdate / 1000;
+      const bytesDiff = bytes - lastBytesReceived;
+
+      let mbitsPerSecond = 0;
+      if (timeDiffSeconds > 0 && bytesDiff > 0) {
+        const bytesPerSecond = bytesDiff / timeDiffSeconds;
+        mbitsPerSecond = (bytesPerSecond * 8) / (1024 * 1024);
+      }
+
+      const progressPercent = totalBytes > 0 ? (bytes / totalBytes) * 100 : 0;
+      const receivedMB = (bytes / (1024 * 1024)).toFixed(2);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(2);
+
+      log(
+        'Receive progress: ' +
+          progressPercent.toFixed(2) +
+          '% (' +
+          receivedMB +
+          ' MB / ' +
+          totalMB +
+          ' MB)',
+        outputReceive,
+      );
+
+      updateTransferUI(progressPercent, receivedMB, totalMB, mbitsPerSecond);
+
+      lastUpdateTime = currentTime;
+      lastBytesReceived = bytes;
+    };
+
     try {
       for await (const ualistChunk of activeStream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
-          log('Received an empty or null chunk.', targetOutput);
+          log('Received an empty or null chunk.', outputReceive);
           continue;
         }
 
@@ -369,6 +407,11 @@ async function main() {
                   outputReceive,
                 );
                 headerReceived = true;
+
+                document.getElementById('receivedFileName').innerText =
+                  fileNameFromHeader;
+                document.getElementById('receivedFileSize').innerText =
+                  `${(fileSizeFromHeader / 1024 / 1024).toFixed(2)} MB`;
               } catch (e) {
                 log(
                   `Could not parse file header JSON: "${headerJsonString}". Error: ${e.message}. Treating chunk as data.`,
@@ -399,21 +442,17 @@ async function main() {
             if (actualBodyData.length > 0) {
               receivedFileBuffer.push(actualBodyData);
               receivedBytesTotal += actualBodyData.length;
-              log(
-                `Received ${receivedBytesTotal} bytes (from first chunk's body)...`,
-                outputReceive,
-              );
+              updateProgress(receivedBytesTotal, fileSizeFromHeader);
             }
           }
         } else {
           receivedFileBuffer.push(dataChunk);
           receivedBytesTotal += dataChunk.length;
-          log(
-            `Received ${receivedBytesTotal} bytes... (Expected: ${fileSizeFromHeader > 0 ? fileSizeFromHeader : 'N/A'})`,
-            outputReceive,
-          );
+          updateProgress(receivedBytesTotal, fileSizeFromHeader);
         }
       }
+
+      updateProgress(receivedBytesTotal, fileSizeFromHeader, true);
 
       log(
         `File stream source ended. Total bytes received in buffer: ${receivedBytesTotal}`,
@@ -447,10 +486,6 @@ async function main() {
 
         document.getElementById('receivingLoadingIndicator').style.display =
           'none';
-        document.getElementById('receivedFileName').innerText =
-          fileNameFromHeader;
-        document.getElementById('receivedFileSize').innerText =
-          `${fileSizeMb} MB`;
         document.getElementById('downloadReadyMessage').style.display = 'block';
 
         document.body.appendChild(a);
@@ -458,14 +493,18 @@ async function main() {
         document.body.removeChild(a);
 
         setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+
+        log('File received completely.', outputReceive);
       } else {
-        errorMessage =
+        const errorMessage =
           'No data received in file buffer. Download will be empty.';
         log(errorMessage, outputReceive);
+        showErrorPopup(errorMessage);
       }
     } catch (err) {
-      errorMessage = `Error reading from file stream: ${err.message}`;
+      const errorMessage = `Error reading from file stream: ${err.message}`;
       log(errorMessage, outputReceive);
+      showErrorPopup(errorMessage);
     } finally {
       log('Closing incoming file stream processing.', outputReceive);
       activeStream = null;
@@ -692,9 +731,19 @@ async function sendFileToStream(stream, file, chunkSize = 64 * 1024) {
 }
 
 function updateTransferUI(progressPercent, sentMB, totalMB, mbps) {
-  const progressBar = document.getElementById('transferProgressBar');
-  const progressText = document.getElementById('transferProgressText');
-  const transferRate = document.getElementById('transferRate');
+  let progressBar;
+  let progressText;
+  let transferRate;
+
+  if (isSenderMode) {
+    progressBar = document.getElementById('sendProgressBar');
+    progressText = document.getElementById('sendProgressText');
+    transferRate = document.getElementById('sendRate');
+  } else {
+    progressBar = document.getElementById('receiveProgressBar');
+    progressText = document.getElementById('receiveProgressText');
+    transferRate = document.getElementById('receiveRate');
+  }
 
   progressBar.style.width = `${progressPercent}%`;
   progressText.textContent = `${sentMB} MB / ${totalMB} MB`;
