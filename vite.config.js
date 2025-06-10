@@ -20,5 +20,14 @@ export default defineConfig(({ mode }) => {
     },
 
     base: isStaging ? '/staging/' : '/',
+    resolve: {
+      alias: {
+        '@': '/src',
+        '@core': '/src/core',
+        '@services': '/src/services',
+        '@ui': '/src/ui',
+        '@utils': '/src/utils',
+      },
+    },
   };
 });

@@ -1,0 +1,230 @@
+import { Uint8ArrayList } from 'uint8arraylist';
+
+export class FileTransferManager {
+  constructor(node, appState, progressTracker, errorHandler) {
+    this.node = node;
+    this.appState = appState;
+    this.progressTracker = progressTracker;
+    this.errorHandler = errorHandler;
+    this.protocol = '/fileferry/filetransfer/1.0.0';
+  }
+
+  setupFileTransferProtocol() {
+    this.node.handle(this.protocol, async ({ stream, connection }) => {
+      await this.handleFileTransfer(stream, connection);
+    });
+  }
+
+  async handleFileTransfer(stream, connection) {
+    try {
+      this.appState.setActiveStream(stream);
+      this.appState.setActivePeer(connection.remotePeer);
+
+      await this.pauseServices();
+      await this.receiveFileFromStream(stream);
+    } catch (error) {
+      this.errorHandler.handleTransferError(error, { direction: 'receive' });
+    } finally {
+      await this.resumeServices();
+      this.appState.setActiveStream(null);
+    }
+  }
+
+  async sendFileToStream(stream, file, chunkSize = 1024 * 64) {
+    try {
+      const header = this.createFileHeader(file);
+      const encodedHeader = new TextEncoder().encode(header + '\n');
+
+      let bytesSent = 0;
+      const channel = stream.channel;
+      const threshold = channnel.bufferedAmountLowThreshold || 1024 * 64;
+
+      async function* fileChunks() {
+        yield new Uint8ArrayList(encodedHeader);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+
+        for (let offset = 0; offset < file.size; offset += chunkSize) {
+          const slice = file.slice(
+            offset,
+            Math.min(offset + chunkSize, file.size),
+          );
+          const chunk = new Uint8Array(await slice.arrayBuffer());
+
+          yield new Uint8ArrayList(chunk);
+
+          if (channel.bufferedAmount > threshold) {
+            await new Promise((resolve) => {
+              channel.addEventListener('bufferedamountlow', resolve, {
+                once: true,
+              });
+            });
+          }
+
+          bytesSent += chunk.length;
+          updateProgress(bytesSent, file.size);
+        }
+      }
+
+      await stream.sink(fileChunks().call(this));
+      await stream.close();
+
+      return true;
+    } catch (error) {
+      await this.abortTransfer(error);
+      throw error;
+    }
+  }
+
+  createFileHeader(file) {
+    return JSON.stringify({
+      name: file.name,
+      size: file.size,
+      type: file.type || 'application/octet-stream',
+    });
+  }
+
+  async *streamFileChunks(stream) {
+    let receivedFileBuffer = [];
+    let fileNameFromHeader = 'downloaded_file';
+    let fileSizeFromHeader = 0;
+    let fileTypeFromHeader = 'application/octet-stream';
+    let headerReceived = false;
+    let receivedBytesTotal = 0;
+
+    try {
+      for await (const ualistChunk of activeStream.source) {
+        if (!ualistChunk || ualistChunk.length === 0) {
+          continue;
+        }
+
+        const dataChunk = ualistChunk.subarray();
+
+        if (!headerReceived) {
+          const headerResult = this.parseFileHeader(dataChunk);
+          if (headerResult.header) {
+            fileNameFromHeader = headerResult.header.name || fileNameFromHeader;
+            fileSizeFromHeader = headerResult.header.size || fileSizeFromHeader;
+            fileTypeFromHeader = headerResult.header.type || fileTypeFromHeader;
+            headerReceived = true;
+          }
+
+          if (headerResult.bodyData && headerResult.bodyData.length > 0) {
+            receivedFileBuffer.push(headerResult.bodyData);
+            receivedBytesTotal += headerResult.bodyData.length;
+            this.updateReceiverProgress(receivedBytesTotal, fileSizeFromHeader);
+          }
+        } else {
+          receivedFileBuffer.push(dataChunk);
+          receivedBytesTotal += dataChunk.length;
+          this.updateReceiverProgress(receivedBytesTotal, fileSizeFromHeader);
+        }
+
+        if (receivedBytesTotal == fileSizeFromHeader) {
+          await this.appState.saveReceivedFile(
+            receivedFileBuffer,
+            fileNameFromHeader,
+            fileTypeFromHeader,
+          );
+        }
+      }
+    } catch (error) {
+      this.errorHandler.handleTransferError(error, { direction: 'receive' });
+      throw error;
+    }
+  }
+
+  parseFileHeader(dataChunk) {
+    try {
+      const potentialHeaderText = new TextDecoder('utf-8', {
+        fatal: false,
+      }).decode(dataChunk);
+      const newlineIndex = potentialHeaderText.indexOf('\n');
+
+      if (newlineIndex !== -1) {
+        const headerJsonString = potentialHeaderText.substring(0, newlineIndex);
+        const encodedHeaderWithLength = new TextEncoder().encode(
+          headerJsonString + '\n',
+        ).byteLength;
+        const bodyStartIndex = encodedHeaderWithLength;
+
+        try {
+          const parsedHeaderObject = JSON.parse(headerJsonString);
+          const bodyData =
+            bodyStartIndex < dataChunk.byteLength
+              ? dataChunk.subarray(bodyStartIndex)
+              : null;
+
+          return { header: parsedHeaderObject, bodyData };
+        } catch (e) {
+          return { header: null, bodyData: dataChunk };
+        }
+      }
+
+      return { header: null, bodyData: dataChunk };
+    } catch (error) {
+      return { header: null, bodyData: dataChunk };
+    }
+  }
+
+  async saveReceivedFile(buffer, filename, type) {
+    const completeFileBlob = new Blob(buffer, { type });
+    const downloadLink = URL.createObjectURL(completeFileBlob);
+
+    const a = document.createElement('a');
+    a.href = downloadLink;
+    a.download = filename;
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(downloadLink);
+    }, 100);
+  }
+
+  updateSendProgress(bytes, total) {
+    this.progressTracker.updateProgress(bytes, total, 'send');
+  }
+
+  updateReceiverProgress(bytes, total) {
+    this.progressTracker.updateProgress(bytes, total, 'receive');
+  }
+
+  async closeActiveStream() {
+    const activeStream = this.appState.getActiveStream();
+    if (stream) {
+      await activeStream.close();
+      this.appState.setActiveStream(null);
+    }
+  }
+
+  async abortTransfer(reason) {
+    const activeStream = this.appState.getActiveStream();
+    if (activeStream) {
+      try {
+        await activeStream.abort(reason);
+      } catch (abortError) {
+        console.error('Failed to abort stream:', abortError);
+      }
+      this.appState.setActiveStream(null);
+    }
+  }
+
+  async pauseServices() {
+    const pingService = this.node.services.ping;
+    const identifyService = this.node.services.identifyPush;
+
+    await pingService.stop();
+    await identifyService.stop();
+  }
+
+  async resumeServices() {
+    const pingService = this.node.services.ping;
+    const identifyService = this.node.services.identifyPush;
+
+    await pingService.start();
+    await identifyService.start();
+  }
+}
