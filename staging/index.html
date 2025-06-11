@@ -4,7 +4,7 @@
     <title>FileFerry</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module" crossorigin src="/staging/assets/index-Dlh_Z_Ap.js"></script>
+    <script type="module" crossorigin src="/staging/assets/index-Dhjru-5E.js"></script>
     <link rel="stylesheet" crossorigin href="/staging/assets/index-ceBGdLGJ.css">
   </head>
   <body class="overflow-x-hidden font-[Outfit]">
@@ -245,7 +245,7 @@
                   </div>
 
                   <div
-                    id="loadingIndicator"
+                    id="sendInProgress"
                     class="hidden relative z-20 text-stone-700 space-y-4 w-full text-center p-4 sm:p-6"
                   >
                     <div class="space-y-2">
@@ -278,7 +278,7 @@
                     </p>
                   </div>
                   <div
-                    id="completionMessage"
+                    id="sendComplete"
                     class="hidden relative z-20 text-green-700 space-y-3 sm:space-y-4 w-full text-center
                       p-4 sm:p-6"
                   >
@@ -310,7 +310,7 @@
                     </div>
                   </div>
                   <div
-                    id="errorMessage"
+                    id="sendErrorMessage"
                     class="hidden relative z-20 text-red-700 space-y-3 sm:space-y-4 w-full text-center p-4
                       sm:p-6 bg-red-100/70 rounded border border-red-600/60"
                   >
@@ -426,7 +426,7 @@
                 </div>
 
                 <div
-                  id="downloadReadyMessage"
+                  id="receiveComplete"
                   class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-left p-3 sm:p-4 md:p-6
                     bg-teal-700/50 rounded-lg shadow-inner border border-teal-600/70"
                 >
@@ -531,7 +531,7 @@
                 </div>
 
                 <div
-                  id="receivingLoadingIndicator"
+                  id="receiveInProgress"
                   class="hidden text-teal-100 space-y-3 sm:space-y-4 w-full text-center p-4 sm:p-6"
                 >
                   <div class="space-y-2">
@@ -622,7 +622,6 @@
             >
               <button
                 id="goSendButton"
-                onclick="goSend()"
                 class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
                   sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md
                   text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
@@ -631,7 +630,6 @@
               </button>
               <button
                 id="goReceiveButton"
-                onclick="goReceive()"
                 class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
                   sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md
                   text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
@@ -639,8 +637,7 @@
                 <span class="text-lg sm:text-xl">📦</span> Receive
               </button>
               <button
-                id="returnButton"
-                onclick="goHome()"
+                id="goBackButton"
                 class="hidden w-full bg-green-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6
                   rounded-lg sm:rounded-xl font-semibold hover:bg-green-800 transition-colors
                   shadow-md text-sm sm:text-base md:text-lg flex items-center justify-center gap-1
@@ -824,32 +821,6 @@
     <script>
       if (window.location.href.includes('staging')) {
         document.getElementById('title').innerText = 'Staging';
-      }
-
-      function goHome() {
-        document.getElementById('sendWindow').style.display = 'none';
-        document.getElementById('receiveWindow').style.display = 'none';
-        document.getElementById('returnButton').style.display = 'none';
-        document.getElementById('goSendButton').style.display = 'flex';
-        document.getElementById('goReceiveButton').style.display = 'flex';
-
-        window.location.reload();
-      }
-
-      function goSend() {
-        document.getElementById('returnButton').style.display = 'flex';
-        document.getElementById('goSendButton').style.display = 'none';
-        document.getElementById('goReceiveButton').style.display = 'none';
-        document.getElementById('sendWindow').style.display = 'block';
-        document.getElementById('receiveWindow').style.display = 'none';
-      }
-
-      function goReceive() {
-        document.getElementById('returnButton').style.display = 'flex';
-        document.getElementById('goSendButton').style.display = 'none';
-        document.getElementById('goReceiveButton').style.display = 'none';
-        document.getElementById('receiveWindow').style.display = 'block';
-        document.getElementById('sendWindow').style.display = 'none';
       }
     </script>
   </body>
