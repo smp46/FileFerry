@@ -73,49 +73,74 @@ class FileFerryApp {
                 credential: 'i^YV13eTPOHdVzWm#2t5',
               },
             ],
+            iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require',
           },
-          dataChannel: {
-            bufferedAmountLowThreshold: 1024 * 1024,
-            maxMessageSize: 256 * 1024,
-            maxBufferedAmount: 16 * 1024 * 1024,
+          initiatorOptions: {
+            offerTimeout: 30000,
+            answerTimeout: 30000,
+          },
+          dataChannelOptions: {
             ordered: true,
-            protocol: 'file-transfer',
+            maxRetransmits: 10,
           },
         }),
         circuitRelayTransport({
           discoverRelays: 0,
           reservationConcurrency: 1,
+          maxReservations: 1,
+          connectionGater: {
+            denyInboundRelayedConnection: () => false,
+            denyOutboundRelayedConnection: () => false,
+          },
         }),
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [
         yamux({
-          maxStreamWindowSize: 1024 * 1024 * 2,
-          maxMessageSize: 1024 * 1024,
+          maxStreamWindowSize: 1024 * 1024 * 4,
+          maxMessageSize: 1024 * 1024 * 2,
+          keepAliveInterval: 30000,
+          maxInboundStreams: 512,
+          maxOutboundStreams: 512,
+          streamWindowUpdateThreshold: 1024 * 256,
+          closeTimeout: 0,
+          streamCloseTimeout: 60000,
         }),
       ],
+
       connectionGater: {
         denyDialMultiaddr: () => false,
       },
       services: {
-        identify: identify(),
-        identifyPush: identifyPush(),
-        ping: ping({
-          protocolPrefix: 'ipfs',
-          maxInboundStreams: 1,
-          maxOutboundStreams: 1,
+        identify: identify({
+          timeout: 30000,
+          maxInboundStreams: 64,
+          maxOutboundStreams: 64,
           runOnTransientConnection: false,
+        }),
+        identifyPush: identifyPush({
+          runOnTransientConnection: false,
+        }),
+        ping: ping({
+          maxInboundStreams: 32,
+          maxOutboundStreams: 32,
           timeout: 30000,
         }),
       },
       connectionManager: {
-        minConnections: 0,
+        minConnections: 1,
         pollInterval: 30000,
         inboundConnectionThreshold: 5,
-        maxIncomingPendingConnections: 5,
+        maxIncomingPendingConnections: 10,
         autoDialInterval: 0,
         maxParallelDials: 10,
-        dialTimeout: 30000,
+        dialTimeout: 60000,
+        maxConnections: 100,
+        autoDial: false,
+        maxDialsPerPeer: 3,
+        connectTimeout: 60000,
       },
     });
 
@@ -134,17 +159,19 @@ class FileFerryApp {
     this.managers.progress = new ProgressTracker();
 
     // Create core managers
-    this.managers.connection = new ConnectionManager(
-      this.node,
-      this.appState,
-      this.managers.error,
-    );
-
     this.managers.fileTransfer = new FileTransferManager(
       this.node,
       this.appState,
       this.managers.progress,
       this.managers.error,
+    );
+
+    this.managers.connection = new ConnectionManager(
+      this.node,
+      this.appState,
+      this.managers.error,
+      this.config,
+      this.managers.fileTransfer,
     );
 
     this.managers.relay = new RelayManager(
@@ -168,10 +195,6 @@ class FileFerryApp {
     this.managers.ui.onPhraseEntered = this.handlePhraseEntered.bind(this);
     this.managers.ui.onReceiveModeRequested =
       this.handleReceiveModeRequested.bind(this);
-
-    // Override progress callbacks
-    this.managers.progress.onProgressUpdate =
-      this.handleProgressUpdate.bind(this);
   }
 
   setupEventListeners() {
@@ -226,10 +249,6 @@ class FileFerryApp {
     this.managers.ui.showReceiverMode();
   }
 
-  handleProgressUpdate(progress, direction) {
-    this.managers.ui.showFileProgress(progress);
-  }
-
   async startSenderMode(file) {
     try {
       this.appState.setSelectedFile(file);
@@ -248,7 +267,6 @@ class FileFerryApp {
       }
 
       // Connect to relay
-      console.log('Connecting to relay...');
       await this.managers.relay.connectToRelay(this.config.getRelayAddress());
 
       // Wait for relay to be ready
@@ -260,7 +278,6 @@ class FileFerryApp {
 
       // Get circuit address
       const circuitAddress = await this.managers.relay.waitForRelayAddress();
-      console.log(`Circuit address: ${circuitAddress.toString()}`);
 
       // Register phrase
       console.log('Registering phrase...');
@@ -287,12 +304,42 @@ class FileFerryApp {
       throw new Error('No address found for phrase');
     }
 
+    // Connect to relay first
+    await this.managers.relay.connectToRelay(this.config.getRelayAddress());
+
+    // Wait for relay to be ready
+    console.log('Waiting for relay to be ready...');
+    const canUseRelay = await this.managers.relay.canUseRelay();
+    if (!canUseRelay) {
+      throw new Error('Relay is not ready for use');
+    }
+
+    // Wait for circuit address
+    await this.managers.relay.waitForRelayAddress();
+
     const peerMultiaddr = multiaddr(addressData.maddr);
 
-    // Connect to sender
-    await this.managers.connection.dialPeer(peerMultiaddr);
+    const connection = await this.managers.connection.dialPeer(peerMultiaddr, {
+      signal: AbortSignal.timeout(60000),
+    });
 
     console.log(`Connected to sender via phrase: ${phrase}`);
+
+    this.appState.setActivePeer(connection.remotePeer.toString());
+
+    const checkWebRTC = setInterval(() => {
+      const connections = this.node.getConnections(connection.remotePeer);
+      const webrtcConn = connections.find((c) =>
+        c.remoteAddr.toString().includes('/webrtc'),
+      );
+
+      if (webrtcConn && webrtcConn.status === 'open') {
+        clearInterval(checkWebRTC);
+        console.log(
+          'WebRTC connection established, circuit can now be closed safely',
+        );
+      }
+    }, 1000);
   }
 
   async start() {
@@ -313,6 +360,7 @@ class FileFerryApp {
   }
 }
 
+// debugger;
 const app = new FileFerryApp();
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -28,14 +28,22 @@ export class AppState {
 
   // Connection tracking
   addConnection(peerId, connection) {
-    this.connections.set(peerId.toString(), connection);
+    const connectionsMap = this.connections.get(peerId.toString()) || new Map();
+    connectionsMap.set(connection.id, connection);
+    this.connections.set(peerId.toString(), connectionsMap);
   }
 
-  removeConnection(peerId) {
+  removeConnection(peerId, id) {
+    const connectionsMap = this.connections.get(peerId.toString());
+    connectionsMap?.delete(id);
+    this.connections.set(peerId.toString(), connectionsMap);
+  }
+
+  removeALlConnectionsWithPeer(peerId) {
     this.connections.delete(peerId.toString());
   }
 
-  getConnection(peerId) {
+  getConnectionsForPeer(peerId) {
     return this.connections.get(peerId.toString());
   }
 

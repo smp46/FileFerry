@@ -13,7 +13,6 @@ export class ConfigManager {
       transfer: {
         chunkSize: 256 * 256,
         protocol: '/fileferry/filetransfer/1.0.0',
-        maxFileSize: 1024 * 1024 * 1024, // 1GB
       },
       stun: {
         fallback: 'stun:l.google.com:19302',

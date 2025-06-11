@@ -80,9 +80,15 @@ export class RelayManager {
       return false;
     }
 
-    const connection = this.appState.getConnection(this.relayPeerId.toString());
-    const isConnected =
-      connection !== undefined && connection.status === 'open';
+    const connectionsMap = this.appState.getConnectionsForPeer(
+      this.relayPeerId.toString(),
+    );
+    let isConnected = false;
+    for (const [_, connection] of connectionsMap) {
+      if (connection !== undefined && connection.status === 'open') {
+        isConnected = true;
+      }
+    }
 
     console.log(
       `Relay connection status: ${isConnected ? 'connected' : 'disconnected'}`,
@@ -95,10 +101,6 @@ export class RelayManager {
     const circuitAddr = multiaddrs.find((ma) =>
       ma.toString().includes('/p2p-circuit'),
     );
-
-    if (circuitAddr) {
-      console.log(`Found circuit address: ${circuitAddr.toString()}`);
-    }
 
     return circuitAddr;
   }
@@ -137,13 +139,15 @@ export class RelayManager {
       console.log('Releasing relay reservation...');
 
       if (this.relayPeerId) {
-        const connection = this.appState.getConnection(
-          this.relayPeerId.toString(),
-        );
-        if (connection && connection.status === 'open') {
-          await connection.close();
-          console.log('Relay connection closed');
+        const connections = getConnectionsForPeer(this.relayPeerId.toString());
+        for (const [_, connection] of connections) {
+          if (connection && connection.status === 'open') {
+            await connection.close();
+            console.log('Relay connection closed');
+          }
         }
+
+        this.appState.removeAllConnectionsWithPeer(this.relayPeerId.toString());
       }
 
       this.reservationStatus = null;

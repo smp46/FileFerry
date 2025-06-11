@@ -1,4 +1,5 @@
 import { Uint8ArrayList } from 'uint8arraylist';
+import { pipe } from 'it-pipe';
 
 export class FileTransferManager {
   constructor(node, appState, progressTracker, errorHandler) {
@@ -15,17 +16,32 @@ export class FileTransferManager {
     });
   }
 
+  async startFileTransfer() {
+    try {
+      this.appState.setActiveTransfer(true);
+      this.sendFileToStream(
+        this.appState.getActiveStream(),
+        this.appState.getSelectedFile(),
+      );
+      this.appState.clearActiveTransfer();
+    } catch (error) {
+      this.errorHandler.handleTransferError(error, { direction: 'send' });
+    }
+  }
+
   async handleFileTransfer(stream, connection) {
     try {
+      console.log(
+        'Incoming file transfer from:',
+        connection.remotePeer.toString(),
+      );
       this.appState.setActiveStream(stream);
       this.appState.setActivePeer(connection.remotePeer);
 
-      await this.pauseServices();
       await this.receiveFileFromStream(stream);
     } catch (error) {
       this.errorHandler.handleTransferError(error, { direction: 'receive' });
     } finally {
-      await this.resumeServices();
       this.appState.setActiveStream(null);
     }
   }
@@ -37,9 +53,9 @@ export class FileTransferManager {
 
       let bytesSent = 0;
       const channel = stream.channel;
-      const threshold = channnel.bufferedAmountLowThreshold || 1024 * 64;
+      const threshold = channel.bufferedAmountLowThreshold || 1024 * 64;
 
-      async function* fileChunks() {
+      const fileChunks = async function* () {
         yield new Uint8ArrayList(encodedHeader);
         await new Promise((resolve) => setTimeout(resolve, 1));
 
@@ -61,14 +77,12 @@ export class FileTransferManager {
           }
 
           bytesSent += chunk.length;
-          updateProgress(bytesSent, file.size);
+          this.progressTracker.updateProgress(bytesSent, file.size, 'send');
         }
-      }
+      }.bind(this);
 
-      await stream.sink(fileChunks().call(this));
-      await stream.close();
-
-      return true;
+      await pipe(fileChunks(), stream.sink);
+      this.progressTracker.updateProgress(bytesSent, file.size, 'send', true);
     } catch (error) {
       await this.abortTransfer(error);
       throw error;
@@ -83,7 +97,7 @@ export class FileTransferManager {
     });
   }
 
-  async *streamFileChunks(stream) {
+  async receiveFileFromStream(stream) {
     let receivedFileBuffer = [];
     let fileNameFromHeader = 'downloaded_file';
     let fileSizeFromHeader = 0;
@@ -92,7 +106,7 @@ export class FileTransferManager {
     let receivedBytesTotal = 0;
 
     try {
-      for await (const ualistChunk of activeStream.source) {
+      for await (const ualistChunk of stream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
           continue;
         }
@@ -106,28 +120,50 @@ export class FileTransferManager {
             fileSizeFromHeader = headerResult.header.size || fileSizeFromHeader;
             fileTypeFromHeader = headerResult.header.type || fileTypeFromHeader;
             headerReceived = true;
+            console.log(
+              `Receiving file: ${fileNameFromHeader} (${fileSizeFromHeader} bytes)`,
+            );
           }
 
           if (headerResult.bodyData && headerResult.bodyData.length > 0) {
             receivedFileBuffer.push(headerResult.bodyData);
             receivedBytesTotal += headerResult.bodyData.length;
-            this.updateReceiverProgress(receivedBytesTotal, fileSizeFromHeader);
+            this.progressTracker.updateProgress(
+              receivedBytesTotal,
+              fileSizeFromHeader,
+              'receive',
+            );
           }
         } else {
           receivedFileBuffer.push(dataChunk);
           receivedBytesTotal += dataChunk.length;
-          this.updateReceiverProgress(receivedBytesTotal, fileSizeFromHeader);
+          this.progressTracker.updateProgress(
+            receivedBytesTotal,
+            fileSizeFromHeader,
+            'receive',
+          );
         }
 
-        if (receivedBytesTotal == fileSizeFromHeader) {
-          await this.appState.saveReceivedFile(
+        if (
+          receivedBytesTotal >= fileSizeFromHeader &&
+          fileSizeFromHeader > 0
+        ) {
+          this.progressTracker.updateProgress(
+            receivedBytesTotal,
+            fileSizeFromHeader,
+            'receive',
+            true,
+          );
+          await this.saveReceivedFile(
             receivedFileBuffer,
             fileNameFromHeader,
             fileTypeFromHeader,
           );
+          break;
         }
       }
     } catch (error) {
+      console.error('Error receiving file:', error);
       this.errorHandler.handleTransferError(error, { direction: 'receive' });
       throw error;
     }
@@ -184,14 +220,6 @@ export class FileTransferManager {
     }, 100);
   }
 
-  updateSendProgress(bytes, total) {
-    this.progressTracker.updateProgress(bytes, total, 'send');
-  }
-
-  updateReceiverProgress(bytes, total) {
-    this.progressTracker.updateProgress(bytes, total, 'receive');
-  }
-
   async closeActiveStream() {
     const activeStream = this.appState.getActiveStream();
     if (stream) {
@@ -210,21 +238,5 @@ export class FileTransferManager {
       }
       this.appState.setActiveStream(null);
     }
-  }
-
-  async pauseServices() {
-    const pingService = this.node.services.ping;
-    const identifyService = this.node.services.identifyPush;
-
-    await pingService.stop();
-    await identifyService.stop();
-  }
-
-  async resumeServices() {
-    const pingService = this.node.services.ping;
-    const identifyService = this.node.services.identifyPush;
-
-    await pingService.start();
-    await identifyService.start();
   }
 }

@@ -1,105 +1,76 @@
 export class ProgressTracker {
   constructor() {
-    this.startTime = null;
     this.lastUpdateTime = 0;
     this.lastBytes = 0;
     this.updateInterval = 250; // ms
   }
 
-  // Progress calculation
-  calculateProgress(current, total) {
-    return total > 0 ? (current / total) * 100 : 0;
-  }
-
-  calculateTransferRate(bytes, timeElapsed) {
-    if (timeElapsed <= 0) return 0;
-
-    const timeDiffSeconds = timeElapsed / 1000;
-    const bytesDiff = bytes - this.lastBytes;
-
-    if (bytesDiff <= 0) return 0;
-
-    const bytesPerSecond = bytesDiff / timeDiffSeconds;
-    return (bytesPerSecond * 8) / (1024 * 1024); // Convert to Mbps
-  }
-
-  formatBytes(bytes) {
-    return (bytes / (1024 * 1024)).toFixed(2);
-  }
-
-  formatRate(bytesPerSecond) {
-    const mbps = (bytesPerSecond * 8) / (1024 * 1024);
-    return mbps.toFixed(2);
-  }
-
-  // Progress display
-  updateProgress(current, total, direction) {
+  updateProgress(bytes, totalBytes, mode, forceUpdate = false) {
     const currentTime = Date.now();
+    const timeSinceLastUpdate = currentTime - this.lastUpdateTime;
 
-    if (!this.shouldUpdateDisplay(currentTime)) {
+    if (!forceUpdate && timeSinceLastUpdate < this.updateInterval) {
       return;
     }
 
-    const percentage = this.calculateProgress(current, total);
-    const timeElapsed = currentTime - this.lastUpdateTime;
-    const rate = this.calculateTransferRate(current, timeElapsed);
+    const timeDiffSeconds = timeSinceLastUpdate / 1000;
+    const bytesDiff = bytes - this.lastBytes;
 
-    const progress = {
-      percentage,
-      current: this.formatBytes(current),
-      total: this.formatBytes(total),
-      rate: rate.toFixed(2),
-    };
+    let mbitsPerSecond = 0;
+    if (timeDiffSeconds > 0 && bytesDiff > 0) {
+      const bytesPerSecond = bytesDiff / timeDiffSeconds;
+      mbitsPerSecond = (bytesPerSecond * 8) / (1024 * 1024);
+    }
 
-    this.onProgressUpdate(progress, direction);
+    const progressPercent = totalBytes > 0 ? (bytes / totalBytes) * 100 : 0;
+    const receivedMB = (bytes / (1024 * 1024)).toFixed(2);
+    const totalMB = (totalBytes / (1024 * 1024)).toFixed(2);
+
+    console.log(
+      'Receive progress: ' +
+        progressPercent.toFixed(2) +
+        '% (' +
+        receivedMB +
+        ' MB / ' +
+        totalMB +
+        ' MB)',
+    );
+
+    this.updateTransferUI(
+      progressPercent,
+      receivedMB,
+      totalMB,
+      mbitsPerSecond,
+      mode,
+    );
 
     this.lastUpdateTime = currentTime;
-    this.lastBytes = current;
+    this.lastBytes = bytes;
   }
 
-  updateProgressBar(percentage) {
-    // Implementation depends on UI framework
-  }
+  // Progress display
+  updateTransferUI(progressPercent, sentMB, totalMB, mbps, mode) {
+    let progressBar;
+    let progressText;
+    let transferRate;
 
-  updateProgressText(current, total) {
-    return `${current} MB / ${total} MB`;
-  }
+    if (mode === 'send') {
+      progressBar = document.getElementById('sendProgressBar');
+      progressText = document.getElementById('sendProgressText');
+      transferRate = document.getElementById('sendRate');
+    } else {
+      progressBar = document.getElementById('receiveProgressBar');
+      progressText = document.getElementById('receiveProgressText');
+      transferRate = document.getElementById('receiveRate');
+    }
 
-  updateTransferRate(rate) {
-    return `${rate} Mbps`;
-  }
+    progressBar.style.width = `${progressPercent}%`;
+    progressText.textContent = `${sentMB} MB / ${totalMB} MB`;
 
-  // Timing
-  startTimer() {
-    this.startTime = Date.now();
-    this.lastUpdateTime = this.startTime;
-    this.lastBytes = 0;
+    if (progressPercent >= 100) {
+      transferRate.textContent = 'Complete';
+    } else {
+      transferRate.textContent = `${mbps.toFixed(2)} Mbps`;
+    }
   }
-
-  stopTimer() {
-    this.startTime = null;
-  }
-
-  getElapsedTime() {
-    return this.startTime ? Date.now() - this.startTime : 0;
-  }
-
-  // Rate limiting
-  shouldUpdateDisplay(currentTime = Date.now()) {
-    return currentTime - this.lastUpdateTime >= this.updateInterval;
-  }
-
-  throttleUpdates(callback, interval) {
-    let lastCall = 0;
-    return function (...args) {
-      const now = Date.now();
-      if (now - lastCall >= interval) {
-        lastCall = now;
-        return callback.apply(this, args);
-      }
-    };
-  }
-
-  // Callback method (to be overridden)
-  onProgressUpdate(progress, direction) {}
 }
