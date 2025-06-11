@@ -2,6 +2,8 @@ export class UIManager {
   constructor(appState) {
     this.appState = appState;
     this.elements = this.getUIElements();
+
+    this.clearPhrase();
   }
 
   // UI state management
@@ -10,17 +12,34 @@ export class UIManager {
     this.showElement('fileInfoArea');
   }
 
-  showReceiverMode() {
-    this.hideElement('initialReceiveUI');
-    this.showElement('receivingLoadingIndicator');
+  showSendingInProgress() {
+    this.hideElement('fileInfoArea');
+    this.showElement('sendInProgress');
   }
 
-  showIdleMode() {
-    this.showElement('goSendButton');
-    this.showElement('goReceiveButton');
-    this.hideElement('returnButton');
-    this.hideElement('sendWindow');
+  showReceiverMode() {
+    this.hideElement('initialReceiveUI');
+    this.showElement('receiveInProgress');
+  }
+
+  showHome() {
+    window.location.reload();
+  }
+
+  showSendWindow() {
+    this.showElement('goBackButton', 'flex');
+    this.hideElement('goSendButton');
+    this.hideElement('goReceiveButton');
+    this.showElement('sendWindow');
     this.hideElement('receiveWindow');
+  }
+
+  showReceiveWindow() {
+    this.showElement('goBackButton', 'flex');
+    this.hideElement('goSendButton');
+    this.hideElement('goReceiveButton');
+    this.showElement('receiveWindow');
+    this.hideElement('sendWindow');
   }
 
   resetUI() {
@@ -38,16 +57,43 @@ export class UIManager {
     );
   }
 
-  showFileProgress(progress) {
+  showFileProgress(progress, mode) {
     const { percentage, current, total, rate } = progress;
-    this.updateProgressBar(percentage);
-    this.updateElement('progressText', `${current} MB / ${total} MB`);
-    this.updateElement('transferRate', `${rate} Mbps`);
+
+    const progressBarId =
+      mode === 'send' ? 'sendProgressBar' : 'receiveProgressBar';
+    const progressTextId =
+      mode === 'send' ? 'sendProgressText' : 'receiveProgressText';
+    const transferRateId = mode === 'send' ? 'sendRate' : 'receiveRate';
+
+    this.updateProgressBar(progressBarId, percentage);
+    this.updateElement(progressTextId, `${current} MB / ${total} MB`);
+    this.updateElement(transferRateId, `${rate} Mbps`);
   }
 
-  showTransferComplete() {
-    this.hideElement('loadingIndicator');
-    this.showElement('completionMessage');
+  showReceivedFileDetails(fileName, fileSize) {
+    this.updateElement('receivedFileName', fileName);
+    this.updateElement(
+      'receivedFileSize',
+      `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
+    );
+  }
+
+  showTransferComplete(mode) {
+    const loadingIndicatorId =
+      mode === 'send' ? 'sendInProgress' : 'receiveInProgress';
+    const completionMessageId =
+      mode === 'send' ? 'sendComplete' : 'receiveComplete';
+
+    this.hideElement(loadingIndicatorId);
+    this.showElement(completionMessageId);
+  }
+
+  updateProgressBar(id, percentage) {
+    const progressBar = document.getElementById(id);
+    if (progressBar) {
+      progressBar.style.width = `${percentage}%`;
+    }
   }
 
   clearFileDisplay() {
@@ -82,11 +128,28 @@ export class UIManager {
   }
 
   setupButtonHandlers() {
-    const copyButton = this.elements.copyPhraseButton;
-    const receiveModeButton = this.elements.receiveModeButton;
+    this.elements.selectFileButton.addEventListener('click', () =>
+      this.elements.fileInput.click(),
+    );
 
-    copyButton.addEventListener('click', this.copyPhrase.bind(this));
-    receiveModeButton.addEventListener('click', () => {
+    this.elements.goSendButton.addEventListener(
+      'click',
+      this.showSendWindow.bind(this),
+    );
+    this.elements.goReceiveButton.addEventListener(
+      'click',
+      this.showReceiveWindow.bind(this),
+    );
+    this.elements.goBackButton.addEventListener(
+      'click',
+      this.showHome.bind(this),
+    );
+
+    this.elements.copyPhraseButton.addEventListener(
+      'click',
+      this.copyPhrase.bind(this),
+    );
+    this.elements.receiveModeButton.addEventListener('click', () => {
       const phraseInput = document.getElementById('phraseInput');
       const phraseValue = phraseInput.value.trim();
 
@@ -163,13 +226,17 @@ export class UIManager {
   }
 
   showPhrase(phrase) {
-    const phraseElement = this.elements.generatedPhraseDisplay;
-    phraseElement.innerText = phrase;
+    this.updateElement('generatedPhraseDisplay', phrase);
   }
 
   copyPhrase() {
-    const phraseElement = this.elements.generatedPhraseDisplay;
-    navigator.clipboard.writeText(phraseElement.innerText);
+    navigator.clipboard.writeText(
+      this.elements.generatedPhraseDisplay.innerText,
+    );
+  }
+
+  clearPhrase() {
+    document.getElementById('phraseInput').value = '';
   }
 
   // UI utilities
@@ -180,10 +247,10 @@ export class UIManager {
     }
   }
 
-  showElement(id) {
+  showElement(id, displayType = 'block') {
     const element = document.getElementById(id);
     if (element) {
-      element.style.display = 'block';
+      element.style.display = displayType;
     }
   }
 
@@ -194,19 +261,16 @@ export class UIManager {
     }
   }
 
-  updateProgressBar(percentage) {
-    const progressBar = document.getElementById('progressBar');
-    if (progressBar) {
-      progressBar.style.width = `${percentage}%`;
-    }
-  }
-
   getUIElements() {
     return {
       dropZone: document.getElementById('drop_zone'),
       fileInput: document.getElementById('fileInput'),
       copyPhraseButton: document.getElementById('copyPhraseButton'),
       receiveModeButton: document.getElementById('receiveModeButton'),
+      goSendButton: document.getElementById('goSendButton'),
+      goReceiveButton: document.getElementById('goReceiveButton'),
+      goBackButton: document.getElementById('goBackButton'),
+      selectFileButton: document.getElementById('selectFileButton'),
       errorWindow: document.getElementById('errorWindow'),
       closeErrorButton: document.getElementById('closeErrorButton'),
       generatedPhraseDisplay: document.getElementById('generatedPhraseDisplay'),

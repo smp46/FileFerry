@@ -2,10 +2,11 @@ import { Uint8ArrayList } from 'uint8arraylist';
 import { pipe } from 'it-pipe';
 
 export class FileTransferManager {
-  constructor(node, appState, progressTracker, errorHandler) {
+  constructor(node, appState, progressTracker, uiManager, errorHandler) {
     this.node = node;
     this.appState = appState;
     this.progressTracker = progressTracker;
+    this.uiManager = uiManager;
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
   }
@@ -154,6 +155,12 @@ export class FileTransferManager {
             'receive',
             true,
           );
+
+          this.uiManager.showReceivedFileDetails(
+            fileNameFromHeader,
+            fileSizeFromHeader,
+          );
+
           await this.saveReceivedFile(
             receivedFileBuffer,
             fileNameFromHeader,

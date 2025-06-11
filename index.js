@@ -156,13 +156,14 @@ class FileFerryApp {
     this.managers.error = new ErrorHandler(this.managers.ui);
 
     // Create progress tracker
-    this.managers.progress = new ProgressTracker();
+    this.managers.progress = new ProgressTracker(this.managers.ui);
 
     // Create core managers
     this.managers.fileTransfer = new FileTransferManager(
       this.node,
       this.appState,
       this.managers.progress,
+      this.managers.ui,
       this.managers.error,
     );
 

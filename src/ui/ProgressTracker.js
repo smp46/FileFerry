@@ -1,5 +1,6 @@
 export class ProgressTracker {
-  constructor() {
+  constructor(uiManager) {
+    this.uiManager = uiManager;
     this.lastUpdateTime = 0;
     this.lastBytes = 0;
     this.updateInterval = 250; // ms
@@ -36,41 +37,21 @@ export class ProgressTracker {
         ' MB)',
     );
 
-    this.updateTransferUI(
-      progressPercent,
-      receivedMB,
-      totalMB,
-      mbitsPerSecond,
-      mode,
-    );
+    this.uiManager.showSendingInProgress();
+
+    if (progressPercent >= 100) {
+      this.uiManager.showTransferComplete(mode);
+    } else {
+      const progress = {
+        percentage: progressPercent,
+        current: receivedMB,
+        total: totalMB,
+        rate: mbitsPerSecond.toFixed(2),
+      };
+      this.uiManager.showFileProgress(progress, mode);
+    }
 
     this.lastUpdateTime = currentTime;
     this.lastBytes = bytes;
-  }
-
-  // Progress display
-  updateTransferUI(progressPercent, sentMB, totalMB, mbps, mode) {
-    let progressBar;
-    let progressText;
-    let transferRate;
-
-    if (mode === 'send') {
-      progressBar = document.getElementById('sendProgressBar');
-      progressText = document.getElementById('sendProgressText');
-      transferRate = document.getElementById('sendRate');
-    } else {
-      progressBar = document.getElementById('receiveProgressBar');
-      progressText = document.getElementById('receiveProgressText');
-      transferRate = document.getElementById('receiveRate');
-    }
-
-    progressBar.style.width = `${progressPercent}%`;
-    progressText.textContent = `${sentMB} MB / ${totalMB} MB`;
-
-    if (progressPercent >= 100) {
-      transferRate.textContent = 'Complete';
-    } else {
-      transferRate.textContent = `${mbps.toFixed(2)} Mbps`;
-    }
   }
 }
