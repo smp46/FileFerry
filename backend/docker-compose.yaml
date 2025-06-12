@@ -19,7 +19,7 @@ services:
       - '3478:3478/udp'
       - '49152-49352:49152-49352/udp'
     volumes:
-      - /home/smp/FileFerry/relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
     tmpfs:
       - /var/lib/coturn
     read_only: true
@@ -52,7 +52,7 @@ services:
     ports:
       - '41337:41337'
     env_file:
-      - /home/smp/FileFerry/relay-server/.env
+      - ./relay-server/.env
     networks:
       - relay-net
     read_only: true
