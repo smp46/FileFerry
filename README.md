@@ -145,7 +145,7 @@ Here is what you need to build and run your own instance of FileFerry:
 
 4.  **Configure Docker-Compose**
     * **Relay Server:** The `relay-server` currently uses a `.env` file for basic config, find this in `./backend/relay-server. The only addition you *need* is a Base64 encoded private key for a persistent peer id.
-    * **CoTURN Configuration:** The `coturn` service requires a `my-turnserver.conf` file. `coturn` uses a config file found at `./backend/relay-server/my-turnserver.conf`, you can customise this is you want/need to to suit your network environment. 
+    * **CoTURN Configuration:** The `coturn` service requires a `my-turnserver.conf` file. `coturn` uses a config file found at `./backend/relay-server/my-turnserver.conf`, you can customise this as you want/need to to suit your network environment. 
 
 5.  **Start Backend Services with Docker Compose:**
     Navigate to the `backend` directory and start all services defined in `docker-compose.yaml`. This will launch the `coturn` server, `passphrase-server`, and `relay-server`.
@@ -156,7 +156,7 @@ Here is what you need to build and run your own instance of FileFerry:
     This command will run the services in detached mode, meaning they will run in the background.
 
 6.  **Run the Frontend Application:**
-    Once the backend services are running, return to the root of your project directory and start the frontend application.
+    Once the backend services are running, return to the root of your repo directory and start the frontend application.
     ```
     npm start
     ```
@@ -196,6 +196,8 @@ Visit [fileferry.smp46.me](https://fileferry.smp46.me) to try it yourself!
 - [ ] Direct links to transfers to facilitate easier sharing.
 	- [ ] Share links to transfers
 	- [ ] QR Code links to transfers
+ - [ ] Prevent *trigger* words being generated for passphrase.
+ - [ ]   
 
 If you have any ideas or feedback, I would appreciate if you [open an Issue](https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md") and let me know!
 
