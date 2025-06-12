@@ -258,7 +258,7 @@ Project Link: [https://github.com/smp46/FileFerry](https://github.com/smp46/File
 [issues-shield]: https://img.shields.io/github/issues/smp46/FileFerry.svg?style=for-the-badge
 [issues-url]: https://github.com/smp46/FileFerry/issues
 [license-shield]: https://img.shields.io/github/license/smp46/FileFerry.svg?style=for-the-badge
-[license-url]: https://github.com/smp46/FileFerry/blob/master/LICENSE
+[license-url]: https://github.com/smp46/FileFerry/blob/main/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/smp46
 [product-screenshot]: public/screenshot.png
