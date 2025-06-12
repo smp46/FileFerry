@@ -1,12 +1,39 @@
+// ui/ProgressTracker.ts
+import type { UIManager } from './UIManager.ts';
+
+/**
+ * Monitors file transfer progress and updates the UI with speed and percentage.
+ */
 export class ProgressTracker {
-  constructor(uiManager) {
+  private uiManager: UIManager;
+  private lastUpdateTime: number;
+  private lastBytes: number;
+  private updateInterval: number; // ms
+
+  /**
+   * Initializes the ProgressTracker.
+   * @param uiManager - An instance of the UIManager to update the UI.
+   */
+  public constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
     this.lastUpdateTime = 0;
     this.lastBytes = 0;
     this.updateInterval = 250; // ms
   }
 
-  updateProgress(bytes, totalBytes, mode, forceUpdate = false) {
+  /**
+   * Updates the progress of the file transfer.
+   * @param bytes - The number of bytes transferred so far.
+   * @param totalBytes - The total size of the file in bytes.
+   * @param mode - The transfer direction ('send' or 'receive').
+   * @param forceUpdate - If true, forces a UI update regardless of the update interval.
+   */
+  public updateProgress(
+    bytes: number,
+    totalBytes: number,
+    mode: 'send' | 'receive',
+    forceUpdate: boolean = false,
+  ): void {
     const currentTime = Date.now();
     const timeSinceLastUpdate = currentTime - this.lastUpdateTime;
 

@@ -1,8 +1,71 @@
+// core/FileTransferManager.ts
 import { Uint8ArrayList } from 'uint8arraylist';
 import { pipe } from 'it-pipe';
+import type { Libp2p } from 'libp2p';
+import type { Stream, StreamHandler } from '@libp2p/interface';
+import type { AppState } from '@/core/AppState';
+import type { ProgressTracker } from '@ui/ProgressTracker';
+import type { UIManager } from '@ui/UIManager';
+import type { ErrorHandler } from '@utils/ErrorHandler';
 
+/**
+ * Interface for the file header object.
+ * @internal
+ */
+interface FileHeader {
+  name: string;
+  size: number;
+  type: string;
+}
+
+/**
+ * Interface for the parsed header result.
+ * @internal
+ */
+interface ParsedHeaderResult {
+  header: FileHeader | null;
+  bodyData: Uint8Array | null;
+}
+
+/**
+ * Handles the logic for sending and receiving files over libp2p streams,
+ * including header parsing, chunking, and progress reporting.
+ */
 export class FileTransferManager {
-  constructor(node, appState, progressTracker, uiManager, errorHandler) {
+  private node: Libp2p;
+  private appState: AppState;
+  private progressTracker: ProgressTracker;
+  private uiManager: UIManager;
+  private errorHandler: ErrorHandler;
+  private readonly protocol: string;
+
+  // Sender paramters
+  private transferProgressBytes: number;
+
+  // Receiver parameters
+  private receivedFileBuffer: Uint8Array[];
+  private fileNameFromHeader: string;
+  private fileSizeFromHeader: number;
+  private fileTypeFromHeader: string;
+  private headerReceived: boolean;
+  private receivedBytesTotal: number;
+  private retryAttempts: number;
+
+  /**
+   * Initializes the FileTransferManager.
+   * @param node - The libp2p node instance.
+   * @param appState - The application state.
+   * @param progressTracker - The progress tracker instance.
+   * @param uiManager - The UI manager instance.
+   * @param errorHandler - The error handler instance.
+   */
+  public constructor(
+    node: Libp2p,
+    appState: AppState,
+    progressTracker: ProgressTracker,
+    uiManager: UIManager,
+    errorHandler: ErrorHandler,
+  ) {
     this.node = node;
     this.appState = appState;
     this.progressTracker = progressTracker;
@@ -24,9 +87,12 @@ export class FileTransferManager {
     this.retryAttempts = 0;
   }
 
-  setupFileTransferProtocol() {
-    this.node.handle(this.protocol, async ({ stream, connection }) => {
-      this.appState.setActivePeer(connection.remotePeer);
+  /**
+   * Sets up the handler for the file transfer protocol.
+   */
+  public setupFileTransferProtocol(): void {
+    const handler: StreamHandler = async ({ stream, connection }) => {
+      this.appState.setActivePeer(connection.remotePeer.toString());
       this.appState.setTransferConnectionId(connection.id);
 
       if (this.appState.isTransferActive()) {
@@ -34,57 +100,85 @@ export class FileTransferManager {
         this.appState.setActiveStream(stream);
       } else {
         this.appState.setActiveStream(stream);
-        this.appState.setActiveTransfer(true);
+        this.appState.setActiveTransfer();
       }
 
       await this.handleFileTransfer();
-    });
+    };
+    this.node.handle(this.protocol, handler);
   }
 
-  async startFileTransfer() {
+  /**
+   * Starts sending the selected file.
+   */
+  public async startFileTransfer(): Promise<void> {
     try {
+      const activeStream = this.appState.getActiveStream();
+      const selectedFile = this.appState.getSelectedFile();
+
+      if (!activeStream || !selectedFile) {
+        throw new Error('No active stream or file to start transfer.');
+      }
+
       if (this.appState.isTransferActive()) {
         console.log('Resuming file transfer after reconnection.');
-        this.sendFileToStream(
-          this.appState.getActiveStream(),
-          this.appState.getSelectedFile(),
-        );
+        this.sendFileToStream(activeStream, selectedFile);
       } else {
-        this.appState.setActiveTransfer(true);
-        this.sendFileToStream(
-          this.appState.getActiveStream(),
-          this.appState.getSelectedFile(),
-        );
+        this.appState.setActiveTransfer();
+        this.sendFileToStream(activeStream, selectedFile);
       }
       this.appState.clearActiveTransfer();
     } catch (error) {
       if (this.retryAttempts > 10) {
-        this.errorHandler.handleTransferError(error, { direction: 'send' });
+        this.errorHandler.handleTransferError(error as Error, {
+          direction: 'send',
+        });
       }
     }
   }
 
-  async handleFileTransfer() {
+  /**
+   * Handles an incoming file transfer request.
+   */
+  public async handleFileTransfer(): Promise<void> {
     try {
-      await this.receiveFileFromStream(this.appState.getActiveStream());
+      const activeStream = this.appState.getActiveStream();
+      if (!activeStream) {
+        throw new Error('No active stream to handle transfer.');
+      }
+      await this.receiveFileFromStream(activeStream);
     } catch (error) {
       if (this.retryAttempts > 10) {
         this._resetReceiverState();
-        this.errorHandler.handleTransferError(error, { direction: 'receive' });
+        this.errorHandler.handleTransferError(error as Error, {
+          direction: 'receive',
+        });
       }
     }
   }
 
-  async sendFileToStream(stream, file, chunkSize = 1024 * 64) {
+  /**
+   * Sends a file to a stream, chunk by chunk.
+   * @param stream - The stream to write to.
+   * @param file - The file to send.
+   * @param chunkSize - The size of each chunk in bytes.
+   * @internal
+   */
+  private async sendFileToStream(
+    stream: Stream,
+    file: File,
+    chunkSize: number = 1024 * 64,
+  ): Promise<void> {
     try {
       const header = this.createFileHeader(file);
       const encodedHeader = new TextEncoder().encode(header + '\n');
 
       let bytesSent = 0;
-      const channel = stream.channel;
+      // This assumes the stream is over WebRTC, which exposes the RTCDataChannel
+      const channel = (stream as any).channel as RTCDataChannel;
       const threshold = channel.bufferedAmountLowThreshold || 1024 * 64;
 
-      const fileChunks = async function* () {
+      const fileChunks = async function* (this: FileTransferManager) {
         yield new Uint8ArrayList(encodedHeader);
         await new Promise((resolve) => setTimeout(resolve, 1));
 
@@ -104,8 +198,8 @@ export class FileTransferManager {
           yield new Uint8ArrayList(chunk);
 
           if (channel.bufferedAmount > threshold) {
-            await new Promise((resolve) => {
-              channel.addEventListener('bufferedamountlow', resolve, {
+            await new Promise<void>((resolve) => {
+              channel.addEventListener('bufferedamountlow', () => resolve(), {
                 once: true,
               });
             });
@@ -134,7 +228,13 @@ export class FileTransferManager {
     }
   }
 
-  createFileHeader(file) {
+  /**
+   * Creates the JSON string for the file header.
+   * @param file - The file to create a header for.
+   * @returns The JSON stringified header.
+   * @internal
+   */
+  private createFileHeader(file: File): string {
     return JSON.stringify({
       name: file.name,
       size: file.size,
@@ -142,7 +242,12 @@ export class FileTransferManager {
     });
   }
 
-  async receiveFileFromStream(stream) {
+  /**
+   * Receives a file from a stream.
+   * @param stream - The stream to read from.
+   * @internal
+   */
+  private async receiveFileFromStream(stream: Stream): Promise<void> {
     try {
       for await (const ualistChunk of stream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
@@ -216,7 +321,25 @@ export class FileTransferManager {
     }
   }
 
-  parseFileHeader(dataChunk) {
+  /**
+   * Closes the active file transfer stream.
+   * @returns A promise that resolves when the stream is closed.
+   */
+  private async closeActiveStream(): Promise<void> {
+    const stream = this.appState.getActiveStream();
+    if (stream) {
+      await stream.close();
+      this.appState.setActiveStream(null!);
+    }
+  }
+
+  /**
+   * Parses the file header from an incoming data chunk.
+   * @param dataChunk - The data chunk to parse.
+   * @returns An object containing the parsed header and any remaining body data.
+   * @internal
+   */
+  private parseFileHeader(dataChunk: Uint8Array): ParsedHeaderResult {
     try {
       const potentialHeaderText = new TextDecoder('utf-8', {
         fatal: false,
@@ -231,7 +354,7 @@ export class FileTransferManager {
         const bodyStartIndex = encodedHeaderWithLength;
 
         try {
-          const parsedHeaderObject = JSON.parse(headerJsonString);
+          const parsedHeaderObject: FileHeader = JSON.parse(headerJsonString);
           const bodyData =
             bodyStartIndex < dataChunk.byteLength
               ? dataChunk.subarray(bodyStartIndex)
@@ -249,7 +372,18 @@ export class FileTransferManager {
     }
   }
 
-  async saveReceivedFile(buffer, filename, type) {
+  /**
+   * Saves the received file buffer as a file on the user's machine.
+   * @param buffer - An array of Uint8Arrays containing the file data.
+   * @param filename - The name of the file to save.
+   * @param type - The MIME type of the file.
+   * @internal
+   */
+  private async saveReceivedFile(
+    buffer: Uint8Array[],
+    filename: string,
+    type: string,
+  ): Promise<void> {
     const completeFileBlob = new Blob(buffer, { type });
     const downloadLink = URL.createObjectURL(completeFileBlob);
 
@@ -267,7 +401,11 @@ export class FileTransferManager {
     }, 100);
   }
 
-  _resetReceiverState() {
+  /**
+   * Resets the state of the receiver.
+   * @internal
+   */
+  private _resetReceiverState(): void {
     this.receivedFileBuffer = [];
     this.fileNameFromHeader = 'downloaded_file';
     this.fileSizeFromHeader = 0;
