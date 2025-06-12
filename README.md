@@ -65,7 +65,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+<div align="center">
+	
 [![FileFerry Screenshot][product-screenshot]](https://fileferry.smp46.me)
+
+</div>
 
 FileFerry is a browser-based peer-to-peer file transfer application that eliminates the need for file uploads to central servers. Users share files through a simple passphrase system - the sender generates a unique phrase that the receiver enters to establish a direct connection.
 
