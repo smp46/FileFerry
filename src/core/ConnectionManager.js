@@ -98,16 +98,6 @@ export class ConnectionManager {
     }
   }
 
-  monitorConnectionHealth() {
-    setInterval(() => {
-      for (const [peerId, connection] of this.appState.connections) {
-        if (connection.status !== 'open') {
-          this.retryFailedConnection(peerId);
-        }
-      }
-    }, 10000);
-  }
-
   isDirectConnection(connection) {
     return (
       connection.remoteAddr.toString().includes('/webrtc') &&
@@ -117,11 +107,6 @@ export class ConnectionManager {
 
   isRelayConnection(connection) {
     return connection.remoteAddr.toString().includes('/p2p-circuit');
-  }
-
-  getBestConnection(peerId) {
-    const connection = this.appState.getConnection(peerId);
-    return connection;
   }
 
   async waitForWebRTCStream(stream, timeout = 30000) {

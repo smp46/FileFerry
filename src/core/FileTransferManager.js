@@ -9,41 +9,66 @@ export class FileTransferManager {
     this.uiManager = uiManager;
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
+
+    // Sender paramters
+    this.transferProgressBytes = 0;
+
+    // Receiver parameters
+    this.receivedFileBuffer = [];
+    this.fileNameFromHeader = 'downloaded_file';
+    this.fileSizeFromHeader = 0;
+    this.fileTypeFromHeader = 'application/octet-stream';
+    this.headerReceived = false;
+    this.receivedBytesTotal = 0;
+
+    this.retryAttempts = 0;
   }
 
   setupFileTransferProtocol() {
     this.node.handle(this.protocol, async ({ stream, connection }) => {
-      await this.handleFileTransfer(stream, connection);
+      if (this.appState.isTransferActive()) {
+        this.appState.setActiveStream(stream);
+        this.appState.setActivePeer(connection.remotePeer);
+      } else {
+        this.appState.setActiveStream(stream);
+        this.appState.setActiveTransfer(true);
+      }
+
+      await this.handleFileTransfer();
     });
   }
 
   async startFileTransfer() {
     try {
-      this.appState.setActiveTransfer(true);
-      this.sendFileToStream(
-        this.appState.getActiveStream(),
-        this.appState.getSelectedFile(),
-      );
+      if (this.appState.isTransferActive()) {
+        console.log('Resuming file transfer after reconnection.');
+        this.sendFileToStream(
+          this.appState.getActiveStream(),
+          this.appState.getSelectedFile(),
+        );
+      } else {
+        this.appState.setActiveTransfer(true);
+        this.sendFileToStream(
+          this.appState.getActiveStream(),
+          this.appState.getSelectedFile(),
+        );
+      }
       this.appState.clearActiveTransfer();
     } catch (error) {
-      this.errorHandler.handleTransferError(error, { direction: 'send' });
+      if (this.retryAttempts > 10) {
+        this.errorHandler.handleTransferError(error, { direction: 'send' });
+      }
     }
   }
 
-  async handleFileTransfer(stream, connection) {
+  async handleFileTransfer() {
     try {
-      console.log(
-        'Incoming file transfer from:',
-        connection.remotePeer.toString(),
-      );
-      this.appState.setActiveStream(stream);
-      this.appState.setActivePeer(connection.remotePeer);
-
-      await this.receiveFileFromStream(stream);
+      await this.receiveFileFromStream(this.appState.getActiveStream());
     } catch (error) {
-      this.errorHandler.handleTransferError(error, { direction: 'receive' });
-    } finally {
-      this.appState.setActiveStream(null);
+      if (this.retryAttempts > 10) {
+        this._resetReceiverState();
+        this.errorHandler.handleTransferError(error, { direction: 'receive' });
+      }
     }
   }
 
@@ -67,6 +92,12 @@ export class FileTransferManager {
           );
           const chunk = new Uint8Array(await slice.arrayBuffer());
 
+          // Skip already sent bytes
+          if (bytesSent < this.transferProgressBytes) {
+            bytesSent += chunk.length;
+            continue;
+          }
+
           yield new Uint8ArrayList(chunk);
 
           if (channel.bufferedAmount > threshold) {
@@ -78,14 +109,24 @@ export class FileTransferManager {
           }
 
           bytesSent += chunk.length;
-          this.progressTracker.updateProgress(bytesSent, file.size, 'send');
+          this.transferProgressBytes += chunk.length;
+          this.progressTracker.updateProgress(
+            this.transferProgressBytes,
+            file.size,
+            'send',
+          );
         }
       }.bind(this);
 
       await pipe(fileChunks(), stream.sink);
-      this.progressTracker.updateProgress(bytesSent, file.size, 'send', true);
+      this.progressTracker.updateProgress(
+        this.transferProgressBytes,
+        file.size,
+        'send',
+        true,
+      );
+      this.transferProgressBytes = 0;
     } catch (error) {
-      await this.abortTransfer(error);
       throw error;
     }
   }
@@ -99,13 +140,6 @@ export class FileTransferManager {
   }
 
   async receiveFileFromStream(stream) {
-    let receivedFileBuffer = [];
-    let fileNameFromHeader = 'downloaded_file';
-    let fileSizeFromHeader = 0;
-    let fileTypeFromHeader = 'application/octet-stream';
-    let headerReceived = false;
-    let receivedBytesTotal = 0;
-
     try {
       for await (const ualistChunk of stream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
@@ -114,64 +148,67 @@ export class FileTransferManager {
 
         const dataChunk = ualistChunk.subarray();
 
-        if (!headerReceived) {
+        if (!this.headerReceived) {
           const headerResult = this.parseFileHeader(dataChunk);
           if (headerResult.header) {
-            fileNameFromHeader = headerResult.header.name || fileNameFromHeader;
-            fileSizeFromHeader = headerResult.header.size || fileSizeFromHeader;
-            fileTypeFromHeader = headerResult.header.type || fileTypeFromHeader;
-            headerReceived = true;
+            this.fileNameFromHeader =
+              headerResult.header.name || this.fileNameFromHeader;
+            this.fileSizeFromHeader =
+              headerResult.header.size || this.fileSizeFromHeader;
+            this.fileTypeFromHeader =
+              headerResult.header.type || this.fileTypeFromHeader;
+            this.headerReceived = true;
             console.log(
-              `Receiving file: ${fileNameFromHeader} (${fileSizeFromHeader} bytes)`,
+              `Receiving file: ${this.fileNameFromHeader} (${this.fileSizeFromHeader} bytes)`,
             );
           }
 
           if (headerResult.bodyData && headerResult.bodyData.length > 0) {
-            receivedFileBuffer.push(headerResult.bodyData);
-            receivedBytesTotal += headerResult.bodyData.length;
+            this.receivedFileBuffer.push(headerResult.bodyData);
+            this.receivedBytesTotal += headerResult.bodyData.length;
             this.progressTracker.updateProgress(
-              receivedBytesTotal,
-              fileSizeFromHeader,
+              this.receivedBytesTotal,
+              this.fileSizeFromHeader,
               'receive',
             );
           }
         } else {
-          receivedFileBuffer.push(dataChunk);
-          receivedBytesTotal += dataChunk.length;
+          this.receivedFileBuffer.push(dataChunk);
+          this.receivedBytesTotal += dataChunk.length;
           this.progressTracker.updateProgress(
-            receivedBytesTotal,
-            fileSizeFromHeader,
+            this.receivedBytesTotal,
+            this.fileSizeFromHeader,
             'receive',
           );
         }
 
         if (
-          receivedBytesTotal >= fileSizeFromHeader &&
-          fileSizeFromHeader > 0
+          this.receivedBytesTotal >= this.fileSizeFromHeader &&
+          this.fileSizeFromHeader > 0
         ) {
           this.progressTracker.updateProgress(
-            receivedBytesTotal,
-            fileSizeFromHeader,
+            this.receivedBytesTotal,
+            this.fileSizeFromHeader,
             'receive',
             true,
           );
 
           this.uiManager.showReceivedFileDetails(
-            fileNameFromHeader,
-            fileSizeFromHeader,
+            this.fileNameFromHeader,
+            this.fileSizeFromHeader,
           );
 
           await this.saveReceivedFile(
-            receivedFileBuffer,
-            fileNameFromHeader,
-            fileTypeFromHeader,
+            this.receivedFileBuffer,
+            this.fileNameFromHeader,
+            this.fileTypeFromHeader,
           );
+          this.appState.clearActiveTransfer();
+          await this.closeActiveStream();
           break;
         }
       }
     } catch (error) {
-      console.error('Error receiving file:', error);
-      this.errorHandler.handleTransferError(error, { direction: 'receive' });
       throw error;
     }
   }
@@ -227,23 +264,12 @@ export class FileTransferManager {
     }, 100);
   }
 
-  async closeActiveStream() {
-    const activeStream = this.appState.getActiveStream();
-    if (stream) {
-      await activeStream.close();
-      this.appState.setActiveStream(null);
-    }
-  }
-
-  async abortTransfer(reason) {
-    const activeStream = this.appState.getActiveStream();
-    if (activeStream) {
-      try {
-        await activeStream.abort(reason);
-      } catch (abortError) {
-        console.error('Failed to abort stream:', abortError);
-      }
-      this.appState.setActiveStream(null);
-    }
+  _resetReceiverState() {
+    this.receivedFileBuffer = [];
+    this.fileNameFromHeader = 'downloaded_file';
+    this.fileSizeFromHeader = 0;
+    this.fileTypeFromHeader = 'application/octet-stream';
+    this.headerReceived = false;
+    this.receivedBytesTotal = 0;
   }
 }
