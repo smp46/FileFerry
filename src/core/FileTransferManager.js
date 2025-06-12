@@ -26,9 +26,12 @@ export class FileTransferManager {
 
   setupFileTransferProtocol() {
     this.node.handle(this.protocol, async ({ stream, connection }) => {
+      this.appState.setActivePeer(connection.remotePeer);
+      this.appState.setTransferConnectionId(connection.id);
+
       if (this.appState.isTransferActive()) {
+        console.log('Resuming file transfer after reconnection.');
         this.appState.setActiveStream(stream);
-        this.appState.setActivePeer(connection.remotePeer);
       } else {
         this.appState.setActiveStream(stream);
         this.appState.setActiveTransfer(true);

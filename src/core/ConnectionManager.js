@@ -65,10 +65,11 @@ export class ConnectionManager {
     this.connectionUpgrades.delete(connectionId);
     if (
       this.appState.isTransferActive() &&
-      remotePeerIdStr === this.appState.getActivePeer()
+      remotePeerIdStr === this.appState.getActivePeer() &&
+      connectionId === this.appState.getTransferConnectionId()
     ) {
       this.appState.removeConnection(remotePeerIdStr, event.detail.id);
-      await this.managers.connection.dialPeer(event.detail.remotePeer, {
+      await this.dialPeer(event.detail.remotePeer, {
         signal: AbortSignal.timeout(60000),
       });
     } else {
@@ -170,8 +171,11 @@ export class ConnectionManager {
           peerMultiaddr,
           this.config.getFileTransferProtocol(),
         );
+
+        this.appState.setTransferConnectionId(connection.id);
         this.appState.setActivePeer(remotePeerIdStr);
         this.appState.setActiveStream(await this.waitForWebRTCStream(stream));
+
         await this.waitForWebRTCStream(stream).then(() => {
           this.fileTransferHandler.startFileTransfer();
         });

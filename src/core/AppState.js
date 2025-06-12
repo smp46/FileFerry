@@ -6,6 +6,7 @@ export class AppState {
     this.selectedFile = null;
     this.activePeerId = null;
     this.activeStream = null;
+    this.transferConnectionId = null;
   }
 
   // State management
@@ -20,7 +21,7 @@ export class AppState {
   reset() {
     this.mode = 'idle';
     this.connections.clear();
-    this.activeTransfer = null;
+    this.activeTransfer = false;
     this.selectedFile = null;
     this.activePeerId = null;
     this.activeStream = null;
@@ -39,7 +40,7 @@ export class AppState {
     this.connections.set(peerId.toString(), connectionsMap);
   }
 
-  removeALlConnectionsWithPeer(peerId) {
+  removeAllConnectionsWithPeer(peerId) {
     this.connections.delete(peerId.toString());
   }
 
@@ -52,16 +53,24 @@ export class AppState {
   }
 
   // Transfer state
-  setActiveTransfer(transferInfo) {
-    this.activeTransfer = transferInfo;
+  setActiveTransfer() {
+    this.activeTransfer = true;
   }
 
   clearActiveTransfer() {
-    this.activeTransfer = null;
+    this.activeTransfer = false;
   }
 
   isTransferActive() {
-    return this.activeTransfer !== null;
+    return this.activeTransfer;
+  }
+
+  setTransferConnectionId(id) {
+    this.transferConnectionId = id;
+  }
+
+  getTransferConnectionId() {
+    return this.transferConnectionId;
   }
 
   // File state
