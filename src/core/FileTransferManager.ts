@@ -122,10 +122,10 @@ export class FileTransferManager {
 
       if (this.appState.isTransferActive()) {
         console.log('Resuming file transfer after reconnection.');
-        this.sendFileToStream(activeStream, selectedFile);
+        await this.sendFileToStream(activeStream, selectedFile);
       } else {
         this.appState.setActiveTransfer();
-        this.sendFileToStream(activeStream, selectedFile);
+        await this.sendFileToStream(activeStream, selectedFile);
       }
       this.appState.clearActiveTransfer();
     } catch (error) {

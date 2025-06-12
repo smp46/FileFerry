@@ -131,6 +131,7 @@ export class ConnectionManager {
     const remotePeerIdStr = event.detail.remotePeer.toString();
     const connectionId = event.detail.id;
     this.connectionUpgrades.delete(connectionId);
+
     if (
       this.appState.isTransferActive() &&
       remotePeerIdStr === this.appState.getActivePeer() &&
@@ -187,10 +188,10 @@ export class ConnectionManager {
 
   /**
    * Upgrades a connection from relay to direct WebRTC.
-   * @param peerId - The string PeerId of the peer to upgrade.
+   * @param connectionId - The string PeerId of the peer to upgrade.
    */
-  public async upgradeConnection(peerId: string): Promise<void> {
-    const connInfo = this.connectionUpgrades.get(peerId);
+  public async upgradeConnection(connectionId: string): Promise<void> {
+    const connInfo = this.connectionUpgrades.get(connectionId);
     if (!connInfo || connInfo.upgrading) {
       return;
     }
