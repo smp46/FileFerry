@@ -1,13 +1,15 @@
-
-
 <a id="readme-top"></a>
+
+<div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![Unlicense License][license-shield]][license-url]
+[![MIT License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
+
+</div>
 
 
 
@@ -254,7 +256,7 @@ Project Link: [https://github.com/smp46/FileFerry](https://github.com/smp46/File
 [license-shield]: https://img.shields.io/github/license/smp46/FileFerry.svg?style=for-the-badge
 [license-url]: https://github.com/smp46/FileFerry/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/othneildrew
+[linkedin-url]: https://linkedin.com/in/smp46
 [product-screenshot]: public/screenshot.png
 [js-libp2p]: https://img.shields.io/badge/js--libp2p-9400D3?style=for-the-badge&logo=ipfs&logoColor=white
 [js-libp2p-url]: https://github.com/libp2p/js-libp2p
