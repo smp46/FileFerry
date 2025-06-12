@@ -134,7 +134,6 @@ export class ConnectionManager {
 
     if (
       this.appState.isTransferActive() &&
-      this.appState.getMode() === 'sender' &&
       remotePeerIdStr === this.appState.getActivePeer() &&
       connectionId === this.appState.getTransferConnectionId()
     ) {
