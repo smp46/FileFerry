@@ -196,8 +196,7 @@ Visit [fileferry.smp46.me](https://fileferry.smp46.me) to try it yourself!
 - [ ] Direct links to transfers to facilitate easier sharing.
 	- [ ] Share links to transfers
 	- [ ] QR Code links to transfers
- - [ ] Prevent *trigger* words being generated for passphrase.
- - [ ]   
+ - [ ] Prevent *trigger* words being generated for passphrase. 
 
 If you have any ideas or feedback, I would appreciate if you [open an Issue](https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md") and let me know!
 
