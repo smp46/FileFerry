@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2022',
     },
+    publicDir: 'public',
     optimizeDeps: {
       esbuildOptions: { target: 'es2022', supported: { bigint: true } },
     },
@@ -20,5 +21,14 @@ export default defineConfig(({ mode }) => {
     },
 
     base: isStaging ? '/staging/' : '/',
+    resolve: {
+      alias: {
+        '@': '/src',
+        '@core': '/src/core',
+        '@services': '/src/services',
+        '@ui': '/src/ui',
+        '@utils': '/src/utils',
+      },
+    },
   };
 });
