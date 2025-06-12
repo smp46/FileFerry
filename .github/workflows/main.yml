@@ -47,3 +47,5 @@ jobs:
           target-folder:
             ${{ github.ref == 'refs/heads/staging' && 'staging' || '.' }}
           clean: true
+          clean-exclude: |
+            staging
