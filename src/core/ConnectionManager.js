@@ -61,9 +61,19 @@ export class ConnectionManager {
 
   async onConnectionClosed(event) {
     const remotePeerIdStr = event.detail.remotePeer.toString();
-    const connectionId = event.detail.id;
-    this.appState.removeConnection(remotePeerIdStr, connectionId);
-    this.connectionUpgrades.delete(connectionId);
+    if (
+      this.appState.isTransferActive() &&
+      remotePeerIdStr === this.appState.getActivePeer()
+    ) {
+      this.appState.removeConnection(remotePeerIdStr, event.detail.id);
+      await this.managers.connection.dialPeer(event.detail.remotePeer, {
+        signal: AbortSignal.timeout(60000),
+      });
+    } else {
+      const connectionId = event.detail.id;
+      this.appState.removeConnection(remotePeerIdStr, connectionId);
+      this.connectionUpgrades.delete(connectionId);
+    }
   }
 
   async dialPeer(multiaddr, options = {}) {
