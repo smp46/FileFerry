@@ -134,10 +134,13 @@ export class ConnectionManager {
 
     if (
       this.appState.isTransferActive() &&
+      this.appState.getMode() === 'sender' &&
       remotePeerIdStr === this.appState.getActivePeer() &&
       connectionId === this.appState.getTransferConnectionId()
     ) {
       this.appState.removeConnection(remotePeerIdStr, event.detail.id);
+      await this.closePeer(event.detail.remotePeer);
+
       await this.dialPeer(event.detail.remotePeer, {
         signal: AbortSignal.timeout(60000),
       });
@@ -181,6 +184,7 @@ export class ConnectionManager {
       for (const connection of connections.values()) {
         if (connection) {
           await connection.close();
+          connections.delete(connection.id);
         }
       }
     }
