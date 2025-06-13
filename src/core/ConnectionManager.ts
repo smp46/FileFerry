@@ -134,19 +134,39 @@ export class ConnectionManager {
 
     if (
       this.appState.isTransferActive() &&
-      remotePeerIdStr === this.appState.getActivePeer() &&
-      connectionId === this.appState.getTransferConnectionId()
+      remotePeerIdStr === this.appState.getActivePeer()
     ) {
       this.appState.removeConnection(remotePeerIdStr, event.detail.id);
-      await this.closePeer(event.detail.remotePeer);
 
-      await this.dialPeer(event.detail.remotePeer, {
-        signal: AbortSignal.timeout(60000),
-      });
+      const retryDelay = 2000;
       let retryAttemptsForThisPeer =
         this.retryAttempts.get(remotePeerIdStr) || 0;
-      retryAttemptsForThisPeer++;
-      this.retryAttempts.set(remotePeerIdStr, retryAttemptsForThisPeer);
+
+      if (retryAttemptsForThisPeer < 10) {
+        setTimeout(
+          async () => {
+            console.log(`Attempting to reconnect to ${remotePeerIdStr}...`);
+            try {
+              await this.dialPeer(event.detail.remotePeer, {
+                signal: AbortSignal.timeout(60000),
+              });
+              this.retryAttempts.set(
+                remotePeerIdStr,
+                retryAttemptsForThisPeer + 1,
+              );
+            } catch (error) {
+              this.errorHandler.handleConnectionError(error as Error, {
+                peerId: remotePeerIdStr,
+                operation: 'reconnect',
+              });
+            }
+          },
+          retryDelay * (retryAttemptsForThisPeer + 1),
+        );
+      } else {
+        console.error(`Exceeded max retry attempts for ${remotePeerIdStr}.`);
+        this.appState.clearActiveTransfer();
+      }
     } else {
       this.appState.removeConnection(remotePeerIdStr, connectionId);
     }
