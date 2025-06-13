@@ -16,6 +16,7 @@ export class AppState {
   public mode: AppMode;
   public connections: Map<string, Map<string, Connection>>;
   public activeTransfer: boolean | null;
+  public finished: boolean | null;
   public selectedFile: File | null;
   public activePeerId: string | null;
   public activeStream: Stream | null;
@@ -27,7 +28,8 @@ export class AppState {
   public constructor() {
     this.mode = 'idle'; // 'idle', 'sender', 'receiver'
     this.connections = new Map();
-    this.activeTransfer = null;
+    this.activeTransfer = false;
+    this.finished = false;
     this.selectedFile = null;
     this.activePeerId = null;
     this.activeStream = null;
@@ -57,6 +59,7 @@ export class AppState {
     this.mode = 'idle';
     this.connections.clear();
     this.activeTransfer = false;
+    this.finished = false;
     this.selectedFile = null;
     this.activePeerId = null;
     this.activeStream = null;
@@ -205,5 +208,13 @@ export class AppState {
    */
   public getActiveStream(): Stream | null {
     return this.activeStream;
+  }
+
+  public isFinished(): boolean {
+    return this.finished || false;
+  }
+
+  public declareFinished(): void {
+    this.finished = true;
   }
 }

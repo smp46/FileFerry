@@ -192,18 +192,19 @@ class FileFerryApp {
       this.managers.error,
     );
 
-    this.managers.connection = new ConnectionManager(
-      this.node,
-      this.appState,
-      this.managers.error,
-      this.config,
-      this.managers.fileTransfer,
-    );
-
     this.managers.relay = new RelayManager(
       this.node,
       this.appState,
       this.managers.error,
+    );
+
+    this.managers.connection = new ConnectionManager(
+      this.node,
+      this.appState,
+      this.managers.error,
+      this.managers.relay,
+      this.config,
+      this.managers.fileTransfer,
     );
 
     // Setup event listeners

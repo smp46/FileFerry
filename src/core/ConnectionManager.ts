@@ -11,6 +11,7 @@ import type { AppState } from '@core/AppState';
 import type { ErrorHandler } from '@utils/ErrorHandler';
 import type { ConfigManager } from '@utils/ConfigManager';
 import type { FileTransferManager } from '@core/FileTransferManager';
+import type { RelayManager } from '@core/RelayManager';
 
 /**
  * Interface describing the state of a connection upgrade.
@@ -39,6 +40,7 @@ export class ConnectionManager {
   private node: Libp2p;
   private appState: AppState;
   private errorHandler: ErrorHandler;
+  private relayManager: RelayManager;
   private config: ConfigManager;
   private fileTransferHandler: FileTransferManager;
   private connectionUpgrades: Map<string, ConnectionUpgradeInfo>;
@@ -56,12 +58,14 @@ export class ConnectionManager {
     node: Libp2p,
     appState: AppState,
     errorHandler: ErrorHandler,
+    relayManager: RelayManager,
     config: ConfigManager,
     fileTransferHandler: FileTransferManager,
   ) {
     this.node = node;
     this.appState = appState;
     this.errorHandler = errorHandler;
+    this.relayManager = relayManager;
     this.config = config;
     this.fileTransferHandler = fileTransferHandler;
     this.connectionUpgrades = new Map();
@@ -97,6 +101,10 @@ export class ConnectionManager {
       let closeBlocked = true;
 
       connection.close = async (): Promise<void> => {
+        if (this.appState.isFinished()) {
+          return originalClose();
+        }
+
         if (closeBlocked) {
           console.log(
             `Blocking premature close of circuit connection to ${remotePeerIdStr}`,
@@ -145,7 +153,8 @@ export class ConnectionManager {
     if (
       this.appState.isTransferActive() &&
       remotePeerIdStr === this.appState.getActivePeer() &&
-      this.appState.getMode() === 'sender'
+      this.appState.getMode() === 'sender' &&
+      !this.appState.isFinished()
     ) {
       this.appState.removeConnection(remotePeerIdStr, event.detail.id);
 
@@ -239,27 +248,6 @@ export class ConnectionManager {
         }
       }, 5000);
     }
-  }
-
-  /**
-   * Checks if a connection is a direct WebRTC connection.
-   * @param connection - The connection to check.
-   * @returns True if the connection is direct.
-   */
-  public isDirectConnection(connection: Connection): boolean {
-    return (
-      connection.remoteAddr.toString().includes('/webrtc') &&
-      !connection.remoteAddr.toString().includes('/p2p-circuit')
-    );
-  }
-
-  /**
-   * Checks if a connection is over a relay.
-   * @param connection - The connection to check.
-   * @returns True if the connection is relayed.
-   */
-  public isRelayConnection(connection: Connection): boolean {
-    return connection.remoteAddr.toString().includes('/p2p-circuit');
   }
 
   /**

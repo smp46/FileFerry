@@ -3,7 +3,6 @@ import { Uint8ArrayList } from 'uint8arraylist';
 import { pipe } from 'it-pipe';
 import {
   WritableStream as PolyfillWritableStream,
-  TransformStream as PolyfillTransformStream,
   WritableStreamDefaultWriter as PolyfillWritableStreamDefaultWriter,
 } from 'web-streams-polyfill';
 import streamSaver from 'streamsaver';
@@ -94,9 +93,7 @@ export class FileTransferManager {
     this.headerReceived = false;
     this.receivedBytesTotal = 0;
 
-    // Configure streamSaver
     streamSaver.WritableStream = PolyfillWritableStream;
-    // streamSaver.mitm = '/mitm.html';
     window.WritableStream = PolyfillWritableStream;
   }
 
@@ -140,7 +137,9 @@ export class FileTransferManager {
         this.appState.setActiveTransfer();
         await this.sendFileToStream(activeStream, selectedFile);
       }
-      this.appState.clearActiveTransfer();
+      this.appState.declareFinished();
+      await this.node.stop();
+      return;
     } catch (error) {
       if (this.retryAttempts > 10) {
         this.errorHandler.handleTransferError(error as Error, {
@@ -160,6 +159,10 @@ export class FileTransferManager {
         throw new Error('No active stream to handle transfer.');
       }
       await this.receiveFileFromStream(activeStream);
+
+      this.appState.declareFinished();
+      await this.node.stop();
+      return;
     } catch (error) {
       if (this.retryAttempts > 10) {
         this._resetReceiverState();
