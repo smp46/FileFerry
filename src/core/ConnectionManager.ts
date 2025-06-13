@@ -82,7 +82,10 @@ export class ConnectionManager {
 
     console.log(`Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`);
 
-    if (remoteAddr.includes('/p2p-circuit')) {
+    if (
+      remoteAddr.includes('/p2p-circuit') &&
+      !remoteAddr.includes('/webrtc')
+    ) {
       const originalClose = connection.close.bind(connection);
       let closeBlocked = true;
 
@@ -134,7 +137,8 @@ export class ConnectionManager {
 
     if (
       this.appState.isTransferActive() &&
-      remotePeerIdStr === this.appState.getActivePeer()
+      remotePeerIdStr === this.appState.getActivePeer() &&
+      this.appState.getMode() === 'sender'
     ) {
       this.appState.removeConnection(remotePeerIdStr, event.detail.id);
 
