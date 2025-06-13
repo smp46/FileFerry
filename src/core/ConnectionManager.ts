@@ -82,6 +82,13 @@ export class ConnectionManager {
 
     console.log(`Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`);
 
+    if (this.appState.isTransferActive()) {
+      connection.close = async () => {
+        const originalClose = connection.close.bind(connection);
+        return originalClose();
+      };
+    }
+
     if (
       remoteAddr.includes('/p2p-circuit') &&
       !remoteAddr.includes('/webrtc')

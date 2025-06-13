@@ -228,6 +228,7 @@ export class FileTransferManager {
       }.bind(this);
 
       await pipe(fileChunks(), stream.sink);
+
       this.progressTracker.updateProgress(
         this.transferProgressBytes,
         file.size,
@@ -235,6 +236,8 @@ export class FileTransferManager {
         true,
       );
       this.transferProgressBytes = 0;
+
+      await stream.close();
     } catch (error) {
       throw error;
     }
