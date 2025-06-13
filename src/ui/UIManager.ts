@@ -67,13 +67,6 @@ export class UIManager {
     this.elements = this.getUIElements();
     this.theme = (localStorage.theme as 'light' | 'dark') || 'light';
     this.clearPhrase();
-
-    document.documentElement.classList.toggle(
-      'dark',
-      localStorage.theme === 'dark' ||
-        (!('theme' in localStorage) &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches),
-    );
   }
 
   /**
