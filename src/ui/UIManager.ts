@@ -1,5 +1,5 @@
 // ui/UIManager.ts
-import type { AppState } from '../core/AppState.ts';
+import type { AppState } from '@/core/AppState';
 
 /**
  * Interface for the collection of UI elements.
@@ -17,6 +17,8 @@ interface UIElements {
   errorWindow: HTMLElement | null;
   closeErrorButton: HTMLElement | null;
   generatedPhraseDisplay: HTMLElement | null;
+  sun: HTMLElement | null;
+  moon: HTMLElement | null;
 }
 
 /**
@@ -37,6 +39,7 @@ interface ProgressData {
 export class UIManager {
   private appState: AppState;
   private elements: UIElements;
+  private theme: 'light' | 'dark' = 'light';
 
   /**
    * A callback function executed when a file is selected.
@@ -62,7 +65,13 @@ export class UIManager {
   public constructor(appState: AppState) {
     this.appState = appState;
     this.elements = this.getUIElements();
+    this.theme = 'light';
     this.clearPhrase();
+
+    document.documentElement.classList.toggle(
+      'light',
+      window.matchMedia('(prefers-color-scheme: dark)').matches,
+    );
   }
 
   /**
@@ -125,6 +134,18 @@ export class UIManager {
     this.showHome(); // Simplified from showIdleMode
     this.clearFileDisplay();
     this.hideErrorPopup();
+  }
+
+  public toggleTheme(): void {
+    if (this.theme === 'light') {
+      this.theme = 'dark';
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    } else {
+      this.theme = 'light';
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
   }
 
   /**
@@ -251,6 +272,10 @@ export class UIManager {
    * @internal
    */
   private setupButtonHandlers(): void {
+    this.elements.sun?.addEventListener('click', () => this.toggleTheme());
+
+    this.elements.moon?.addEventListener('click', () => this.toggleTheme());
+
     this.elements.selectFileButton?.addEventListener('click', () =>
       this.elements.fileInput?.click(),
     );
@@ -450,6 +475,8 @@ export class UIManager {
       errorWindow: document.getElementById('errorWindow'),
       closeErrorButton: document.getElementById('closeErrorButton'),
       generatedPhraseDisplay: document.getElementById('generatedPhraseDisplay'),
+      sun: document.getElementById('sun'),
+      moon: document.getElementById('moon'),
     };
   }
 }

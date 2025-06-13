@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html class="light">
   <head>
     <title>FileFerry</title>
     <meta charset="UTF-8" />
@@ -21,15 +21,171 @@
     <meta name="apple-mobile-web-app-title" content="FileFerry" />
     <link rel="manifest" href="favicon/site.webmanifest" />
   </head>
-  <body class="overflow-x-hidden font-[Outfit]">
+
+  <body class="select-none overflow-x-hidden font-[Outfit]">
     <div
       class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500
-        overflow-hidden relative flex flex-col pt-8 pb-[350px] sm:pb-[400px]
-        md:pb-[450px]"
+        dark:from-slate-900 dark:via-blue-900 dark:to-blue-950 overflow-hidden relative
+        flex flex-col pt-8 pb-[350px] sm:pb-[400px] md:pb-[450px]"
     >
+      <!-- Stars (Dark Mode) -->
       <div
-        class="absolute top-4 right-4 sm:top-8 sm:right-12 w-16 h-16 sm:w-24 sm:h-24
-          bg-yellow-300 rounded-full shadow-2xl"
+        id="starField"
+        class="absolute inset-0 overflow-hidden hidden dark:block min-h-screen"
+      >
+        <!-- Stars in the upper half -->
+        <div
+          class="absolute top-10 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-70"
+          style="animation-delay: 0s"
+        ></div>
+        <div
+          class="absolute top-20 left-[25%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 0.5s"
+        ></div>
+        <div
+          class="absolute top-16 left-[60%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.5s"
+        ></div>
+        <div
+          class="absolute top-28 left-[75%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-70"
+          style="animation-delay: 2s"
+        ></div>
+        <div
+          class="absolute top-40 left-[85%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 0.3s"
+        ></div>
+        <div
+          class="absolute top-12 left-[30%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-40"
+          style="animation-delay: 1.2s"
+        ></div>
+
+        <div
+          class="absolute top-24 left-[90%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.7s"
+        ></div>
+        <div
+          class="absolute top-44 left-[15%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-80"
+          style="animation-delay: 0.6s"
+        ></div>
+
+        <!-- Stars in the lower half -->
+        <div
+          class="absolute top-60 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 1.1s"
+        ></div>
+        <div
+          class="absolute top-72 left-[25%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.6s"
+        ></div>
+        <div
+          class="absolute top-80 left-[40%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-70"
+          style="animation-delay: 0.4s"
+        ></div>
+        <div
+          class="absolute top-64 left-[60%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-40"
+          style="animation-delay: 2.1s"
+        ></div>
+        <div
+          class="absolute top-76 left-[75%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 0.9s"
+        ></div>
+        <div
+          class="absolute top-88 left-[85%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.4s"
+        ></div>
+        <div
+          class="absolute top-56 left-[30%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-30"
+          style="animation-delay: 1.9s"
+        ></div>
+        <div
+          class="absolute top-84 left-[50%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 0.7s"
+        ></div>
+        <div
+          class="absolute top-70 left-[90%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-40"
+          style="animation-delay: 1.3s"
+        ></div>
+        <div
+          class="absolute top-96 left-[15%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-70"
+          style="animation-delay: 2.2s"
+        ></div>
+
+        <!-- Stars near the bottom -->
+        <div
+          class="absolute top-100 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.8s"
+        ></div>
+        <div
+          class="absolute top-104 left-[25%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-40"
+          style="animation-delay: 2.3s"
+        ></div>
+        <div
+          class="absolute top-112 left-[40%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 0.2s"
+        ></div>
+        <div
+          class="absolute top-108 left-[60%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-30"
+          style="animation-delay: 1.1s"
+        ></div>
+        <div
+          class="absolute top-116 left-[75%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 1.6s"
+        ></div>
+        <div
+          class="absolute top-120 left-[85%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-40"
+          style="animation-delay: 0.9s"
+        ></div>
+        <div
+          class="absolute top-98 left-[30%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-20"
+          style="animation-delay: 1.4s"
+        ></div>
+        <div
+          class="absolute top-118 left-[50%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-50"
+          style="animation-delay: 0.5s"
+        ></div>
+        <div
+          class="absolute top-102 left-[90%] w-1 h-1 bg-white rounded-full animate-pulse
+            opacity-30"
+          style="animation-delay: 1.9s"
+        ></div>
+        <div
+          class="absolute top-124 left-[15%] w-1.5 h-1.5 bg-white rounded-full animate-pulse
+            opacity-60"
+          style="animation-delay: 2.5s"
+        ></div>
+      </div>
+
+      <!-- Sun (Light Mode) -->
+      <div
+        id="sun"
+        class="cursor-pointer absolute top-4 right-4 sm:top-8 sm:right-12 w-16 h-16 sm:w-24
+          sm:h-24 bg-yellow-300 rounded-full shadow-2xl dark:hidden"
       >
         <div
           class="absolute inset-1 sm:inset-2 bg-yellow-200 rounded-full"
@@ -39,17 +195,78 @@
         ></div>
       </div>
 
+      <!-- Moon (Dark Mode) -->
+      <div
+        id="moon"
+        class="absolute cursor-pointer top-4 right-4 sm:top-8 sm:right-12 w-16 h-16 sm:w-24
+          sm:h-24 hidden dark:block"
+      >
+        <div
+          class="absolute -inset-4 sm:-inset-6 bg-blue-100/10 rounded-full blur-2xl"
+        ></div>
+        <div
+          class="absolute -inset-6 sm:-inset-8 bg-blue-200/5 rounded-full blur-3xl"
+        ></div>
+
+        <div
+          class="relative w-full h-full bg-gradient-to-br from-gray-200 via-gray-100 to-gray-300
+            rounded-full shadow-2xl overflow-hidden"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/10
+              rounded-full"
+          ></div>
+
+          <div
+            class="absolute top-2 left-3 w-4 h-4 sm:w-6 sm:h-6 bg-gray-300/40 rounded-full blur-sm"
+          ></div>
+          <div
+            class="absolute bottom-4 right-3 w-3 h-3 sm:w-5 sm:h-5 bg-gray-400/30 rounded-full
+              blur-sm"
+          ></div>
+          <div
+            class="absolute top-1/2 left-1/3 w-2 h-2 sm:w-3 sm:h-3 bg-gray-300/50 rounded-full"
+          ></div>
+
+          <div
+            class="absolute top-1/4 right-1/3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400/40 rounded-full"
+          ></div>
+          <div
+            class="absolute bottom-1/3 left-1/4 w-2 h-2 sm:w-3 sm:h-3 bg-gray-300/30 rounded-full
+              blur-sm"
+          ></div>
+
+          <div
+            class="absolute top-1/3 right-1/2 w-1 h-1 bg-gray-400/50 rounded-full"
+          ></div>
+          <div
+            class="absolute bottom-1/4 left-1/2 w-1 h-1 bg-gray-300/40 rounded-full"
+          ></div>
+          <div
+            class="absolute top-3/4 left-2/3 w-0.5 h-0.5 bg-gray-400/60 rounded-full"
+          ></div>
+
+          <div class="absolute inset-0 opacity-30"></div>
+
+          <div
+            class="absolute top-1 left-1 w-1/3 h-1/3 bg-gradient-to-br from-white/20 to-transparent
+              rounded-full blur-md"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Clouds -->
       <div
         class="absolute top-10 left-5 sm:top-16 sm:left-20 w-24 h-12 sm:w-32 sm:h-16 bg-white
-          rounded-full opacity-80"
+          dark:bg-slate-700/40 rounded-full opacity-80 dark:opacity-80 z-10"
       ></div>
       <div
         class="absolute top-16 left-20 sm:top-24 sm:left-40 w-20 h-10 sm:w-24 sm:h-12 bg-white
-          rounded-full opacity-70"
+          dark:bg-slate-700/30 rounded-full opacity-70 z-10"
       ></div>
       <div
         class="absolute top-8 right-20 sm:top-12 sm:right-40 w-22 h-11 sm:w-28 sm:h-14 bg-white
-          rounded-full opacity-75"
+          dark:bg-slate-700/35 rounded-full opacity-75 z-10"
       ></div>
 
       <h1
@@ -64,6 +281,7 @@
       <div
         class="relative flex-grow flex items-center justify-center z-30 px-4"
       >
+        <!-- Send Window -->
         <div
           class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40
             w-11/12 max-w-lg md:max-w-xl"
@@ -184,9 +402,9 @@
                     <button
                       id="selectFileButton"
                       onclick="document.getElementById('fileInput').click();"
-                      class="bg-amber-700 text-amber-50 px-4 py-2 sm:px-6 sm:py-3 rounded text-sm
-                        sm:text-base hover:bg-amber-800 transition-colors shadow-md focus:outline-none
-                        focus:ring-2 focus:ring-amber-600 focus:ring-offset-2
+                      class="cursor-pointer bg-amber-700 text-amber-50 px-4 py-2 sm:px-6 sm:py-3 rounded
+                        text-sm sm:text-base hover:bg-amber-800 transition-colors shadow-md
+                        focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2
                         focus:ring-offset-amber-100"
                     >
                       Browse Files
@@ -230,15 +448,15 @@
                       <div class="flex items-center gap-1 sm:gap-2 mt-1">
                         <div
                           id="generatedPhraseDisplay"
-                          class="flex bg-amber-50/80 h-8 sm:h-10 text-stone-900 p-1 sm:p-2 rounded border
-                            border-stone-600/50 font-mono text-xs sm:text-sm focus:outline-none ml-auto
-                            placeholder-stone-500"
+                          class="flex select-all bg-amber-50/80 h-8 sm:h-10 text-stone-900 p-1 sm:p-2 rounded
+                            border border-stone-600/50 font-mono text-xs sm:text-sm focus:outline-none
+                            ml-auto placeholder-stone-500"
                         ></div>
                         <button
                           id="copyPhraseButton"
                           title="Copy Phrase"
-                          class="p-1.5 sm:p-2 bg-amber-700 text-amber-50 rounded hover:bg-amber-800
-                            focus:outline-none focus:ring-2 focus:ring-amber-600 mr-auto"
+                          class="cursor-pointer p-1.5 sm:p-2 bg-amber-700 text-amber-50 rounded
+                            hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-600 mr-auto"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -328,6 +546,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Receive Window -->
         <div
           class="absolute hidden top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
             z-40 w-11/12 max-w-lg md:max-w-xl"
@@ -398,9 +618,9 @@
                     />
                     <button
                       id="receiveModeButton"
-                      class="sm:ml-3 mt-2 sm:mt-0 bg-teal-100 text-teal-800 px-4 py-2 sm:px-6 sm:py-3
-                        rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg text-sm
-                        sm:text-base"
+                      class="cursor-pointer sm:ml-3 mt-2 sm:mt-0 bg-teal-100 text-teal-800 px-4 py-2 sm:px-6
+                        sm:py-3 rounded-lg font-bold hover:bg-teal-200 transition-colors shadow-lg
+                        text-sm sm:text-base"
                     >
                       Receive
                     </button>
@@ -508,28 +728,39 @@
           </div>
         </div>
       </div>
+
+      <!-- The Ferry -->
       <div class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 md:p-5">
         <div class="float-animation">
           <div class="relative">
-            <!-- Cabin (behind hull) -->
+            <div
+              id="shipGlow"
+              class="absolute inset-0 items-center justify-center dark:flex hidden"
+            >
+              <div
+                class="absolute w-full h-full max-w-sm sm:max-w-md md:max-w-lg transform scale-110"
+              >
+                <div
+                  class="absolute inset-0 bg-yellow-200/20 blur-3xl rounded-full"
+                ></div>
+              </div>
+            </div>
+
             <div
               class="absolute -top-16 sm:-top-20 md:-top-24 left-1/2 transform -translate-x-1/2
                 w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm md:max-w-md h-32 sm:h-36 md:h-40
                 bg-white rounded-t-xl sm:rounded-t-2xl rounded-b-md sm:rounded-b-lg shadow-xl
                 z-10"
             >
-              <!-- Roof -->
               <div
                 class="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 w-11/12 h-4 sm:h-6
                   bg-gray-100 rounded-t-lg sm:rounded-t-xl border-2 border-gray-200"
               ></div>
 
-              <!-- Chimney -->
               <div
                 class="absolute -top-8 sm:-top-10 left-1/4 w-6 sm:w-8 h-10 sm:h-12 bg-gray-800
                   rounded-t-sm"
               >
-                <!-- Steam Animation -->
                 <div
                   class="absolute -top-4 left-1/2 transform -translate-x-1/2"
                 >
@@ -540,7 +771,6 @@
               </div>
             </div>
 
-            <!-- Hull -->
             <div
               class="w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto h-36 sm:h-40 md:h-48 bg-red-500
                 rounded-b-[20%] sm:rounded-b-[30%] relative shadow-2xl z-20"
@@ -557,7 +787,6 @@
               ></div>
             </div>
 
-            <!-- Buttons -->
             <div
               class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-3
                 sm:px-4 md:px-8 space-y-2 sm:space-y-3 w-10/12 sm:w-11/12 max-w-xs sm:max-w-sm
@@ -565,26 +794,28 @@
             >
               <button
                 id="goSendButton"
-                class="w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
-                  sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-md
-                  text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                class="cursor-pointer w-full bg-blue-600 text-white py-2.5 sm:py-3 md:py-3.5 px-4
+                  sm:px-6 rounded-lg sm:rounded-xl font-semibold hover:bg-blue-700
+                  transition-colors shadow-md text-sm sm:text-base md:text-lg flex items-center
+                  justify-center gap-1 sm:gap-2"
               >
                 <span class="text-lg sm:text-xl">⚓</span> Send
               </button>
               <button
                 id="goReceiveButton"
-                class="w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6 rounded-lg
-                  sm:rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md
-                  text-sm sm:text-base md:text-lg flex items-center justify-center gap-1 sm:gap-2"
+                class="cursor-pointer w-full bg-orange-500 text-white py-2.5 sm:py-3 md:py-3.5 px-4
+                  sm:px-6 rounded-lg sm:rounded-xl font-semibold hover:bg-orange-600
+                  transition-colors shadow-md text-sm sm:text-base md:text-lg flex items-center
+                  justify-center gap-1 sm:gap-2"
               >
                 <span class="text-lg sm:text-xl">📦</span> Receive
               </button>
               <button
                 id="goBackButton"
-                class="hidden w-full bg-green-700 text-white py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-6
-                  rounded-lg sm:rounded-xl font-semibold hover:bg-green-800 transition-colors
-                  shadow-md text-sm sm:text-base md:text-lg items-center justify-center gap-1
-                  sm:gap-2"
+                class="hidden cursor-pointer w-full bg-green-700 text-white py-2.5 sm:py-3 md:py-3.5
+                  px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold hover:bg-green-800
+                  transition-colors shadow-md text-sm sm:text-base md:text-lg items-center
+                  justify-center gap-1 sm:gap-2"
               >
                 <span class="text-lg sm:text-xl">🔙</span> Return
               </button>
@@ -593,18 +824,19 @@
         </div>
       </div>
 
+      <!-- Ocean -->
       <div
         class="absolute bottom-0 left-0 right-0 h-[300px] sm:h-[350px] md:h-[400px] z-2"
       >
         <div
           class="absolute bottom-[calc(48px+128px)] sm:bottom-[calc(56px+128px)]
             md:bottom-[calc(60px+128px)] w-full h-12 bg-gradient-to-b from-transparent
-            to-blue-400/20 swell-animation"
+            to-blue-400/20 dark:to-indigo-900/20 swell-animation"
         ></div>
         <div
           class="absolute bottom-[calc(40px+128px)] sm:bottom-[calc(48px+128px)]
             md:bottom-[calc(52px+128px)] w-full h-8 bg-gradient-to-b from-transparent
-            to-blue-500/30 swell-animation"
+            to-blue-500/30 dark:to-indigo-950/30 swell-animation"
           style="animation-delay: 0.5s"
         ></div>
         <div
@@ -619,7 +851,7 @@
             >
               <defs>
                 <linearGradient
-                  id="waveGradient"
+                  id="waveGradientLight"
                   x1="0%"
                   y1="0%"
                   x2="0%"
@@ -634,10 +866,26 @@
                     style="stop-color: #1e40af; stop-opacity: 0.8"
                   />
                 </linearGradient>
+                <linearGradient
+                  id="waveGradientDark"
+                  x1="0%"
+                  y1="0%"
+                  x2="0%"
+                  y2="100%"
+                >
+                  <stop
+                    offset="0%"
+                    style="stop-color: #00075d; stop-opacity: 0.4"
+                  />
+                  <stop
+                    offset="100%"
+                    style="stop-color: #00063d; stop-opacity: 0.8"
+                  />
+                </linearGradient>
               </defs>
               <path
                 d="M0,48 C240,96 480,0 720,48 C960,96 1200,0 1440,48 C1680,96 1920,0 2160,48 C2400,96 2640,0 2880,48 L2880,96 L0,96 Z"
-                fill="url(#waveGradient)"
+                class="fill-[url(#waveGradientLight)] dark:fill-[url(#waveGradientDark)]"
               />
             </svg>
           </div>
@@ -650,7 +898,7 @@
             style="animation-delay: 1s"
           >
             <defs>
-              <radialGradient id="oceanGradient">
+              <radialGradient id="oceanGradientLight">
                 <stop
                   offset="0%"
                   style="stop-color: #2563eb; stop-opacity: 0.6"
@@ -660,34 +908,47 @@
                   style="stop-color: #1e40af; stop-opacity: 0.9"
                 />
               </radialGradient>
+              <radialGradient id="oceanGradientDark">
+                <stop
+                  offset="0%"
+                  style="stop-color: #00072d; stop-opacity: 0.6"
+                />
+                <stop
+                  offset="100%"
+                  style="stop-color: #00060d; stop-opacity: 0.9"
+                />
+              </radialGradient>
             </defs>
             <path
               d="M0,32 C360,80 720,0 1080,32 C1260,48 1380,64 1440,64 L1440,128 L0,128 Z"
-              fill="url(#oceanGradient)"
+              class="fill-[url(#oceanGradientLight)] dark:fill-[url(#oceanGradientDark)]"
             />
           </svg>
         </div>
 
         <div
-          class="absolute bottom-[140px] sm:bottom-[150px] left-1/3 w-1 h-1 bg-white rounded-full
-            sparkle z-2"
+          class="absolute bottom-[140px] sm:bottom-[150px] left-1/3 w-1 h-1 bg-white
+            dark:bg-blue-200 rounded-full sparkle z-2"
         ></div>
         <div
           class="absolute bottom-[135px] sm:bottom-[145px] right-1/4 w-1 h-1 bg-white
-            rounded-full sparkle z-2"
+            dark:bg-blue-200 rounded-full sparkle z-2"
           style="animation-delay: 1s"
         ></div>
         <div
-          class="absolute bottom-[145px] sm:bottom-[155px] left-2/3 w-1 h-1 bg-white rounded-full
-            sparkle z-2"
+          class="absolute bottom-[145px] sm:bottom-[155px] left-2/3 w-1 h-1 bg-white
+            dark:bg-blue-200 rounded-full sparkle z-2"
           style="animation-delay: 2s"
         ></div>
         <div
           class="absolute bottom-0 left-0 right-0 h-32 z-1 sm:h-40 md:h-48 bg-gradient-to-b
-            from-blue-600 via-blue-700 to-blue-900"
+            from-blue-600 via-blue-700 to-blue-900 dark:from-blue-950 dark:via-indigo-950
+            dark:to-slate-950"
         ></div>
       </div>
     </div>
+
+    <!-- Error Popup -->
     <div
       id="errorWindow"
       class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center
@@ -761,7 +1022,7 @@
         ></div>
       </div>
     </div>
-    <script type="module" src="./app.ts"></script>
+    <script type="module" id="appScript" src="./app.ts"></script>
     <script>
       if (window.location.href.includes('staging')) {
         document.getElementById('title').innerText = 'Staging';

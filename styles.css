@@ -1,5 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 3s ease-in-out infinite;
+}
 
 @keyframes float {
   0%,
@@ -77,34 +92,43 @@
   animation: swing 3s ease-in-out infinite;
 }
 
-  .float-animation {
-    animation: float 3s ease-in-out infinite;
-  }
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
   }
+  50% {
+    transform: translateY(-10px);
+  }
+}
 
-  .steam-puff {
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: 50%;
+.steam-puff {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0;
+  animation: steam 2s infinite;
+}
+
+.animation-delay-1 {
+  animation-delay: 0.5s;
+}
+.animation-delay-2 {
+  animation-delay: 1s;
+}
+
+@keyframes steam {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-30px) scale(2);
     opacity: 0;
-    animation: steam 2s infinite;
   }
-
-  .animation-delay-1 { animation-delay: 0.5s; }
-  .animation-delay-2 { animation-delay: 1s; }
-
-  @keyframes steam {
-    0% {
-      transform: translateY(0) scale(1);
-      opacity: 0.8;
-    }
-    100% {
-      transform: translateY(-30px) scale(2);
-      opacity: 0;
-    }
-  }
+}

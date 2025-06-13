@@ -1,5 +1,5 @@
 // ui/ProgressTracker.ts
-import type { UIManager } from './UIManager.ts';
+import type { UIManager } from '@ui/UIManager';
 
 /**
  * Monitors file transfer progress and updates the UI with speed and percentage.
