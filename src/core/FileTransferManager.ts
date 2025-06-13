@@ -1,6 +1,12 @@
 // core/FileTransferManager.ts
 import { Uint8ArrayList } from 'uint8arraylist';
 import { pipe } from 'it-pipe';
+import {
+  WritableStream as PolyfillWritableStream,
+  TransformStream as PolyfillTransformStream,
+  WritableStreamDefaultWriter as PolyfillWritableStreamDefaultWriter,
+} from 'web-streams-polyfill';
+import streamSaver from 'streamsaver';
 import type { Libp2p } from 'libp2p';
 import type { Stream, StreamHandler } from '@libp2p/interface';
 import type { AppState } from '@/core/AppState';
@@ -43,7 +49,9 @@ export class FileTransferManager {
   private transferProgressBytes: number;
 
   // Receiver parameters
-  private receivedFileBuffer: Uint8Array[];
+  private receivedFileStream: PolyfillWritableStream<Uint8Array> | null = null;
+  private receivedFileWriter: PolyfillWritableStreamDefaultWriter<Uint8Array> | null =
+    null;
   private fileNameFromHeader: string;
   private fileSizeFromHeader: number;
   private fileTypeFromHeader: string;
@@ -72,19 +80,24 @@ export class FileTransferManager {
     this.uiManager = uiManager;
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
+    this.retryAttempts = 0;
 
     // Sender paramters
     this.transferProgressBytes = 0;
 
     // Receiver parameters
-    this.receivedFileBuffer = [];
+    this.receivedFileStream = null;
+    this.receivedFileWriter = null;
     this.fileNameFromHeader = 'downloaded_file';
     this.fileSizeFromHeader = 0;
     this.fileTypeFromHeader = 'application/octet-stream';
     this.headerReceived = false;
     this.receivedBytesTotal = 0;
 
-    this.retryAttempts = 0;
+    // Configure streamSaver
+    streamSaver.WritableStream = PolyfillWritableStream;
+    // streamSaver.mitm = '/mitm.html';
+    window.WritableStream = PolyfillWritableStream;
   }
 
   /**
@@ -167,14 +180,13 @@ export class FileTransferManager {
   private async sendFileToStream(
     stream: Stream,
     file: File,
-    chunkSize: number = 1024 * 64,
+    chunkSize: number = 1024 * 32,
   ): Promise<void> {
     try {
       const header = this.createFileHeader(file);
       const encodedHeader = new TextEncoder().encode(header + '\n');
 
       let bytesSent = 0;
-      // This assumes the stream is over WebRTC, which exposes the RTCDataChannel
       const channel = (stream as any).channel as RTCDataChannel;
       const threshold = channel.bufferedAmountLowThreshold || 1024 * 64;
 
@@ -243,7 +255,7 @@ export class FileTransferManager {
   }
 
   /**
-   * Receives a file from a stream.
+   * Receives a file from a stream using StreamSaver.
    * @param stream - The stream to read from.
    * @internal
    */
@@ -266,13 +278,27 @@ export class FileTransferManager {
             this.fileTypeFromHeader =
               headerResult.header.type || this.fileTypeFromHeader;
             this.headerReceived = true;
+
             console.log(
               `Receiving file: ${this.fileNameFromHeader} (${this.fileSizeFromHeader} bytes)`,
             );
+
+            if (this.receivedFileStream === null) {
+              this.receivedFileStream = streamSaver.createWriteStream(
+                this.fileNameFromHeader,
+              ) as PolyfillWritableStream<Uint8Array>;
+            }
+            if (this.receivedFileWriter === null) {
+              this.receivedFileWriter = this.receivedFileStream.getWriter();
+            }
           }
 
-          if (headerResult.bodyData && headerResult.bodyData.length > 0) {
-            this.receivedFileBuffer.push(headerResult.bodyData);
+          if (
+            headerResult.bodyData &&
+            headerResult.bodyData.length > 0 &&
+            this.receivedFileWriter != null
+          ) {
+            await this.receivedFileWriter.write(headerResult.bodyData);
             this.receivedBytesTotal += headerResult.bodyData.length;
             this.progressTracker.updateProgress(
               this.receivedBytesTotal,
@@ -280,8 +306,8 @@ export class FileTransferManager {
               'receive',
             );
           }
-        } else {
-          this.receivedFileBuffer.push(dataChunk);
+        } else if (this.receivedFileWriter != null) {
+          await this.receivedFileWriter.write(dataChunk);
           this.receivedBytesTotal += dataChunk.length;
           this.progressTracker.updateProgress(
             this.receivedBytesTotal,
@@ -291,6 +317,7 @@ export class FileTransferManager {
         }
 
         if (
+          this.headerReceived &&
           this.receivedBytesTotal >= this.fileSizeFromHeader &&
           this.fileSizeFromHeader > 0
         ) {
@@ -306,13 +333,14 @@ export class FileTransferManager {
             this.fileSizeFromHeader,
           );
 
-          await this.saveReceivedFile(
-            this.receivedFileBuffer,
-            this.fileNameFromHeader,
-            this.fileTypeFromHeader,
-          );
+          if (this.receivedFileWriter != null) {
+            await this.receivedFileWriter.close();
+            this.receivedFileWriter = null;
+          }
+
           this.appState.clearActiveTransfer();
           await this.closeActiveStream();
+          this._resetReceiverState();
           break;
         }
       }
@@ -348,10 +376,8 @@ export class FileTransferManager {
 
       if (newlineIndex !== -1) {
         const headerJsonString = potentialHeaderText.substring(0, newlineIndex);
-        const encodedHeaderWithLength = new TextEncoder().encode(
-          headerJsonString + '\n',
-        ).byteLength;
-        const bodyStartIndex = encodedHeaderWithLength;
+        const encodedHeader = new TextEncoder().encode(headerJsonString + '\n');
+        const bodyStartIndex = encodedHeader.length;
 
         try {
           const parsedHeaderObject: FileHeader = JSON.parse(headerJsonString);
@@ -373,40 +399,11 @@ export class FileTransferManager {
   }
 
   /**
-   * Saves the received file buffer as a file on the user's machine.
-   * @param buffer - An array of Uint8Arrays containing the file data.
-   * @param filename - The name of the file to save.
-   * @param type - The MIME type of the file.
-   * @internal
-   */
-  private async saveReceivedFile(
-    buffer: Uint8Array[],
-    filename: string,
-    type: string,
-  ): Promise<void> {
-    const completeFileBlob = new Blob(buffer, { type });
-    const downloadLink = URL.createObjectURL(completeFileBlob);
-
-    const a = document.createElement('a');
-    a.href = downloadLink;
-    a.download = filename;
-    a.style.display = 'none';
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    setTimeout(() => {
-      URL.revokeObjectURL(downloadLink);
-    }, 100);
-  }
-
-  /**
    * Resets the state of the receiver.
    * @internal
    */
   private _resetReceiverState(): void {
-    this.receivedFileBuffer = [];
+    this.receivedFileStream = null;
     this.fileNameFromHeader = 'downloaded_file';
     this.fileSizeFromHeader = 0;
     this.fileTypeFromHeader = 'application/octet-stream';

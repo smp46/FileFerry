@@ -32,8 +32,10 @@
     "dashphrase": "^1.4.0",
     "it-pushable": "^3.2.0",
     "libp2p": "^2.0.0",
+    "streamsaver": "^2.0.6",
     "tailwindcss": "^4.1.10",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "web-streams-polyfill": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/css": "^0.8.1",
@@ -45,6 +47,7 @@
     "@libp2p/interface-peer-id": "^2.0.2",
     "@libp2p/interface-registrar": "^2.0.12",
     "@types/node": "^24.0.1",
+    "@types/streamsaver": "^2.0.5",
     "eslint": "^9.28.0",
     "globals": "^16.2.0",
     "prettier": "^3.5.3",

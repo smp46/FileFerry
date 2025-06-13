@@ -16,9 +16,6 @@ export default defineConfig(({ mode }) => {
       open: true,
     },
     plugins: [tailwindcss()],
-    define: {
-      global: 'globalThis',
-    },
 
     base: isStaging ? '/staging/' : '/',
     resolve: {
