@@ -20,6 +20,14 @@
     />
     <meta name="apple-mobile-web-app-title" content="FileFerry" />
     <link rel="manifest" href="favicon/site.webmanifest" />
+    <script>
+      document.documentElement.classList.toggle(
+        'dark',
+        localStorage.theme === 'dark' ||
+          (!('theme' in localStorage) &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches),
+      );
+    </script>
   </head>
 
   <body class="select-none overflow-x-hidden font-[Outfit]">

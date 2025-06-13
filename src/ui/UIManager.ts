@@ -65,12 +65,14 @@ export class UIManager {
   public constructor(appState: AppState) {
     this.appState = appState;
     this.elements = this.getUIElements();
-    this.theme = 'light';
+    this.theme = (localStorage.theme as 'light' | 'dark') || 'light';
     this.clearPhrase();
 
     document.documentElement.classList.toggle(
-      'light',
-      window.matchMedia('(prefers-color-scheme: dark)').matches,
+      'dark',
+      localStorage.theme === 'dark' ||
+        (!('theme' in localStorage) &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches),
     );
   }
 
@@ -139,10 +141,12 @@ export class UIManager {
   public toggleTheme(): void {
     if (this.theme === 'light') {
       this.theme = 'dark';
+      localStorage.theme = 'dark';
       document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
     } else {
       this.theme = 'light';
+      localStorage.theme = 'light';
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
     }
