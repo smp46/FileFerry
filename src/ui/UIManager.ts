@@ -65,7 +65,7 @@ export class UIManager {
   public constructor(appState: AppState) {
     this.appState = appState;
     this.elements = this.getUIElements();
-    this.theme = (localStorage.theme as 'light' | 'dark') || 'light';
+    this.theme = this.getSystemTheme();
     this.clearPhrase();
   }
 
@@ -126,11 +126,23 @@ export class UIManager {
    * Resets the UI to its default idle state.
    */
   public resetUI(): void {
-    this.showHome(); 
+    this.showHome();
     this.clearFileDisplay();
     this.hideErrorPopup();
   }
 
+  /**
+   * Gets the current theme from localStorage, or if not stored, from the system preference.
+   */
+  private initTheme(): void {
+    this.theme =
+      (localStorage.theme as 'light' | 'dark') || this.getSystemTheme();
+  }
+
+  /**
+   * Changes the theme between light and dark modes.
+   * Stores the selected theme in localStorage.
+   */
   public toggleTheme(): void {
     if (this.theme === 'light') {
       this.theme = 'dark';
@@ -143,6 +155,22 @@ export class UIManager {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
     }
+  }
+
+  /**
+   * Gets the current system theme preference.
+   * @returns 'dark' if the system is in dark mode, 'light' otherwise.
+   */
+  private getSystemTheme(): 'dark' | 'light' {
+    if (
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    ) {
+      localStorage.theme = 'dark';
+      return 'dark';
+    }
+    localStorage.theme = 'light';
+    return 'light';
   }
 
   /**
