@@ -100,34 +100,6 @@ export class ConfigManager {
   }
 
   /**
-   * Gets the chunk size for file transfers.
-   * @returns The chunk size in bytes.
-   */
-  public getChunkSize(): number {
-    return this.config.transfer.chunkSize;
-  }
-
-  /**
-   * Gets various timeout settings.
-   * @returns An object containing timeout values in milliseconds.
-   */
-  public getTimeouts(): { relay: number; api: number; stun: number } {
-    return {
-      relay: this.config.relay.timeout,
-      api: this.config.api.timeout,
-      stun: this.config.stun.timeout,
-    };
-  }
-
-  /**
-   * Checks if debug mode is enabled.
-   * @returns True if debug mode is on, false otherwise.
-   */
-  public isDebugEnabled(): boolean {
-    return this.config.debug;
-  }
-
-  /**
    * Validates the current configuration.
    * @returns True if the configuration is valid.
    * @throws {Error} if a required configuration key is missing.
@@ -146,25 +118,6 @@ export class ConfigManager {
     }
 
     return true;
-  }
-
-  /**
-   * Sets a configuration value dynamically.
-   * @param key - The dot-notation key for the setting (e.g., 'relay.address').
-   * @param value - The value to set.
-   */
-  public setConfigValue(key: string, value: unknown): void {
-    const keys = key.split('.');
-    let current: any = this.config;
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) {
-        current[keys[i]] = {};
-      }
-      current = current[keys[i]];
-    }
-
-    current[keys[keys.length - 1]] = value;
   }
 
   /**
