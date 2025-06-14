@@ -305,7 +305,7 @@ export class ConnectionManager {
     }
     const relayAddress = this.config.getRelayAddress();
 
-    if (remoteAddr.includes('/p2p-circuit') && !.remoteAddr.includes('/webrtc')) {
+    if (remoteAddr.includes('/p2p-circuit') && !remoteAddr.includes('/webrtc')) {
       connInfo.relay = connection;
       console.log(`Relay connection established for ${remotePeerIdStr}`);
     } else if (remoteAddr.includes('/webrtc')) {
