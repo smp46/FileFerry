@@ -96,7 +96,7 @@ Libp2p. I hope one day I'll be able to contribute as well :)
 Here is the software stack used to build FileFerry:
 
 - [![js-libp2p][js-libp2p]][js-libp2p-url]
-- [![JavaScript][JavaScript]][JavaScript-url]
+- [![TypeScript][TypeScript]][TypeScript-url]
 - [![HTML][HTML]][HTML-url]
 - [![CSS][CSS]][CSS-url]
 - [![TailwindCSS][TailwindCSS]][TailwindCSS-url]
@@ -125,7 +125,6 @@ Here is what you need to build and run your own instance of FileFerry:
 
 - [Node.js](https://nodejs.org/en/download/) and
   [npm](https://www.npmjs.com/get-npm)
-- [Go](https://go.dev/doc/install)
 - [Docker](https://docs.docker.com/get-docker/) and
   [Docker Compose](https://docs.docker.com/compose/install/)
 
@@ -298,6 +297,9 @@ Project Link:
 [JavaScript]:
   https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
 [JavaScript-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+[TypeScript]:
+  https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
+[TypeScript-url]: https://www.typescriptlang.org/
 [HTML]:
   https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white
 [HTML-url]: https://developer.mozilla.org/en-US/docs/Web/HTML
