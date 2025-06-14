@@ -86,13 +86,6 @@ export class ConnectionManager {
 
     console.log(`Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`);
 
-    if (this.appState.isTransferActive()) {
-      connection.close = async () => {
-        const originalClose = connection.close.bind(connection);
-        return originalClose();
-      };
-    }
-
     if (
       remoteAddr.includes('/p2p-circuit') &&
       !remoteAddr.includes('/webrtc')
@@ -312,7 +305,7 @@ export class ConnectionManager {
     }
     const relayAddress = this.config.getRelayAddress();
 
-    if (remoteAddr.includes('/p2p-circuit')) {
+    if (remoteAddr.includes('/p2p-circuit') && !.remoteAddr.includes('/webrtc')) {
       connInfo.relay = connection;
       console.log(`Relay connection established for ${remotePeerIdStr}`);
     } else if (remoteAddr.includes('/webrtc')) {
