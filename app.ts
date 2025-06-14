@@ -1,3 +1,4 @@
+// app.ts
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
@@ -6,22 +7,63 @@ import { ping } from '@libp2p/ping';
 import { webRTC } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
 import * as filters from '@libp2p/websockets/filters';
-import { createLibp2p } from 'libp2p';
+import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
 
-import { AppState } from '@core/AppState.js';
-import { ConnectionManager } from '@core/ConnectionManager.js';
-import { FileTransferManager } from '@core/FileTransferManager.js';
-import { RelayManager } from '@core/RelayManager.js';
-import { StunService } from '@services/StunService.js';
-import { PhraseService } from '@services/PhraseService.js';
-import { UIManager } from '@ui/UIManager.js';
-import { ProgressTracker } from '@ui/ProgressTracker.js';
-import { ErrorHandler } from '@utils/ErrorHandler.js';
-import { ConfigManager } from '@utils/ConfigManager.js';
+import { AppState } from '@/core/AppState';
+import { ConnectionManager } from '@/core/ConnectionManager';
+import { FileTransferManager } from '@/core/FileTransferManager';
+import { RelayManager } from '@/core/RelayManager';
+import { StunService } from '@/services/StunService';
+import { PhraseService } from '@/services/PhraseService';
+import { UIManager } from '@/ui/UIManager';
+import { ProgressTracker } from '@/ui/ProgressTracker';
+import { ErrorHandler } from '@/utils/ErrorHandler';
+import { ConfigManager } from '@/utils/ConfigManager';
 
+/**
+ * Interface for the services container.
+ * @internal
+ */
+interface Services {
+  stun: StunService;
+  phrase: PhraseService;
+}
+
+/**
+ * Interface for the managers container.
+ * @internal
+ */
+interface Managers {
+  ui: UIManager;
+  error: ErrorHandler;
+  progress: ProgressTracker;
+  fileTransfer: FileTransferManager;
+  connection: ConnectionManager;
+  relay: RelayManager;
+}
+
+// Extend the Window interface for global app access
+declare global {
+  interface Window {
+    fileFerryApp: FileFerryApp;
+  }
+}
+
+/**
+ * The main application class that manages all modules.
+ */
 class FileFerryApp {
-  constructor() {
+  private config: ConfigManager;
+  private appState: AppState;
+  private node: Libp2p | null;
+  private services: Partial<Services>;
+  private managers: Partial<Managers>;
+
+  /**
+   * Initializes the FileFerryApp.
+   */
+  public constructor() {
     this.config = new ConfigManager();
     this.appState = new AppState();
     this.node = null;
@@ -29,7 +71,11 @@ class FileFerryApp {
     this.managers = {};
   }
 
-  async initialize() {
+  /**
+   * Initializes all services, managers, and the libp2p node.
+   * @returns A promise that resolves when initialization is complete.
+   */
+  public async initialize(): Promise<void> {
     try {
       this.config.validateConfig();
       await this.setupServices();
@@ -44,15 +90,25 @@ class FileFerryApp {
     }
   }
 
-  async setupServices() {
+  /**
+   * Sets up application services.
+   * @returns A promise that resolves when services are set up.
+   * @internal
+   */
+  private async setupServices(): Promise<void> {
     this.services.stun = new StunService();
     this.services.phrase = new PhraseService(this.config.getApiUrl());
   }
 
-  async setupLibp2pNode() {
+  /**
+   * Creates and configures the libp2p node.
+   * @returns A promise that resolves when the node is started.
+   * @internal
+   */
+  private async setupLibp2pNode(): Promise<void> {
     const stunServer = await this.getStunConfiguration();
 
-    this.node = await createLibp2p({
+    const options: Libp2pOptions = {
       addresses: {
         listen: ['/p2p-circuit', '/webrtc'],
       },
@@ -77,78 +133,47 @@ class FileFerryApp {
             bundlePolicy: 'max-bundle',
             rtcpMuxPolicy: 'require',
           },
-          initiatorOptions: {
-            offerTimeout: 30000,
-            answerTimeout: 30000,
-          },
-          dataChannelOptions: {
-            ordered: true,
-            maxRetransmits: 10,
-          },
         }),
-        circuitRelayTransport({
-          discoverRelays: 0,
-          reservationConcurrency: 1,
-          maxReservations: 1,
-          connectionGater: {
-            denyInboundRelayedConnection: () => false,
-            denyOutboundRelayedConnection: () => false,
-          },
-        }),
+        circuitRelayTransport(),
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [
         yamux({
           maxStreamWindowSize: 1024 * 1024 * 4,
-          maxMessageSize: 1024 * 1024 * 2,
-          keepAliveInterval: 30000,
-          maxInboundStreams: 512,
-          maxOutboundStreams: 512,
-          streamWindowUpdateThreshold: 1024 * 256,
-          closeTimeout: 0,
-          streamCloseTimeout: 60000,
         }),
       ],
-
       connectionGater: {
         denyDialMultiaddr: () => false,
       },
       services: {
         identify: identify({
           timeout: 30000,
-          maxInboundStreams: 64,
-          maxOutboundStreams: 64,
-          runOnTransientConnection: false,
         }),
-        identifyPush: identifyPush({
-          runOnTransientConnection: false,
-        }),
+        identifyPush: identifyPush({}),
         ping: ping({
           maxInboundStreams: 32,
           maxOutboundStreams: 32,
           timeout: 30000,
         }),
       },
-      connectionManager: {
-        minConnections: 1,
-        pollInterval: 30000,
-        inboundConnectionThreshold: 5,
-        maxIncomingPendingConnections: 10,
-        autoDialInterval: 0,
-        maxParallelDials: 10,
-        dialTimeout: 60000,
-        maxConnections: 100,
-        autoDial: false,
-        maxDialsPerPeer: 3,
-        connectTimeout: 60000,
-      },
-    });
+      connectionManager: {},
+    };
+
+    this.node = await createLibp2p(options);
 
     await this.node.start();
     console.log(`Node started with Peer ID: ${this.node.peerId.toString()}`);
   }
 
-  async setupManagers() {
+  /**
+   * Sets up all application managers.
+   * @returns A promise that resolves when managers are set up.
+   * @internal
+   */
+  private async setupManagers(): Promise<void> {
+    if (!this.node) {
+      throw new Error('Libp2p node is not initialized.');
+    }
     // Create UI manager first
     this.managers.ui = new UIManager(this.appState);
 
@@ -167,18 +192,18 @@ class FileFerryApp {
       this.managers.error,
     );
 
+    this.managers.relay = new RelayManager(
+      this.node,
+      this.appState,
+      this.managers.error,
+    );
+
     this.managers.connection = new ConnectionManager(
       this.node,
       this.appState,
       this.managers.error,
       this.config,
       this.managers.fileTransfer,
-    );
-
-    this.managers.relay = new RelayManager(
-      this.node,
-      this.appState,
-      this.managers.error,
     );
 
     // Setup event listeners
@@ -188,7 +213,15 @@ class FileFerryApp {
     this.managers.fileTransfer.setupFileTransferProtocol();
   }
 
-  async setupUI() {
+  /**
+   * Sets up the UI manager and its callbacks.
+   * @returns A promise that resolves when the UI is set up.
+   * @internal
+   */
+  private async setupUI(): Promise<void> {
+    if (!this.managers.ui) {
+      throw new Error('UIManager not initialized');
+    }
     this.managers.ui.setupEventListeners();
 
     // Override UI callbacks
@@ -198,7 +231,14 @@ class FileFerryApp {
       this.handleReceiveModeRequested.bind(this);
   }
 
-  setupEventListeners() {
+  /**
+   * Sets up global libp2p event listeners.
+   * @internal
+   */
+  private setupEventListeners(): void {
+    if (!this.node || !this.managers.connection) {
+      return;
+    }
     this.node.addEventListener(
       'connection:open',
       this.managers.connection.onConnectionEstablished.bind(
@@ -214,7 +254,15 @@ class FileFerryApp {
     );
   }
 
-  async getStunConfiguration() {
+  /**
+   * Gets the best STUN server configuration.
+   * @returns A promise that resolves to the STUN server URL string.
+   * @internal
+   */
+  private async getStunConfiguration(): Promise<string> {
+    if (!this.services.stun) {
+      return this.config.getStunServers()[0];
+    }
     try {
       const closestStun = await this.services.stun.getClosestStunServer();
       return closestStun
@@ -226,31 +274,64 @@ class FileFerryApp {
     }
   }
 
-  // Event handlers
-  async handleFileSelected(file) {
+  /**
+   * Handles the file selection event from the UI.
+   * @param file - The selected file.
+   * @internal
+   */
+  private async handleFileSelected(file: File): Promise<void> {
+    if (!this.managers.ui || !this.managers.error) {
+      return;
+    }
     try {
       this.managers.ui.showSenderMode();
       await this.startSenderMode(file);
     } catch (error) {
-      this.managers.error.handleTransferError(error, {
+      this.managers.error.handleTransferError(error as Error, {
         operation: 'fileSelected',
+        direction: 'send',
       });
     }
   }
 
-  async handlePhraseEntered(phrase) {
+  /**
+   * Handles the phrase submission event from the UI.
+   * @param phrase - The entered phrase.
+   * @internal
+   */
+  private async handlePhraseEntered(phrase: string): Promise<void> {
+    if (!this.managers.error) {
+      return;
+    }
     try {
       await this.startReceiverMode(phrase);
     } catch (error) {
-      this.managers.error.handleApiError(error, { operation: 'phraseEntered' });
+      this.managers.error.handleApiError(error as Error, {
+        operation: 'phraseEntered',
+      });
     }
   }
 
-  async handleReceiveModeRequested() {
+  /**
+   * Handles the request to switch to receiver mode.
+   * @internal
+   */
+  private async handleReceiveModeRequested(): Promise<void> {
+    if (!this.managers.ui) {
+      return;
+    }
     this.managers.ui.showReceiverMode();
   }
 
-  async startSenderMode(file) {
+  /**
+   * Starts the sender workflow.
+   * @param file - The file to be sent.
+   * @internal
+   */
+  private async startSenderMode(file: File): Promise<void> {
+    if (!this.services.phrase || !this.managers.relay || !this.managers.error) {
+      return;
+    }
     try {
       this.appState.setSelectedFile(file);
       this.appState.setMode('sender');
@@ -287,15 +368,30 @@ class FileFerryApp {
       console.log('Sender mode setup complete. Waiting for receiver...');
     } catch (error) {
       console.error('Failed to start sender mode:', error);
-      this.managers.error.handleTransferError(error, {
+      this.managers.error.handleTransferError(error as Error, {
         operation: 'startSenderMode',
+        direction: 'send',
       });
       this.appState.setMode('idle');
       throw error;
     }
   }
 
-  async startReceiverMode(phrase) {
+  /**
+   * Starts the receiver workflow.
+   * @param phrase - The phrase to look up the sender.
+   * @internal
+   */
+  private async startReceiverMode(phrase: string): Promise<void> {
+    if (
+      !this.appState ||
+      !this.services.phrase ||
+      !this.managers.relay ||
+      !this.managers.connection ||
+      !this.node
+    ) {
+      return;
+    }
     this.appState.setMode('receiver');
 
     // Lookup phrase
@@ -329,6 +425,10 @@ class FileFerryApp {
     this.appState.setActivePeer(connection.remotePeer.toString());
 
     const checkWebRTC = setInterval(() => {
+      if (!this.node) {
+        clearInterval(checkWebRTC);
+        return;
+      }
       const connections = this.node.getConnections(connection.remotePeer);
       const webrtcConn = connections.find((c) =>
         c.remoteAddr.toString().includes('/webrtc'),
@@ -343,12 +443,20 @@ class FileFerryApp {
     }, 1000);
   }
 
-  async start() {
+  /**
+   * Starts the application.
+   * @returns A promise that resolves when the app has started.
+   */
+  public async start(): Promise<void> {
     await this.initialize();
     console.log('FileFerry app started');
   }
 
-  async stop() {
+  /**
+   * Stops the application and the libp2p node.
+   * @returns A promise that resolves when the app has stopped.
+   */
+  public async stop(): Promise<void> {
     if (this.node) {
       await this.node.stop();
     }
@@ -356,7 +464,11 @@ class FileFerryApp {
     console.log('FileFerry app stopped');
   }
 
-  async cleanup() {
+  /**
+   * Cleans up resources by stopping the app.
+   * @returns A promise that resolves on cleanup.
+   */
+  public async cleanup(): Promise<void> {
     await this.stop();
   }
 }
@@ -372,11 +484,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
-});
+window.addEventListener(
+  'unhandledrejection',
+  (event: PromiseRejectionEvent) => {
+    console.error('Unhandled promise rejection:', event.reason);
+  },
+);
 
-window.addEventListener('error', (event) => {
+window.addEventListener('error', (event: ErrorEvent) => {
   console.error('Global error:', event.error);
 });
 
