@@ -126,7 +126,7 @@ export class UIManager {
    * Resets the UI to its default idle state.
    */
   public resetUI(): void {
-    this.showHome(); // Simplified from showIdleMode
+    this.showHome(); 
     this.clearFileDisplay();
     this.hideErrorPopup();
   }

@@ -292,6 +292,9 @@ export class FileTransferManager {
             if (this.receivedFileStream === null) {
               this.receivedFileStream = streamSaver.createWriteStream(
                 this.fileNameFromHeader,
+                {
+                  size: fileSizeFromHeader,
+                },
               ) as PolyfillWritableStream<Uint8Array>;
             }
             if (this.receivedFileWriter === null) {

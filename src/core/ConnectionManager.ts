@@ -235,8 +235,7 @@ export class ConnectionManager {
     connInfo.upgrading = true;
 
     if (connInfo.relay && connInfo.webrtc) {
-      await setTimeout(() => {
-      }, 5000);
+      await setTimeout(() => {}, 5000);
     }
   }
 
@@ -302,7 +301,10 @@ export class ConnectionManager {
     }
     const relayAddress = this.config.getRelayAddress();
 
-    if (remoteAddr.includes('/p2p-circuit') && !remoteAddr.includes('/webrtc')) {
+    if (
+      remoteAddr.includes('/p2p-circuit') &&
+      !remoteAddr.includes('/webrtc')
+    ) {
       connInfo.relay = connection;
       console.log(`Relay connection established for ${remotePeerIdStr}`);
     } else if (remoteAddr.includes('/webrtc')) {
