@@ -11,7 +11,6 @@ import type { AppState } from '@core/AppState';
 import type { ErrorHandler } from '@utils/ErrorHandler';
 import type { ConfigManager } from '@utils/ConfigManager';
 import type { FileTransferManager } from '@core/FileTransferManager';
-import type { RelayManager } from '@core/RelayManager';
 
 /**
  * Interface describing the state of a connection upgrade.
@@ -40,7 +39,6 @@ export class ConnectionManager {
   private node: Libp2p;
   private appState: AppState;
   private errorHandler: ErrorHandler;
-  private relayManager: RelayManager;
   private config: ConfigManager;
   private fileTransferHandler: FileTransferManager;
   private connectionUpgrades: Map<string, ConnectionUpgradeInfo>;
@@ -58,14 +56,12 @@ export class ConnectionManager {
     node: Libp2p,
     appState: AppState,
     errorHandler: ErrorHandler,
-    relayManager: RelayManager,
     config: ConfigManager,
     fileTransferHandler: FileTransferManager,
   ) {
     this.node = node;
     this.appState = appState;
     this.errorHandler = errorHandler;
-    this.relayManager = relayManager;
     this.config = config;
     this.fileTransferHandler = fileTransferHandler;
     this.connectionUpgrades = new Map();

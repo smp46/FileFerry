@@ -202,7 +202,6 @@ class FileFerryApp {
       this.node,
       this.appState,
       this.managers.error,
-      this.managers.relay,
       this.config,
       this.managers.fileTransfer,
     );

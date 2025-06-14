@@ -65,7 +65,7 @@ export class UIManager {
   public constructor(appState: AppState) {
     this.appState = appState;
     this.elements = this.getUIElements();
-    this.theme = this.getSystemTheme();
+    this.initTheme();
     this.clearPhrase();
   }
 
@@ -137,6 +137,7 @@ export class UIManager {
   private initTheme(): void {
     this.theme =
       (localStorage.theme as 'light' | 'dark') || this.getSystemTheme();
+    document.documentElement.classList.add(this.theme);
   }
 
   /**
