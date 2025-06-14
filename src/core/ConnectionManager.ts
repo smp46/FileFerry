@@ -235,10 +235,7 @@ export class ConnectionManager {
     connInfo.upgrading = true;
 
     if (connInfo.relay && connInfo.webrtc) {
-      setTimeout(() => {
-        if (connInfo.webrtc?.status === 'open') {
-          connInfo.relay?.close();
-        }
+      await setTimeout(() => {
       }, 5000);
     }
   }
