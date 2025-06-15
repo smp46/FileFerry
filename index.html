@@ -19,6 +19,11 @@
       href="favicon/apple-touch-icon.png"
     />
     <meta name="apple-mobile-web-app-title" content="FileFerry" />
+    <script
+      defer
+      src="https://data.smp46.me/getinfo"
+      data-website-id="77f19cc7-85c6-4189-b1d2-0cfd4ccd7853"
+    ></script>
     <link rel="manifest" href="favicon/site.webmanifest" />
     <script>
       document.documentElement.classList.toggle(
@@ -548,6 +553,36 @@
                       </p>
                     </div>
                   </div>
+
+                  <div id="reconnectingSend" class="hidden">
+                    <div
+                      class="bg-amber-100 p-4 sm:p-6 rounded-lg shadow-lg border-4 border-amber-700 relative
+                        overflow-hidden"
+                    >
+                      <div
+                        class="absolute inset-0 bg-repeat opacity-20 pointer-events-none"
+                        style="
+                          background-image: url('data:image/svg+xml,%3Csvg width='80' height='80' viewBox='008080' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23713f12' fill-opacity='0.2'%3E%3Cpath d='M00h40v40H0V0zm4040h40v40H40V40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+                          background-size: 40px 40px;
+                        "
+                      ></div>
+                      <div class="flex flex-col items-center text-center">
+                        <div
+                          class="animate-spin mb-4 w-12 h-12 border-4 border-amber-700 border-t-transparent
+                            rounded-full"
+                        ></div>
+                        <h3
+                          class="text-lg sm:text-xl font-bold text-amber-800 mb-2"
+                        >
+                          Reconnecting to Receiver
+                        </h3>
+                        <p class="text-sm sm:text-base text-amber-700">
+                          The captain fell asleep and we got lost, trying to
+                          find the receiver. 🚢
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -729,6 +764,35 @@
                   <p class="text-xs sm:text-sm text-teal-200">
                     Verifying your coordinates and preparing for retrieval.
                   </p>
+                </div>
+                <div id="reconnectingReceive" class="hidden">
+                  <div
+                    class="bg-teal-100 p-4 sm:p-6 rounded-lg shadow-lg border-4 border-teal-700 relative
+                      overflow-hidden"
+                  >
+                    <div
+                      class="absolute inset-0 bg-repeat opacity-20 pointer-events-none"
+                      style="
+                        background-image: url('data:image/svg+xml,%3Csvg width='80' height='80' viewBox='008080' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23006644' fill-opacity='0.2'%3E%3Cpath d='M00h40v40H0V0zm4040h40v40H40V40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+                        background-size: 40px 40px;
+                      "
+                    ></div>
+                    <div class="flex flex-col items-center text-center">
+                      <div
+                        class="animate-spin mb-4 w-12 h-12 border-4 border-teal-700 border-t-transparent
+                          rounded-full"
+                      ></div>
+                      <h3
+                        class="text-lg sm:text-xl font-bold text-teal-800 mb-2"
+                      >
+                        Reconnecting to Sender
+                      </h3>
+                      <p class="text-sm sm:text-base text-teal-700">
+                        The lighthouse is out, and the sender is lost in the
+                        fog. ⚓
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -958,8 +1022,8 @@
     <!-- Error Popup -->
     <div
       id="errorWindow"
-      class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center
-        z-49"
+      class="hidden flex absolute inset-0 bg-black/60 backdrop-blur-sm items-center
+        justify-center z-49"
     >
       <div
         id="errorMessageContainer"

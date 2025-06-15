@@ -255,6 +255,26 @@ export class UIManager {
     this.updateElement('fileSizeDisplay', '');
   }
 
+  public showReconnecting(): void {
+    if (this.appState.getMode() === 'sender') {
+      this.hideElement('sendInProgress');
+      this.showElement('reconnectingSend');
+    } else if (this.appState.getMode() === 'receiver') {
+      this.hideElement('receiveInProgress');
+      this.showElement('reconnectingReceive');
+    }
+  }
+
+  public hideReconnecting(): void {
+    if (this.appState.getMode() === 'sender') {
+      this.hideElement('reconnectingSend');
+      this.showElement('sendInProgress');
+    } else if (this.appState.getMode() === 'receiver') {
+      this.hideElement('reconnectingReceive');
+      this.showElement('receiveInProgress');
+    }
+  }
+
   /**
    * Displays the error popup with a message.
    * @param message - The error message to display.

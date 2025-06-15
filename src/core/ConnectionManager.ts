@@ -142,42 +142,92 @@ export class ConnectionManager {
     if (
       this.appState.isTransferActive() &&
       remotePeerIdStr === this.appState.getActivePeer() &&
-      this.appState.getMode() === 'sender' &&
+      this.appState.getTransferConnectionId() === connectionId &&
       !this.appState.isFinished()
     ) {
-      this.appState.removeConnection(remotePeerIdStr, event.detail.id);
-
-      const retryDelay = 2000;
-      let retryAttemptsForThisPeer =
-        this.retryAttempts.get(remotePeerIdStr) || 0;
-
-      if (retryAttemptsForThisPeer < 10) {
-        setTimeout(
-          async () => {
-            console.log(`Attempting to reconnect to ${remotePeerIdStr}...`);
-            try {
-              await this.dialPeer(event.detail.remotePeer, {
-                signal: AbortSignal.timeout(60000),
-              });
-              this.retryAttempts.set(
-                remotePeerIdStr,
-                retryAttemptsForThisPeer + 1,
-              );
-            } catch (error) {
-              this.errorHandler.handleConnectionError(error as Error, {
-                peerId: remotePeerIdStr,
-                operation: 'reconnect',
-              });
-            }
-          },
-          retryDelay * (retryAttemptsForThisPeer + 1),
-        );
-      } else {
-        console.error(`Exceeded max retry attempts for ${remotePeerIdStr}.`);
-        this.appState.clearActiveTransfer();
+      this.errorHandler.reconnecting();
+      if (this.appState.getMode() === 'sender') {
+        await this.onSenderConnectionError(event);
+      } else if (this.appState.getMode() === 'receiver') {
+        await this.onReceiverConnectionError(remotePeerIdStr);
       }
-    } else {
-      this.appState.removeConnection(remotePeerIdStr, connectionId);
+    }
+    this.appState.removeConnection(remotePeerIdStr, connectionId);
+  }
+
+  /**
+   * Waits for a reconnection to the sender,
+   * if none occurs after 30 seconds then gracefully exits.
+   *
+   * @param remotePeerIdStr - The string PeerId of the remote peer.
+   * @returns A promise that resolves when a reconnection is detected or after a timeout.
+   */
+  private async onReceiverConnectionError(
+    remotePeerIdStr: string,
+  ): Promise<void> {
+    const reconnectionPromise = new Promise<void>((resolve) => {
+      const onConnectionOpen = (event: CustomEvent<Connection>) => {
+        if (
+          event.detail.remotePeer.toString() === remotePeerIdStr &&
+          this.appState.isTransferActive()
+        ) {
+          this.node.removeEventListener('connection:open', onConnectionOpen);
+          resolve();
+        }
+      };
+      this.node.addEventListener('connection:open', onConnectionOpen);
+    });
+
+    const delayPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 30000);
+    });
+
+    try {
+      await Promise.race([reconnectionPromise, delayPromise]);
+    } catch (_) {}
+
+    await this.fileTransferHandler.transferComplete();
+    this.errorHandler.tryAgainError();
+  }
+
+  /**
+   * Tries to reconnect to peer after a connection error.
+   * Gracefully exits after unsuccessful 5 attempts.
+   *
+   * @param event - The 'connection:error' event.
+   * @returns A promise that resolves when the reconnection attempts are complete.
+   */
+  private async onSenderConnectionError(
+    event: CustomEvent<Connection>,
+  ): Promise<void> {
+    const remotePeerIdStr = event.detail.remotePeer.toString();
+    const retryDelay = 2000;
+    let retryAttemptsForThisPeer = this.retryAttempts.get(remotePeerIdStr) || 0;
+
+    while (retryAttemptsForThisPeer < 4) {
+      console.log(`Attempting to reconnect to ${remotePeerIdStr}...`);
+      try {
+        await this.dialPeer(event.detail.remotePeer, {
+          signal: AbortSignal.timeout(5000),
+        });
+        this.errorHandler.reconnected();
+        break; // If reconnection is successful, break the loop
+      } catch (_) {
+        retryAttemptsForThisPeer++;
+        this.retryAttempts.set(remotePeerIdStr, retryAttemptsForThisPeer);
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * retryAttemptsForThisPeer),
+        );
+      }
+    }
+
+    if (retryAttemptsForThisPeer >= 4) {
+      // Give up after 10 attempts
+      this.appState.declareFinished();
+      await this.node.stop();
+      this.errorHandler.tryAgainError();
     }
   }
 
@@ -195,9 +245,6 @@ export class ConnectionManager {
       const connection = await this.node.dial(multiaddr, options);
       return connection;
     } catch (error) {
-      this.errorHandler.handleConnectionError(error as Error, {
-        peerId: multiaddr.toString(),
-      });
       throw error;
     }
   }
@@ -231,7 +278,7 @@ export class ConnectionManager {
     connInfo.upgrading = true;
 
     if (connInfo.relay && connInfo.webrtc) {
-      await setTimeout(() => {}, 5000);
+      setTimeout(() => {}, 5000);
     }
   }
 

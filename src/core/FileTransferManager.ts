@@ -57,7 +57,6 @@ export class FileTransferManager {
   private fileTypeFromHeader: string;
   private headerReceived: boolean;
   private receivedBytesTotal: number;
-  private retryAttempts: number;
 
   /**
    * Initializes the FileTransferManager.
@@ -80,7 +79,6 @@ export class FileTransferManager {
     this.uiManager = uiManager;
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
-    this.retryAttempts = 0;
     this.wakeLock = null;
 
     // Sender paramters
@@ -140,16 +138,12 @@ export class FileTransferManager {
         this.appState.setActiveTransfer();
         await this.sendFileToStream(activeStream, selectedFile);
       }
-      this.appState.declareFinished();
-      await this.node.stop();
-      this.releaseWakelock();
-      return;
-    } catch (error) {
-      if (this.retryAttempts > 10) {
-        this.errorHandler.handleTransferError(error as Error, {
-          direction: 'send',
-        });
+
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
       }
+    } catch (_) {
+      // Let connection management handle the error
     }
   }
 
@@ -164,17 +158,11 @@ export class FileTransferManager {
       }
       await this.receiveFileFromStream(activeStream);
 
-      this.appState.declareFinished();
-      await this.node.stop();
-      this.releaseWakelock();
-      return;
-    } catch (error) {
-      if (this.retryAttempts > 10) {
-        this._resetReceiverState();
-        this.errorHandler.handleTransferError(error as Error, {
-          direction: 'receive',
-        });
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
       }
+    } catch (_) {
+      // Let connection management handle the error
     }
   }
 
@@ -244,8 +232,6 @@ export class FileTransferManager {
         true,
       );
       this.transferProgressBytes = 0;
-
-      await stream.close();
     } catch (error) {
       throw error;
     }
@@ -297,6 +283,9 @@ export class FileTransferManager {
             if (this.receivedFileStream === null) {
               this.receivedFileStream = streamSaver.createWriteStream(
                 this.fileNameFromHeader,
+                {
+                  size: this.fileSizeFromHeader,
+                },
               ) as PolyfillWritableStream<Uint8Array>;
             }
             if (this.receivedFileWriter === null) {
@@ -351,7 +340,6 @@ export class FileTransferManager {
 
           this.appState.clearActiveTransfer();
           await this.closeActiveStream();
-          this._resetReceiverState();
           break;
         }
       }
@@ -429,16 +417,19 @@ export class FileTransferManager {
     this.wakeLock?.release().catch((_) => {});
   }
 
-  /**
-   * Resets the state of the receiver.
-   * @internal
-   */
-  private _resetReceiverState(): void {
-    this.receivedFileStream = null;
-    this.fileNameFromHeader = 'downloaded_file';
-    this.fileSizeFromHeader = 0;
-    this.fileTypeFromHeader = 'application/octet-stream';
-    this.headerReceived = false;
-    this.receivedBytesTotal = 0;
+  public async transferComplete() {
+    if (
+      this.appState.isTransferActive() &&
+      this.appState.getMode() === 'receiver'
+    ) {
+      try {
+        this.receivedFileWriter?.close();
+        this.closeActiveStream();
+      } catch (_) {}
+    }
+
+    this.appState.declareFinished();
+    await this.node.stop();
+    this.releaseWakelock();
   }
 }

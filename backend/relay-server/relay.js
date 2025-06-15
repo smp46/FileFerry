@@ -1,14 +1,12 @@
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2';
-import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
-import { identify, identifyPush } from '@libp2p/identify';
+import { identify } from '@libp2p/identify';
+import { autoNAT } from '@libp2p/autonat';
 import { webSockets } from '@libp2p/websockets';
-import { webRTC } from '@libp2p/webrtc';
 import { ping } from '@libp2p/ping';
-import * as filters from '@libp2p/websockets/filters';
+import { tcp } from '@libp2p/tcp';
 import { createLibp2p } from 'libp2p';
-import { promises as fs } from 'fs';
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string';
 import { privateKeyFromProtobuf } from '@libp2p/crypto/keys';
 
@@ -19,9 +17,6 @@ const RESERVATION_TTL = parseInt(
   process.env.RESERVATION_TTL || 2 * 60 * 60 * 1000,
   10,
 );
-
-const MAX_CONNECTIONS = parseInt(process.env.MAX_CONNECTIONS || '500', 10);
-const MIN_CONNECTIONS = parseInt(process.env.MIN_CONNECTIONS || '0', 10);
 
 async function getPrivateKeyObjectFromEnv() {
   const privKeyBase64 = process.env.PRIV_KEY_BASE64;
@@ -74,55 +69,23 @@ async function main() {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  //// --- Load custom certificate and key ---
-  //let httpsServerOptions;
-  //if (CERT_PATH && KEY_PATH) {
-  //  try {
-  //    const cert = await fs.readFile(CERT_PATH);
-  //    const key = await fs.readFile(KEY_PATH);
-  //    httpsServerOptions = {
-  //      key: key,
-  //      cert: cert,
-  //    };
-  //    console.info("Custom certificate and key loaded successfully.");
-  //  } catch (err) {
-  //    console.error("Error loading custom certificate or key:", err);
-  //    process.exit(1);
-  //  }
-  //} else {
-  //  console.warn("CERT_PATH or KEY_PATH environment variables not set. WebSockets will use a self-signed.");
-  //}
-
   try {
     const loadedPrivateKey = await getPrivateKeyObjectFromEnv();
 
     serverNode = await createLibp2p({
       privateKey: loadedPrivateKey,
       addresses: {
-        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`],
+        listen: [
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`,
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT},`,
+        ],
       },
-      transports: [
-        webSockets({
-          filter: filters.all,
-        }),
-        webRTC({
-          rtcConfiguration: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun.nextcloud.com:443' },
-            ],
-          },
-        }),
-        circuitRelayTransport({
-          discoverRelays: 0,
-        }),
-      ],
+      transports: [webSockets(), tcp()],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
       services: {
         identify: identify(),
-        identifyPush: identifyPush(),
+        autoNat: autoNAT(),
         ping: ping(),
         relay: circuitRelayServer({
           reservations: {
@@ -130,10 +93,6 @@ async function main() {
             defaultTtl: RESERVATION_TTL,
           },
         }),
-      },
-      connectionManager: {
-        maxConnections: MAX_CONNECTIONS,
-        minConnections: MIN_CONNECTIONS,
       },
     });
 

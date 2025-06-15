@@ -2,13 +2,14 @@
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
-import { identify, identifyPush } from '@libp2p/identify';
-import { ping } from '@libp2p/ping';
+import { identify } from '@libp2p/identify';
 import { webRTC } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
+import { webTransport } from '@libp2p/webtransport';
 import * as filters from '@libp2p/websockets/filters';
 import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
+import { ping } from '@libp2p/ping';
 
 import { AppState } from '@/core/AppState';
 import { ConnectionManager } from '@/core/ConnectionManager';
@@ -114,6 +115,7 @@ class FileFerryApp {
       },
       transports: [
         webSockets({ filter: filters.all }),
+        webTransport(),
         webRTC({
           rtcConfiguration: {
             iceServers: [
@@ -149,20 +151,15 @@ class FileFerryApp {
         identify: identify({
           timeout: 30000,
         }),
-        identifyPush: identifyPush({}),
-        ping: ping({
-          maxInboundStreams: 32,
-          maxOutboundStreams: 32,
-          timeout: 30000,
-        }),
+        ping: ping(),
       },
-      connectionManager: {},
     };
 
     this.node = await createLibp2p(options);
 
     await this.node.start();
     console.log(`Node started with Peer ID: ${this.node.peerId.toString()}`);
+    console.log('This is the node', this.node);
   }
 
   /**
