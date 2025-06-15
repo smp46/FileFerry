@@ -43,6 +43,7 @@ export class FileTransferManager {
   private uiManager: UIManager;
   private errorHandler: ErrorHandler;
   private readonly protocol: string;
+  private wakeLock: WakeLockSentinel | null = null;
 
   // Sender paramters
   private transferProgressBytes: number;
@@ -80,6 +81,7 @@ export class FileTransferManager {
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
     this.retryAttempts = 0;
+    this.wakeLock = null;
 
     // Sender paramters
     this.transferProgressBytes = 0;
@@ -102,6 +104,7 @@ export class FileTransferManager {
    */
   public setupFileTransferProtocol(): void {
     const handler: StreamHandler = async ({ stream, connection }) => {
+      this.getWakelock();
       this.appState.setActivePeer(connection.remotePeer.toString());
       this.appState.setTransferConnectionId(connection.id);
 
@@ -139,6 +142,7 @@ export class FileTransferManager {
       }
       this.appState.declareFinished();
       await this.node.stop();
+      this.releaseWakelock();
       return;
     } catch (error) {
       if (this.retryAttempts > 10) {
@@ -162,6 +166,7 @@ export class FileTransferManager {
 
       this.appState.declareFinished();
       await this.node.stop();
+      this.releaseWakelock();
       return;
     } catch (error) {
       if (this.retryAttempts > 10) {
@@ -292,9 +297,6 @@ export class FileTransferManager {
             if (this.receivedFileStream === null) {
               this.receivedFileStream = streamSaver.createWriteStream(
                 this.fileNameFromHeader,
-                {
-                  size: this.fileSizeFromHeader,
-                },
               ) as PolyfillWritableStream<Uint8Array>;
             }
             if (this.receivedFileWriter === null) {
@@ -405,6 +407,26 @@ export class FileTransferManager {
     } catch (error) {
       return { header: null, bodyData: dataChunk };
     }
+  }
+
+  private async getWakelock() {
+    if ('wakeLock' in navigator) {
+      async function requestWakeLock() {
+        let wakelock: WakeLockSentinel | null = null;
+        try {
+          wakelock = await navigator.wakeLock.request('screen');
+          return wakelock;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      this.wakeLock = (await requestWakeLock()) || null;
+    }
+  }
+
+  private async releaseWakelock() {
+    this.wakeLock?.release().catch((_) => {});
   }
 
   /**
