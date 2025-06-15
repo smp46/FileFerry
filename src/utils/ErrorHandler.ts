@@ -88,6 +88,14 @@ export class ErrorHandler {
     this.uiManager.showErrorPopup(errorMessage);
   }
 
+  public reconnecting() {
+    this.uiManager.showReconnecting();
+  }
+
+  public reconnected() {
+    this.uiManager.hideReconnecting();
+  }
+
   /**
    * Logs an error to the console.
    * @param error - The error object.

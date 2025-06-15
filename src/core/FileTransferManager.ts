@@ -144,14 +144,8 @@ export class FileTransferManager {
       if (this.appState.isFinished()) {
         await this.transferComplete();
       }
-    } catch (error) {
-      if (this.retryAttempts > 10) {
-        this.errorHandler.handleTransferError(error as Error, {
-          direction: 'send',
-        });
-
-        this.transferComplete();
-      }
+    } catch (_) {
+      // Let connection management handle the error
     }
   }
 
@@ -169,14 +163,8 @@ export class FileTransferManager {
       if (this.appState.isFinished()) {
         await this.transferComplete();
       }
-    } catch (error) {
-      if (this.retryAttempts > 10) {
-        this._resetReceiverState();
-        this.errorHandler.handleTransferError(error as Error, {
-          direction: 'receive',
-        });
-        this.transferComplete();
-      }
+    } catch (_) {
+      // Let connection management handle the error
     }
   }
 

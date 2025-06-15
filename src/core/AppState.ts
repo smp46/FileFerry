@@ -63,6 +63,7 @@ export class AppState {
     this.selectedFile = null;
     this.activePeerId = null;
     this.activeStream = null;
+    this.transferConnectionId = null;
   }
 
   /**
