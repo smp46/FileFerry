@@ -36,11 +36,11 @@ export class ConfigManager {
     this.config = {
       relay: {
         address:
-          '/dns4/relay.smp46.me/tcp/443/tls/ws/p2p/12D3KooWPUXghsjtba2yaKbxJAPUpCgZ1UzciEdCPzohBQi7wiPg',
+          '/dns4/relay.fileferry.xyz/tcp/443/tls/ws/p2p/12D3KooWPUXghsjtba2yaKbxJAPUpCgZ1UzciEdCPzohBQi7wiPg',
         timeout: 30000,
       },
       api: {
-        url: 'https://exchange.smp46.me',
+        url: 'https://exchange.fileferry.xyz',
         timeout: 10000,
       },
       transfer: {
@@ -78,8 +78,8 @@ export class ConfigManager {
   public getStunServers(): string[] {
     return [
       this.config.stun.fallback,
-      'turn:relay.smp46.me:3478?transport=udp',
-      'turn:relay.smp46.me:3478?transport=tcp',
+      'turn:relay.fileferry.xyz:3478?transport=udp',
+      'turn:relay.fileferry.xyz:3478?transport=tcp',
     ];
   }
 
