@@ -118,16 +118,16 @@ class FileFerryApp {
           rtcConfiguration: {
             iceServers: [
               { urls: stunServer },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
+              // {
+              //   urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
+              //   username: 'ferryCaptain',
+              //   credential: 'i^YV13eTPOHdVzWm#2t5',
+              // },
+              // {
+              //   urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
+              //   username: 'ferryCaptain',
+              //   credential: 'i^YV13eTPOHdVzWm#2t5',
+              // },
             ],
             iceCandidatePoolSize: 10,
             bundlePolicy: 'max-bundle',
@@ -163,6 +163,7 @@ class FileFerryApp {
 
     await this.node.start();
     console.log(`Node started with Peer ID: ${this.node.peerId.toString()}`);
+    console.log('This is the node', this.node);
   }
 
   /**
