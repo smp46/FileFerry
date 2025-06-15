@@ -28,8 +28,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 1536M
+          cpus: '1'
+          memory: 3072M
 
   passphrase-server:
     image: passphrase-server

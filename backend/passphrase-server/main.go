@@ -128,7 +128,7 @@ func main() {
 	router.Use(gin.Logger())
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174", "https://*.fileferry.xyz", "https://fileferry.xyz"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174", "https://fileferry.xyz"},
 		AllowWildcard:    true,
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},

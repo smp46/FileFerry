@@ -140,15 +140,17 @@ export class FileTransferManager {
         this.appState.setActiveTransfer();
         await this.sendFileToStream(activeStream, selectedFile);
       }
-      this.appState.declareFinished();
-      await this.node.stop();
-      this.releaseWakelock();
-      return;
+
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
+      }
     } catch (error) {
       if (this.retryAttempts > 10) {
         this.errorHandler.handleTransferError(error as Error, {
           direction: 'send',
         });
+
+        this.transferComplete();
       }
     }
   }
@@ -164,16 +166,16 @@ export class FileTransferManager {
       }
       await this.receiveFileFromStream(activeStream);
 
-      this.appState.declareFinished();
-      await this.node.stop();
-      this.releaseWakelock();
-      return;
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
+      }
     } catch (error) {
       if (this.retryAttempts > 10) {
         this._resetReceiverState();
         this.errorHandler.handleTransferError(error as Error, {
           direction: 'receive',
         });
+        this.transferComplete();
       }
     }
   }
@@ -244,8 +246,6 @@ export class FileTransferManager {
         true,
       );
       this.transferProgressBytes = 0;
-
-      await stream.close();
     } catch (error) {
       throw error;
     }
@@ -297,6 +297,9 @@ export class FileTransferManager {
             if (this.receivedFileStream === null) {
               this.receivedFileStream = streamSaver.createWriteStream(
                 this.fileNameFromHeader,
+                {
+                  size: this.fileSizeFromHeader,
+                },
               ) as PolyfillWritableStream<Uint8Array>;
             }
             if (this.receivedFileWriter === null) {
@@ -427,6 +430,12 @@ export class FileTransferManager {
 
   private async releaseWakelock() {
     this.wakeLock?.release().catch((_) => {});
+  }
+
+  private async transferComplete() {
+    this.appState.declareFinished();
+    await this.node.stop();
+    this.releaseWakelock();
   }
 
   /**
