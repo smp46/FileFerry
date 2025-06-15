@@ -142,17 +142,64 @@ export class ConnectionManager {
     if (
       this.appState.isTransferActive() &&
       remotePeerIdStr === this.appState.getActivePeer() &&
-      this.appState.getMode() === 'sender' &&
       this.appState.getTransferConnectionId() === connectionId &&
       !this.appState.isFinished()
     ) {
       this.errorHandler.reconnecting();
-      await this.onConnectionError(event);
+      if (this.appState.getMode() === 'sender') {
+        await this.onSenderConnectionError(event);
+      } else if (this.appState.getMode() === 'receiver') {
+        await this.onReceiverConnectionError(remotePeerIdStr);
+      }
     }
     this.appState.removeConnection(remotePeerIdStr, connectionId);
   }
 
-  private async onConnectionError(
+  /**
+   * Waits for a reconnection to the sender,
+   * if none occurs after 30 seconds then gracefully exits.
+   *
+   * @param remotePeerIdStr - The string PeerId of the remote peer.
+   * @returns A promise that resolves when a reconnection is detected or after a timeout.
+   */
+  private async onReceiverConnectionError(
+    remotePeerIdStr: string,
+  ): Promise<void> {
+    const reconnectionPromise = new Promise<void>((resolve) => {
+      const onConnectionOpen = (event: CustomEvent<Connection>) => {
+        if (
+          event.detail.remotePeer.toString() === remotePeerIdStr &&
+          this.appState.isTransferActive()
+        ) {
+          this.node.removeEventListener('connection:open', onConnectionOpen);
+          resolve();
+        }
+      };
+      this.node.addEventListener('connection:open', onConnectionOpen);
+    });
+
+    const delayPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 30000);
+    });
+
+    try {
+      await Promise.race([reconnectionPromise, delayPromise]);
+    } catch (_) {}
+
+    await this.fileTransferHandler.transferComplete();
+    this.errorHandler.tryAgainError();
+  }
+
+  /**
+   * Tries to reconnect to peer after a connection error.
+   * Gracefully exits after unsuccessful 5 attempts.
+   *
+   * @param event - The 'connection:error' event.
+   * @returns A promise that resolves when the reconnection attempts are complete.
+   */
+  private async onSenderConnectionError(
     event: CustomEvent<Connection>,
   ): Promise<void> {
     const remotePeerIdStr = event.detail.remotePeer.toString();

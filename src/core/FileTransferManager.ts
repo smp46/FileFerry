@@ -57,7 +57,6 @@ export class FileTransferManager {
   private fileTypeFromHeader: string;
   private headerReceived: boolean;
   private receivedBytesTotal: number;
-  private retryAttempts: number;
 
   /**
    * Initializes the FileTransferManager.
@@ -80,7 +79,6 @@ export class FileTransferManager {
     this.uiManager = uiManager;
     this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
-    this.retryAttempts = 0;
     this.wakeLock = null;
 
     // Sender paramters
@@ -342,7 +340,6 @@ export class FileTransferManager {
 
           this.appState.clearActiveTransfer();
           await this.closeActiveStream();
-          this._resetReceiverState();
           break;
         }
       }
@@ -420,22 +417,19 @@ export class FileTransferManager {
     this.wakeLock?.release().catch((_) => {});
   }
 
-  private async transferComplete() {
+  public async transferComplete() {
+    if (
+      this.appState.isTransferActive() &&
+      this.appState.getMode() === 'receiver'
+    ) {
+      try {
+        this.receivedFileWriter?.close();
+        this.closeActiveStream();
+      } catch (_) {}
+    }
+
     this.appState.declareFinished();
     await this.node.stop();
     this.releaseWakelock();
-  }
-
-  /**
-   * Resets the state of the receiver.
-   * @internal
-   */
-  private _resetReceiverState(): void {
-    this.receivedFileStream = null;
-    this.fileNameFromHeader = 'downloaded_file';
-    this.fileSizeFromHeader = 0;
-    this.fileTypeFromHeader = 'application/octet-stream';
-    this.headerReceived = false;
-    this.receivedBytesTotal = 0;
   }
 }
