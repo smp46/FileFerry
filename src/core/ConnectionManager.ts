@@ -163,18 +163,17 @@ export class ConnectionManager {
                 remotePeerIdStr,
                 retryAttemptsForThisPeer + 1,
               );
-            } catch (error) {
-              this.errorHandler.handleConnectionError(error as Error, {
-                peerId: remotePeerIdStr,
-                operation: 'reconnect',
-              });
+            } catch (_) {
+              // Ignore reconnection errors until max attempts reached
             }
           },
           retryDelay * (retryAttemptsForThisPeer + 1),
         );
       } else {
-        console.error(`Exceeded max retry attempts for ${remotePeerIdStr}.`);
-        this.appState.clearActiveTransfer();
+        // Give up after 10 attempts
+        this.appState.declareFinished();
+        await this.node.stop();
+        this.errorHandler.tryAgainError();
       }
     } else {
       this.appState.removeConnection(remotePeerIdStr, connectionId);
@@ -231,7 +230,7 @@ export class ConnectionManager {
     connInfo.upgrading = true;
 
     if (connInfo.relay && connInfo.webrtc) {
-      await setTimeout(() => {}, 5000);
+      setTimeout(() => {}, 5000);
     }
   }
 

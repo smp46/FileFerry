@@ -33,8 +33,6 @@ interface ApiErrorContext {
  */
 export class ErrorHandler {
   private uiManager: UIManager;
-  private retryAttempts: Map<string, number>;
-  private readonly maxRetries: number;
 
   /**
    * Initializes the ErrorHandler.
@@ -42,8 +40,6 @@ export class ErrorHandler {
    */
   public constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
-    this.retryAttempts = new Map();
-    this.maxRetries = 3;
   }
 
   /**
@@ -58,11 +54,13 @@ export class ErrorHandler {
     const errorMessage = `Connection error: ${error.message}`;
     this.logError(error, context);
 
-    if (this.isRecoverableError(error) && context.peerId) {
-      this.attemptConnectionRecovery(context.peerId);
-    } else {
-      this.uiManager.showErrorPopup(errorMessage);
-    }
+    this.uiManager.showErrorPopup(errorMessage);
+  }
+
+  public tryAgainError() {
+    this.uiManager.showErrorPopup(
+      'The FileFerry got lost at sea, make sure your maps are in order and try again.',
+    );
   }
 
   /**
@@ -91,59 +89,6 @@ export class ErrorHandler {
   }
 
   /**
-   * Attempts to recover a failed connection.
-   * @param peerId - The ID of the peer to attempt recovery with.
-   * @returns A promise that resolves to true if recovery is successful.
-   * @internal
-   */
-  private async attemptConnectionRecovery(peerId: string): Promise<boolean> {
-    if (!peerId) {
-      return false;
-    }
-
-    const attempts = this.retryAttempts.get(peerId) || 0;
-    if (attempts >= this.maxRetries) {
-      this.logWarning(`Max retry attempts reached for peer: ${peerId}`, {});
-      return false;
-    }
-
-    this.retryAttempts.set(peerId, attempts + 1);
-
-    try {
-      await this.retryWithBackoff(async () => {
-        // recovery logic
-        return true;
-      }, attempts);
-
-      this.retryAttempts.delete(peerId);
-      return true;
-    } catch (error) {
-      this.logError(error as Error, {
-        operation: 'recovery',
-        peerId,
-        attempt: attempts,
-      });
-      return false;
-    }
-  }
-
-  /**
-   * Retries an operation with exponential backoff.
-   * @param operation - The async operation to retry.
-   * @param attempt - The current retry attempt number.
-   * @returns A promise that resolves with the result of the operation.
-   * @internal
-   */
-  private async retryWithBackoff(
-    operation: () => Promise<boolean>,
-    attempt: number,
-  ): Promise<boolean> {
-    const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Max 10s delay
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    return await operation();
-  }
-
-  /**
    * Logs an error to the console.
    * @param error - The error object.
    * @param context - Contextual information.
@@ -151,16 +96,6 @@ export class ErrorHandler {
    */
   private logError(error: Error, context: object): void {
     console.error('Error:', error.message, 'Context:', context);
-  }
-
-  /**
-   * Logs a warning to the console.
-   * @param message - The warning message.
-   * @param context - Contextual information.
-   * @internal
-   */
-  private logWarning(message: string, context: object): void {
-    console.warn('Warning:', message, 'Context:', context);
   }
 
   /**
