@@ -22,7 +22,7 @@
   <p align="center">
     Peer-to-peer, encrypted file sharing, without leaving your browser!
     <br />
-    <a href="https://fileferry.smp46.me">View Live Site</a>
+    <a href="https://fileferry.xyz">View Live Site</a>
     &middot;
     <a href="https://github.com/smp46/FileFerry/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
@@ -60,8 +60,8 @@
 ## About The Project
 
 <div align="center">
- 
-[![FileFerry Screenshot][product-screenshot]](https://fileferry.smp46.me)
+
+[![FileFerry Screenshot][product-screenshot]](https://fileferry.xyz)
 
 </div>
 
@@ -109,15 +109,16 @@ Here is the software stack used to build FileFerry:
 ## Getting Started
 
 The recommended way to use FileFerry is via the
-[Github Pages](https://fileferry.smp46.me) hosted version, it is deployed
-straight from the `gh-pages` branch right here in the repo.
+[Github Pages](https://fileferry.xyz) hosted version, it is deployed straight
+from the `gh-pages` branch right here in the repo.
 
 Otherwise, follow these steps to get FileFerry running locally. I run the
 backend externally (on a seperate remote machine) to the front-end, your mileage
 may vary as to how well this would or wouldn't work on a single host.
 
 **This section requires updating regarding what needs to be changed to get this
-running under a different domain (that isn't smp46.me), stay tuned for that.**
+running under a different domain (that isn't fileferry.xyz), stay tuned for
+that.**
 
 ### Prerequisites
 
@@ -132,73 +133,72 @@ Here is what you need to build and run your own instance of FileFerry:
 
 1. **Clone the repository:**
 
-    ```
-    git clone https://github.com/smp46/FileFerry.git
-    cd FileFerry
-    ```
+   ```
+   git clone https://github.com/smp46/FileFerry.git
+   cd FileFerry
+   ```
 
 2. **Install Frontend Dependencies:** Navigate to the root of the cloned
-    repository and install the Node.js packages for the frontend:
+   repository and install the Node.js packages for the frontend:
 
-    ```
-    npm install
-    ```
+   ```
+   npm install
+   ```
 
 3. **Build Backend Docker Images:** The `passphrase-server` (Go) and
-    `relay-server` (Node.js) are built as Docker images. You need to build them
-    from their respective directories.
+   `relay-server` (Node.js) are built as Docker images. You need to build them
+   from their respective directories.
 
-    ```
-    docker build -t passphrase-server ./backend/passphrase-server
-    ```
+   ```
+   docker build -t passphrase-server ./backend/passphrase-server
+   ```
 
-    ```
-    docker build -t relay-server ./backend/relay-server
-    ```
+   ```
+   docker build -t relay-server ./backend/relay-server
+   ```
 
 4. **Configure Docker-Compose**
 
-    - **Relay Server:** The `relay-server` currently uses a `.env` file for
-      basic config, find this in `./backend/relay-server. The only addition you
-      _need_ is a Base64 encoded private key for a persistent peer id.
-    - **CoTURN Configuration:** The `coturn` service requires a
-      `my-turnserver.conf` file. `coturn` uses a config file found at
-      `./backend/relay-server/my-turnserver.conf`, you can customise this as you
-      want/need to to suit your network environment.
+   - **Relay Server:** The `relay-server` currently uses a `.env` file for basic
+     config, find this in `./backend/relay-server. The only addition you _need_
+     is a Base64 encoded private key for a persistent peer id.
+   - **CoTURN Configuration:** The `coturn` service requires a
+     `my-turnserver.conf` file. `coturn` uses a config file found at
+     `./backend/relay-server/my-turnserver.conf`, you can customise this as you
+     want/need to to suit your network environment.
 
 5. **Start Backend Services with Docker Compose:** Navigate to the `backend`
-    directory and start all services defined in `docker-compose.yaml`. This will
-    launch the `coturn` server, `passphrase-server`, and `relay-server`.
+   directory and start all services defined in `docker-compose.yaml`. This will
+   launch the `coturn` server, `passphrase-server`, and `relay-server`.
 
-    ```
-    cd backend
-    docker-compose up -d
-    ```
+   ```
+   cd backend
+   docker-compose up -d
+   ```
 
-    This command will run the services in detached mode, meaning they will run
-    in the background.
+   This command will run the services in detached mode, meaning they will run in
+   the background.
 
 6. **Run the Frontend Application:** Once the backend services are running,
-    return to the root of your repo directory and start the frontend
-    application.
+   return to the root of your repo directory and start the frontend application.
 
-    ```
-    npm start
-    ```
+   ```
+   npm start
+   ```
 
-    This will typically start a development server and open FileFerry in your
-    browser. Look for output in the terminal indicating the local URL (e.g.,
-    `http://localhost:5173`).
+   This will typically start a development server and open FileFerry in your
+   browser. Look for output in the terminal indicating the local URL (e.g.,
+   `http://localhost:5173`).
 
 7. **Optional: Build for Production:** To build the static website files for
-    deployment, run:
+   deployment, run:
 
-    ```
-    npm run build
-    ```
+   ```
+   npm run build
+   ```
 
-    The compiled website files will be located in the `dist` directory, ready
-    for static hosting.
+   The compiled website files will be located in the `dist` directory, ready for
+   static hosting.
 
 <!-- USAGE EXAMPLES -->
 
@@ -208,7 +208,7 @@ Here's a demo of the site:
 
 <https://github.com/user-attachments/assets/846a40f8-da3e-48e5-a482-eb51a60c7897>
 
-Visit [fileferry.smp46.me](https://fileferry.smp46.me) to try it yourself!
+Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself!
 
 <!-- ROADMAP -->
 
@@ -224,7 +224,7 @@ Visit [fileferry.smp46.me](https://fileferry.smp46.me) to try it yourself!
 - [ ] Direct links to transfers to facilitate easier sharing.
 - [ ] Share links to transfers.
 - [ ] QR Code links to transfers.
-- [ ] Prevent *trigger* words being generated for passphrase. 
+- [ ] Prevent _trigger_ words being generated for passphrase.
 
 If you have any ideas or feedback, I would appreciate if you
 [open an Issue](https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md")
@@ -296,7 +296,6 @@ Project Link:
 [js-libp2p-url]: https://github.com/libp2p/js-libp2p
 [JavaScript]:
   https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
-[JavaScript-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript
 [TypeScript]:
   https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
 [TypeScript-url]: https://www.typescriptlang.org/

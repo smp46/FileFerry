@@ -119,12 +119,12 @@ class FileFerryApp {
             iceServers: [
               { urls: stunServer },
               {
-                urls: 'turn:relay.smp46.me:3478?transport=udp',
+                urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
                 username: 'ferryCaptain',
                 credential: 'i^YV13eTPOHdVzWm#2t5',
               },
               {
-                urls: 'turn:relay.smp46.me:3478?transport=tcp',
+                urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
                 username: 'ferryCaptain',
                 credential: 'i^YV13eTPOHdVzWm#2t5',
               },
