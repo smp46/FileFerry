@@ -120,16 +120,16 @@ class FileFerryApp {
           rtcConfiguration: {
             iceServers: [
               { urls: stunServer },
-              // {
-              //   urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
-              //   username: 'ferryCaptain',
-              //   credential: 'i^YV13eTPOHdVzWm#2t5',
-              // },
-              // {
-              //   urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
-              //   username: 'ferryCaptain',
-              //   credential: 'i^YV13eTPOHdVzWm#2t5',
-              // },
+              {
+                urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
+                username: 'ferryCaptain',
+                credential: 'i^YV13eTPOHdVzWm#2t5',
+              },
+              {
+                urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
+                username: 'ferryCaptain',
+                credential: 'i^YV13eTPOHdVzWm#2t5',
+              },
             ],
             iceCandidatePoolSize: 10,
             bundlePolicy: 'max-bundle',
