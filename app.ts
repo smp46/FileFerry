@@ -114,7 +114,7 @@ class FileFerryApp {
         listen: ['/p2p-circuit', '/webrtc'],
       },
       transports: [
-        webSockets({ filter: filters.all }),
+        webSockets(),
         webTransport(),
         webRTC({
           rtcConfiguration: {
@@ -131,7 +131,6 @@ class FileFerryApp {
                 credential: 'i^YV13eTPOHdVzWm#2t5',
               },
             ],
-            iceCandidatePoolSize: 10,
             bundlePolicy: 'max-bundle',
             rtcpMuxPolicy: 'require',
           },
@@ -149,9 +148,8 @@ class FileFerryApp {
       },
       services: {
         identify: identify({
-          timeout: 30000,
+          timeout: 10_000,
         }),
-        ping: ping(),
       },
     };
 
