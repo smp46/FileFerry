@@ -176,7 +176,7 @@ export class FileTransferManager {
   private async sendFileToStream(
     stream: Stream,
     file: File,
-    chunkSize: number = 1024 * 32,
+    chunkSize: number = 16_384 * 4, // 4 * the WebRTC default window size
   ): Promise<void> {
     try {
       const header = this.createFileHeader(file);
