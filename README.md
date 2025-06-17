@@ -65,28 +65,13 @@
 
 </div>
 
-FileFerry is a browser-based peer-to-peer file transfer application that
-eliminates the need for file uploads to central servers. Users share files
-through a simple passphrase system - the sender generates a unique phrase that
-the receiver enters to establish a direct connection.
+FileFerry is a browser-based application for direct file transfers without the need to store the file on a third-party server. Users share files using a simple passphrase – the sender creates a unique phrase the receiver enters to connect.
 
-The application uses js-libp2p for networking and WebRTC for secure direct
-transfers. Senders register their network address with a temporary passphrase
-through a lookup API. Receivers use this passphrase to discover and connect to
-senders via a relay server. Once the initial handshake completes through the
-relay, both parties establish a direct WebRTC connection and the relay drops out
-entirely.
+The application utilizes js-libp2p for networking and WebRTC for transfers. Senders register their network address with a temporary passphrase through a lookup API. Receivers use this passphrase to find and connect to senders, using a relay server to establish the connection. Once that initial connection is made, both parties establish a direct WebRTC connection.
 
-This architecture provides true peer-to-peer file sharing - files transfer
-directly between devices without touching intermediate servers. The relay and
-API servers only facilitate discovery for making the initial connection.
+If one or both devices are behind NAT, the application will use a relay to pipe the two connections together. However no storage is taking place, and this uses little more than the bandwith required for the transfer on the server side. All data transferred remains encrypted using the Noise protocol. This uses an x25519 key pair for authentication and ChaCha20Poly1305 for encryption, ensuring privacy throughout the file transfer.
 
-FileFerry _should_ work across different networks and device types, requiring
-only a modern web browser. The passphrase system makes sharing as simple as
-telling someone a couple of words, while the underlying WebRTC technology
-ensures transfers remain private and fast. Unlike cloud-based sharing services,
-your files never leave your device except to go directly to the intended
-recipient.
+FileFerry aims to work across different networks and device types, requiring only a modern web browser. The passphrase system simplifies sharing, while the tech keeps transfers private and fast. Your files remain on your device, transferring directly to the intended recipient.
 
 ### Built With
 
