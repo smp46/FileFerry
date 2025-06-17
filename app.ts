@@ -159,7 +159,6 @@ class FileFerryApp {
 
     await this.node.start();
     console.log(`Node started with Peer ID: ${this.node.peerId.toString()}`);
-    console.log('This is the node', this.node);
   }
 
   /**
@@ -446,7 +445,6 @@ class FileFerryApp {
    */
   public async start(): Promise<void> {
     await this.initialize();
-    console.log('FileFerry app started');
   }
 
   /**
@@ -459,14 +457,6 @@ class FileFerryApp {
     }
     this.appState.reset();
     console.log('FileFerry app stopped');
-  }
-
-  /**
-   * Cleans up resources by stopping the app.
-   * @returns A promise that resolves on cleanup.
-   */
-  public async cleanup(): Promise<void> {
-    await this.stop();
   }
 }
 
