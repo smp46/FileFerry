@@ -5,7 +5,6 @@ import { identify } from '@libp2p/identify';
 import { autoNAT } from '@libp2p/autonat';
 import { webSockets } from '@libp2p/websockets';
 import { ping } from '@libp2p/ping';
-import { tcp } from '@libp2p/tcp';
 import { createLibp2p } from 'libp2p';
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string';
 import { privateKeyFromProtobuf } from '@libp2p/crypto/keys';
@@ -14,7 +13,7 @@ const LISTEN_HOST = process.env.LISTEN_HOST || '0.0.0.0';
 const LISTEN_PORT = parseInt(process.env.LISTEN_PORT || 41337);
 const MAX_RESERVATIONS = parseInt(process.env.MAX_RESERVATIONS || '50', 10);
 const RESERVATION_TTL = parseInt(
-  process.env.RESERVATION_TTL || 2 * 60 * 60 * 1000,
+  process.env.RESERVATION_TTL || 60 * 60 * 1000,
   10,
 );
 
@@ -80,7 +79,11 @@ async function main() {
           `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT},`,
         ],
       },
-      transports: [webSockets(), tcp()],
+      transports: [
+        webSockets({
+          filter: filters.all,
+        }),
+      ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
       services: {

@@ -2,14 +2,14 @@
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
-import { identify } from '@libp2p/identify';
+import { identify, identifyPush } from '@libp2p/identify';
+import { ping } from '@libp2p/ping';
 import { webRTC } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
-import { webTransport } from '@libp2p/webtransport';
 import * as filters from '@libp2p/websockets/filters';
+import { webTransport } from '@libp2p/webtransport';
 import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
-import { ping } from '@libp2p/ping';
 
 import { AppState } from '@/core/AppState';
 import { ConnectionManager } from '@/core/ConnectionManager';
@@ -114,7 +114,9 @@ class FileFerryApp {
         listen: ['/p2p-circuit', '/webrtc'],
       },
       transports: [
-        webSockets(),
+        webSockets({
+          filter: filters.all,
+        }),
         webTransport(),
         webRTC({
           rtcConfiguration: {
@@ -147,9 +149,9 @@ class FileFerryApp {
         denyDialMultiaddr: () => false,
       },
       services: {
-        identify: identify({
-          timeout: 10_000,
-        }),
+        identify: identify(),
+        identifyPush: identifyPush(),
+        ping: ping(),
       },
     };
 
