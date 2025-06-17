@@ -185,7 +185,6 @@ class FileFerryApp {
       this.appState,
       this.managers.progress,
       this.managers.ui,
-      this.managers.error,
     );
 
     this.managers.relay = new RelayManager(
