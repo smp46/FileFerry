@@ -3,12 +3,15 @@ import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2';
 import { identify } from '@libp2p/identify';
 import { autoNAT } from '@libp2p/autonat';
+import * as filters from '@libp2p/websockets/filters';
 import { webSockets } from '@libp2p/websockets';
 import { ping } from '@libp2p/ping';
 import { createLibp2p } from 'libp2p';
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string';
 import { privateKeyFromProtobuf } from '@libp2p/crypto/keys';
 
+const ANNOUNCE_HOST = process.env.ANNOUNCE_HOST || '';
+const ANNOUNCE_PORT = parseInt(process.env.ANNOUNCE_PORT || 443);
 const LISTEN_HOST = process.env.LISTEN_HOST || '0.0.0.0';
 const LISTEN_PORT = parseInt(process.env.LISTEN_PORT || 41337);
 const MAX_RESERVATIONS = parseInt(process.env.MAX_RESERVATIONS || '50', 10);
@@ -74,10 +77,8 @@ async function main() {
     serverNode = await createLibp2p({
       privateKey: loadedPrivateKey,
       addresses: {
-        listen: [
-          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`,
-          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT},`,
-        ],
+        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`],
+        announce: [`/dns4/${ANNOUNCE_HOST}/tcp/${ANNOUNCE_PORT}/wss`],
       },
       transports: [
         webSockets({
