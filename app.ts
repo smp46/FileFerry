@@ -4,12 +4,12 @@ import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
 import { identify, identifyPush } from '@libp2p/identify';
 import { ping } from '@libp2p/ping';
-import { webRTC } from '@libp2p/webrtc';
+import { webRTC, webRTCDirect } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
-import * as filters from '@libp2p/websockets/filters';
-import { webTransport } from '@libp2p/webtransport';
 import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
+import { dcutr } from '@libp2p/dcutr';
+import { autoNAT } from '@libp2p/autonat';
 
 import { AppState } from '@/core/AppState';
 import { ConnectionManager } from '@/core/ConnectionManager';
@@ -108,36 +108,17 @@ class FileFerryApp {
    */
   private async setupLibp2pNode(): Promise<void> {
     const stunServer = await this.getStunConfiguration();
+    console.log(stunServer);
 
     const options: Libp2pOptions = {
       addresses: {
         listen: ['/p2p-circuit', '/webrtc'],
       },
       transports: [
-        webSockets({
-          filter: filters.all,
-        }),
-        webTransport(),
-        webRTC({
-          rtcConfiguration: {
-            iceServers: [
-              { urls: stunServer },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
-            ],
-            bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require',
-          },
-        }),
         circuitRelayTransport(),
+        webRTC(),
+        webRTCDirect(),
+        webSockets(),
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [
@@ -145,10 +126,16 @@ class FileFerryApp {
           maxStreamWindowSize: 1024 * 1024 * 4,
         }),
       ],
+      connectionManager: {
+        maxConnections: 50,
+        dialTimeout: 30000,
+      },
       connectionGater: {
         denyDialMultiaddr: () => false,
       },
       services: {
+        autoNAT: autoNAT(),
+        dcutr: dcutr(),
         identify: identify(),
         identifyPush: identifyPush(),
         ping: ping(),
@@ -347,11 +334,11 @@ class FileFerryApp {
       await this.managers.relay.connectToRelay(this.config.getRelayAddress());
 
       // Wait for relay to be ready
-      console.log('Waiting for relay to be ready...');
-      const canUseRelay = await this.managers.relay.canUseRelay();
-      if (!canUseRelay) {
-        throw new Error('Relay is not ready for use');
-      }
+      // console.log('Waiting for relay to be ready...');
+      // const canUseRelay = await this.managers.relay.canUseRelay();
+      // if (!canUseRelay) {
+      //   throw new Error('Relay is not ready for use');
+      // }
 
       // Get circuit address
       const circuitAddress = await this.managers.relay.waitForRelayAddress();
@@ -400,11 +387,11 @@ class FileFerryApp {
     await this.managers.relay.connectToRelay(this.config.getRelayAddress());
 
     // Wait for relay to be ready
-    console.log('Waiting for relay to be ready...');
-    const canUseRelay = await this.managers.relay.canUseRelay();
-    if (!canUseRelay) {
-      throw new Error('Relay is not ready for use');
-    }
+    // console.log('Waiting for relay to be ready...');
+    // const canUseRelay = await this.managers.relay.canUseRelay();
+    // if (!canUseRelay) {
+    //   throw new Error('Relay is not ready for use');
+    // }
 
     // Wait for circuit address
     await this.managers.relay.waitForRelayAddress();

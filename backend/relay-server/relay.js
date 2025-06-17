@@ -1,10 +1,16 @@
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
-import { circuitRelayServer } from '@libp2p/circuit-relay-v2';
+import {
+  circuitRelayTransport,
+  circuitRelayServer,
+} from '@libp2p/circuit-relay-v2';
+import { dcutr } from '@libp2p/dcutr';
 import { identify } from '@libp2p/identify';
 import { autoNAT } from '@libp2p/autonat';
-import * as filters from '@libp2p/websockets/filters';
+import { tcp } from '@libp2p/tcp';
 import { webSockets } from '@libp2p/websockets';
+import { webRTC, webRTCDirect } from '@libp2p/webrtc';
+import { mplex } from '@libp2p/mplex';
 import { ping } from '@libp2p/ping';
 import { createLibp2p } from 'libp2p';
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string';
@@ -77,20 +83,28 @@ async function main() {
     serverNode = await createLibp2p({
       privateKey: loadedPrivateKey,
       addresses: {
-        listen: [`/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/ws`],
+        listen: [
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/`,
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT + 1}/ws`,
+          `/ip4/${LISTEN_HOST}/udp/${LISTEN_PORT + 2}/webrtc-direct`,
+          `/p2p-circuit`,
+        ],
         announce: [`/dns4/${ANNOUNCE_HOST}/tcp/${ANNOUNCE_PORT}/wss`],
       },
       transports: [
-        webSockets({
-          filter: filters.all,
-        }),
+        circuitRelayTransport(),
+        tcp(),
+        webRTC(),
+        webRTCDirect(),
+        webSockets(),
       ],
       connectionEncrypters: [noise()],
-      streamMuxers: [yamux()],
+      streamMuxers: [yamux(), mplex()],
       services: {
         identify: identify(),
-        autoNat: autoNAT(),
         ping: ping(),
+        dcutr: dcutr(),
+        autoNAT: autoNAT(),
         relay: circuitRelayServer({
           reservations: {
             maxReservations: MAX_RESERVATIONS,
