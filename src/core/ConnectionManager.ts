@@ -224,7 +224,7 @@ export class ConnectionManager {
     }
 
     if (retryAttemptsForThisPeer >= 4) {
-      // Give up after 10 attempts
+      // Give up after 4 attempts
       this.appState.declareFinished();
       await this.node.stop();
       this.errorHandler.tryAgainError();

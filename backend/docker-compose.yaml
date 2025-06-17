@@ -19,10 +19,10 @@ services:
       - '3478:3478/udp'
       - '49152-49352:49152-49352/udp'
     volumes:
-      - ./relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - /home/smp/FileFerry/relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
+    read_only: true
     tmpfs:
       - /var/lib/coturn
-    read_only: true
     networks:
       - coturn-net
     deploy:
@@ -49,15 +49,31 @@ services:
     image: relay-server
     container_name: fileferry-relay-server
     restart: always
-    ports:
-      - '41337:41337'
     env_file:
-      - ./relay-server/.env
-    networks:
-      - relay-net
+      - /home/smp/FileFerry/relay-server/.env
+    network_mode: host
     read_only: true
     deploy:
       resources:
         limits:
           cpus: '0.50'
           memory: 512M
+
+  geoip-api:
+    image: geoip-api:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - geoip-data:/app/api/db
+    environment:
+      - ENVIRONMENT=production
+    read_only: true
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 256M
+
+volumes:
+  geoip-data:
+
+

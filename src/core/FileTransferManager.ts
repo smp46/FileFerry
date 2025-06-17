@@ -6,12 +6,12 @@ import {
   WritableStreamDefaultWriter as PolyfillWritableStreamDefaultWriter,
 } from 'web-streams-polyfill';
 import streamSaver from 'streamsaver';
+import crypto from 'crypto';
 import type { Libp2p } from 'libp2p';
 import type { Stream, StreamHandler } from '@libp2p/interface';
 import type { AppState } from '@/core/AppState';
 import type { ProgressTracker } from '@ui/ProgressTracker';
 import type { UIManager } from '@ui/UIManager';
-import type { ErrorHandler } from '@utils/ErrorHandler';
 
 /**
  * Interface for the file header object.
@@ -41,7 +41,6 @@ export class FileTransferManager {
   private appState: AppState;
   private progressTracker: ProgressTracker;
   private uiManager: UIManager;
-  private errorHandler: ErrorHandler;
   private readonly protocol: string;
   private wakeLock: WakeLockSentinel | null = null;
 
@@ -71,13 +70,11 @@ export class FileTransferManager {
     appState: AppState,
     progressTracker: ProgressTracker,
     uiManager: UIManager,
-    errorHandler: ErrorHandler,
   ) {
     this.node = node;
     this.appState = appState;
     this.progressTracker = progressTracker;
     this.uiManager = uiManager;
-    this.errorHandler = errorHandler;
     this.protocol = '/fileferry/filetransfer/1.0.0';
     this.wakeLock = null;
 
@@ -94,6 +91,7 @@ export class FileTransferManager {
     this.receivedBytesTotal = 0;
 
     streamSaver.WritableStream = PolyfillWritableStream;
+    streamSaver.mitm = 'https://fileferry.xyz/streamsaver/mitm.html';
     window.WritableStream = PolyfillWritableStream;
   }
 
@@ -176,7 +174,7 @@ export class FileTransferManager {
   private async sendFileToStream(
     stream: Stream,
     file: File,
-    chunkSize: number = 1024 * 32,
+    chunkSize: number = 16_384, // the WebRTC default message size
   ): Promise<void> {
     try {
       const header = this.createFileHeader(file);
