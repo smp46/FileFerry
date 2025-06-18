@@ -97,7 +97,7 @@ export class UIManager {
    * Returns the UI to the initial home screen.
    */
   public showHome(): void {
-    window.location.reload();
+    window.location.assign(window.location.origin);
   }
 
   /**

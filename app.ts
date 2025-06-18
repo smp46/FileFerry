@@ -209,6 +209,12 @@ class FileFerryApp {
 
     // Setup file transfer protocol
     this.managers.fileTransfer.setupFileTransferProtocol();
+
+    //If the URL has a pathname, handle it
+    const pathname = window.location.pathname;
+    if (pathname) {
+      this.actionPathname(pathname);
+    }
   }
 
   /**
@@ -439,6 +445,23 @@ class FileFerryApp {
         );
       }
     }, 1000);
+  }
+
+  private actionPathname(pathname: string): void {
+    if (pathname.startsWith('/send')) {
+      this.managers.ui?.showSendWindow();
+    } else if (pathname.startsWith('/receive')) {
+      this.managers.ui?.showReceiveWindow();
+      const urlParams = new URLSearchParams(window.location.search);
+      const phrase = urlParams.get('phrase')?.trim();
+      if (phrase && this.services.phrase?.validatePhrase(phrase)) {
+        this.startReceiverMode(phrase);
+        this.managers.ui?.showReceiverMode();
+        this.managers.ui?.onPhraseEntered(phrase);
+      } else {
+        this.managers.ui?.showErrorPopup('Invalid phrase provided.');
+      }
+    }
   }
 
   /**

@@ -131,7 +131,10 @@ export class PhraseService {
    */
   public validatePhrase(phrase: string): boolean {
     if (phrase != undefined && phrase.trim().length > 0) {
-      return true;
+      const regex = /^\d{1,3}-(?:[a-z]{3,8})-(?:[a-z]{3,8})$/;
+      if (regex.test(phrase)) {
+        return true;
+      }
     }
     return false;
   }
