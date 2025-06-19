@@ -36,7 +36,7 @@ export class ConfigManager {
     this.config = {
       relay: {
         address:
-          '/dns4/relay.fileferry.xyz/tcp/443/tls/ws/p2p/12D3KooWPUXghsjtba2yaKbxJAPUpCgZ1UzciEdCPzohBQi7wiPg',
+          '/ip4/195.114.14.137/tcp/41338/tls/sni/195-114-14-137.k51qzi5uqu5dlg6rzzu1wamxpip5om9vddzw5dvmw38wp1f4b30yi0q4itxkym.libp2p.direct/ws/p2p/12D3KooWQ3E3PsbrVnnh34dSggrcTqBKqrA2bbMwTH9EHmea7CfP',
         timeout: 30000,
       },
       api: {

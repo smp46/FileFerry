@@ -8,13 +8,15 @@ import { webRTC, webRTCDirect } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
 import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
-import { dcutr } from '@libp2p/dcutr';
 import { autoNAT } from '@libp2p/autonat';
+import { keychain } from '@libp2p/keychain';
+import { dcutr } from '@libp2p/dcutr';
+import { WebRTC } from '@multiformats/multiaddr-matcher';
+import * as filters from '@libp2p/websockets/filters';
 
 import { AppState } from '@/core/AppState';
 import { ConnectionManager } from '@/core/ConnectionManager';
 import { FileTransferManager } from '@/core/FileTransferManager';
-import { RelayManager } from '@/core/RelayManager';
 import { StunService } from '@/services/StunService';
 import { PhraseService } from '@/services/PhraseService';
 import { UIManager } from '@/ui/UIManager';
@@ -41,7 +43,7 @@ interface Managers {
   progress: ProgressTracker;
   fileTransfer: FileTransferManager;
   connection: ConnectionManager;
-  relay: RelayManager;
+  // relay: RelayManager;
 }
 
 // Extend the Window interface for global app access
@@ -110,31 +112,34 @@ class FileFerryApp {
     const stunServer = await this.getStunConfiguration();
     console.log(stunServer);
 
+    const iceConfig = {
+      rtcConfiguration: {
+        iceServers: [
+          {
+            urls: [
+              'stun:stun.l.google.com:19302',
+              stunServer,
+              'turn:relay.fileferry.xyz:3478?transport=udp',
+              'turn:relay.fileferry.xyz:3478?transport=tcp',
+            ],
+            username: 'ferryCaptain',
+            credential: 'i^YV13eTPOHdVzWm#2t5',
+          },
+        ],
+      },
+    };
+
     const options: Libp2pOptions = {
       addresses: {
         listen: ['/p2p-circuit', '/webrtc'],
       },
       transports: [
         circuitRelayTransport(),
-        webRTC({
-          rtcConfiguration: {
-            iceServers: [
-              { urls: stunServer },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=udp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
-              {
-                urls: 'turn:relay.fileferry.xyz:3478?transport=tcp',
-                username: 'ferryCaptain',
-                credential: 'i^YV13eTPOHdVzWm#2t5',
-              },
-            ],
-          },
+        webRTC(iceConfig),
+        webRTCDirect(iceConfig),
+        webSockets({
+          filter: filters.all,
         }),
-        webRTCDirect(),
-        webSockets(),
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [
@@ -152,8 +157,14 @@ class FileFerryApp {
       services: {
         autoNAT: autoNAT(),
         dcutr: dcutr(),
-        identify: identify(),
-        identifyPush: identifyPush(),
+        identify: identify({
+          maxMessageSize: 1024 * 1024 * 16, // 10 MB
+          timeout: 10000,
+        }),
+        identifyPush: identifyPush({
+          concurrency: 1,
+        }),
+        keychain: keychain(),
         ping: ping(),
       },
     };
@@ -188,12 +199,6 @@ class FileFerryApp {
       this.appState,
       this.managers.progress,
       this.managers.ui,
-    );
-
-    this.managers.relay = new RelayManager(
-      this.node,
-      this.appState,
-      this.managers.error,
     );
 
     this.managers.connection = new ConnectionManager(
@@ -333,7 +338,7 @@ class FileFerryApp {
    * @internal
    */
   private async startSenderMode(file: File): Promise<void> {
-    if (!this.services.phrase || !this.managers.relay || !this.managers.error) {
+    if (!this.services.phrase || !this.managers.error) {
       return;
     }
     try {
@@ -353,21 +358,29 @@ class FileFerryApp {
       }
 
       // Connect to relay
-      await this.managers.relay.connectToRelay(this.config.getRelayAddress());
+      const relayMaddr = multiaddr(this.config.getRelayAddress());
+      if (relayMaddr) {
+        await this.managers.connection?.dialPeer(relayMaddr, {
+          signal: AbortSignal.timeout(5000),
+        });
+      } else {
+        this.managers.ui?.showErrorPopup('Relay address is not configured.');
+      }
 
-      // Wait for relay to be ready
-      // console.log('Waiting for relay to be ready...');
-      // const canUseRelay = await this.managers.relay.canUseRelay();
-      // if (!canUseRelay) {
-      //   throw new Error('Relay is not ready for use');
-      // }
+      // Get address
+      let webRTCMultiAddr;
+      while (!webRTCMultiAddr) {
+        webRTCMultiAddr = this.node
+          ?.getMultiaddrs()
+          .find((ma) => WebRTC.matches(ma));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
 
-      // Get circuit address
-      const circuitAddress = await this.managers.relay.waitForRelayAddress();
+      console.log('WebRTC Circuit Address:', webRTCMultiAddr?.toString());
 
       // Register phrase
       console.log('Registering phrase...');
-      await this.services.phrase.registerPhrase(phrase, circuitAddress);
+      await this.services.phrase.registerPhrase(phrase, webRTCMultiAddr);
 
       console.log('Sender mode setup complete. Waiting for receiver...');
     } catch (error) {
@@ -390,7 +403,6 @@ class FileFerryApp {
     if (
       !this.appState ||
       !this.services.phrase ||
-      !this.managers.relay ||
       !this.managers.connection ||
       !this.node
     ) {
@@ -405,20 +417,8 @@ class FileFerryApp {
       throw new Error('No address found for phrase');
     }
 
-    // Connect to relay first
-    await this.managers.relay.connectToRelay(this.config.getRelayAddress());
-
-    // Wait for relay to be ready
-    // console.log('Waiting for relay to be ready...');
-    // const canUseRelay = await this.managers.relay.canUseRelay();
-    // if (!canUseRelay) {
-    //   throw new Error('Relay is not ready for use');
-    // }
-
-    // Wait for circuit address
-    await this.managers.relay.waitForRelayAddress();
-
     const peerMultiaddr = multiaddr(addressData.maddr);
+    console.log(`Connecting to peer: ${addressData.maddr}`);
 
     const connection = await this.managers.connection.dialPeer(peerMultiaddr, {
       signal: AbortSignal.timeout(60000),
@@ -427,33 +427,26 @@ class FileFerryApp {
     console.log(`Connected to sender via phrase: ${phrase}`);
 
     this.appState.setActivePeer(connection.remotePeer.toString());
-
-    const checkWebRTC = setInterval(() => {
-      if (!this.node) {
-        clearInterval(checkWebRTC);
-        return;
-      }
-      const connections = this.node.getConnections(connection.remotePeer);
-      const webrtcConn = connections.find((c) =>
-        c.remoteAddr.toString().includes('/webrtc'),
-      );
-
-      if (webrtcConn && webrtcConn.status === 'open') {
-        clearInterval(checkWebRTC);
-        console.log(
-          'WebRTC connection established, circuit can now be closed safely',
-        );
-      }
-    }, 1000);
   }
 
+  /**
+   * Conditionally handles the provided pathname of the current URL.
+   * If the pathname starts with `/send`, it shows the send window.
+   * If it starts with `/receive`, it checks for a phrase in the URL parameters,
+   * if the phrase is valid, it starts the receiver mode and shows the receiver window.
+   *
+   * @param pathname - The pathname from the current URL.
+   * @internal
+   */
   private actionPathname(pathname: string): void {
     if (pathname.startsWith('/send')) {
       this.managers.ui?.showSendWindow();
     } else if (pathname.startsWith('/receive')) {
       this.managers.ui?.showReceiveWindow();
       const urlParams = new URLSearchParams(window.location.search);
-      const phrase = urlParams.get('phrase')?.trim();
+      const phrase = this.services.phrase?.sanitizePhrase(
+        urlParams.get('phrase') || '',
+      );
       if (phrase && this.services.phrase?.validatePhrase(phrase)) {
         this.startReceiverMode(phrase);
         this.managers.ui?.showReceiverMode();

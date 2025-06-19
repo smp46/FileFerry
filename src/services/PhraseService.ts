@@ -125,7 +125,13 @@ export class PhraseService {
   }
 
   /**
-   * Validates a given phrase.
+   * Returns a boolean based on if the phrase matches the expected format:
+   * number from 0-100
+   * dash
+   * word from 3 letters to 8 letters long, all lowercase, english
+   * dash
+   * word from 3 letters to 8 letters long, all lowercase, english
+   *
    * @param phrase - The phrase to validate.
    * @returns True if the phrase is considered valid.
    */

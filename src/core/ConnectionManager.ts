@@ -1,12 +1,7 @@
 // core/ConnectionManager.ts
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr';
 import type { Libp2p } from 'libp2p';
-import type {
-  Connection,
-  Stream,
-  PeerId,
-  DialOptions,
-} from '@libp2p/interface';
+import type { Connection, PeerId, DialOptions } from '@libp2p/interface';
 import type { AppState } from '@core/AppState';
 import type { ErrorHandler } from '@utils/ErrorHandler';
 import type { ConfigManager } from '@utils/ConfigManager';
@@ -21,14 +16,6 @@ interface ConnectionUpgradeInfo {
   webrtc: Connection | null;
   upgrading: boolean;
   stable: boolean;
-}
-
-/**
- * A more specific Stream type for WebRTC data channels.
- * @internal
- */
-interface WebRTCStream extends Stream {
-  channel: RTCDataChannel;
 }
 
 /**
@@ -82,48 +69,7 @@ export class ConnectionManager {
 
     console.log(`Connection OPENED with: ${remotePeerIdStr} on ${remoteAddr}`);
 
-    if (
-      remoteAddr.includes('/p2p-circuit') &&
-      !remoteAddr.includes('/webrtc')
-    ) {
-      const originalClose = connection.close.bind(connection);
-      let closeBlocked = true;
-
-      connection.close = async (): Promise<void> => {
-        if (this.appState.isFinished()) {
-          return originalClose();
-        }
-
-        if (closeBlocked) {
-          console.log(
-            `Blocking premature close of circuit connection to ${remotePeerIdStr}`,
-          );
-          return;
-        }
-        return originalClose();
-      };
-
-      setTimeout(() => {
-        closeBlocked = false;
-        const connInfo = this.connectionUpgrades.get(remotePeerIdStr);
-        if (connInfo && connInfo.webrtc && connInfo.webrtc.status === 'open') {
-          console.log(
-            `Allowing circuit connection closure - WebRTC established`,
-          );
-        }
-      }, 30000);
-    }
-
     this.appState.addConnection(remotePeerId, connection);
-
-    if (!this.connectionUpgrades.has(connection.id)) {
-      this.connectionUpgrades.set(connection.id, {
-        relay: null,
-        webrtc: null,
-        upgrading: false,
-        stable: false,
-      });
-    }
 
     await this.handleConnectionType(connection, remotePeerIdStr, remoteAddr);
   }
@@ -266,66 +212,6 @@ export class ConnectionManager {
   }
 
   /**
-   * Upgrades a connection from relay to direct WebRTC.
-   * @param connectionId - The string PeerId of the peer to upgrade.
-   */
-  public async upgradeConnection(connectionId: string): Promise<void> {
-    const connInfo = this.connectionUpgrades.get(connectionId);
-    if (!connInfo || connInfo.upgrading) {
-      return;
-    }
-
-    connInfo.upgrading = true;
-
-    if (connInfo.relay && connInfo.webrtc) {
-      setTimeout(() => {}, 5000);
-    }
-  }
-
-  /**
-   * Waits for a WebRTC data channel to be in the 'open' state.
-   * @param stream - The stream to wait for.
-   * @param timeout - The timeout in milliseconds.
-   * @returns A promise that resolves to the stream once its channel is open.
-   */
-  public async waitForWebRTCStream(
-    stream: Stream,
-    timeout: number = 30000,
-  ): Promise<Stream> {
-    const rtcStream = stream as WebRTCStream;
-    if (rtcStream.channel) {
-      if (rtcStream.channel.readyState === 'open') {
-        return stream;
-      }
-
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          reject(new Error('WebRTC stream open timeout'));
-        }, timeout);
-
-        const onOpen = (): void => {
-          clearTimeout(timer);
-          rtcStream.channel.removeEventListener('open', onOpen);
-          rtcStream.channel.removeEventListener('error', onError);
-          resolve(stream);
-        };
-
-        const onError = (error: Event): void => {
-          clearTimeout(timer);
-          rtcStream.channel.removeEventListener('open', onOpen);
-          rtcStream.channel.removeEventListener('error', onError);
-          reject(error);
-        };
-
-        rtcStream.channel.addEventListener('open', onOpen);
-        rtcStream.channel.addEventListener('error', onError);
-      });
-    }
-
-    return stream;
-  }
-
-  /**
    * Handles a new connection based on its type (relay or webrtc).
    * @param connection - The new connection.
    * @param remotePeerIdStr - The string PeerId of the remote peer.
@@ -337,22 +223,13 @@ export class ConnectionManager {
     remotePeerIdStr: string,
     remoteAddr: string,
   ): Promise<void> {
-    const connInfo = this.connectionUpgrades.get(connection.id);
-
-    if (!connInfo) {
-      return;
-    }
     const relayAddress = this.config.getRelayAddress();
 
-    if (
-      remoteAddr.includes('/p2p-circuit') &&
-      !remoteAddr.includes('/webrtc')
-    ) {
-      connInfo.relay = connection;
-      console.log(`Relay connection established for ${remotePeerIdStr}`);
-    } else if (remoteAddr.includes('/webrtc')) {
-      connInfo.webrtc = connection;
-
+    if (remoteAddr.includes('/webrtc')) {
+      console.log(
+        remoteAddr.includes('/webrtc'),
+        'WebRTC connection established',
+      );
       if (
         this.appState.getMode() === 'sender' &&
         this.appState.getSelectedFile() != null
@@ -365,16 +242,12 @@ export class ConnectionManager {
 
         this.appState.setTransferConnectionId(connection.id);
         this.appState.setActivePeer(remotePeerIdStr);
-        this.appState.setActiveStream(await this.waitForWebRTCStream(stream));
+        this.appState.setActiveStream(stream);
 
-        await this.waitForWebRTCStream(stream).then(() => {
-          this.fileTransferHandler.startFileTransfer();
-        });
+        this.fileTransferHandler.startFileTransfer();
+        console.log('Starting file transfer with', remotePeerIdStr);
       }
-
-      console.log(`WebRTC connection established for ${remotePeerIdStr}`);
     } else if (remoteAddr === relayAddress) {
-      connInfo.relay = connection;
       console.log(`Direct relay connection established for ${remotePeerIdStr}`);
     }
   }

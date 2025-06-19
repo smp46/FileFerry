@@ -1,30 +1,19 @@
-networks:
-  coturn-net:
-    driver: bridge
-    name: coturn-net
-  passphrase-net:
-    driver: bridge
-    name: passphrase-net
-  relay-net:
-    driver: bridge
-    name: relay-net
-
 services:
   coturn:
     image: coturn/coturn
     container_name: fileferry-coturn
     restart: always
-    ports:
-      - '3478:3478/tcp'
-      - '3478:3478/udp'
-      - '49152-49352:49152-49352/udp'
+    network_mode: host
+    # ports:
+    #   - '3478:3478'
+    #   - '49152-49352:49152-49352'
     volumes:
       - /home/smp/FileFerry/relay-server/my-turnserver.conf:/etc/coturn/turnserver.conf:ro
     read_only: true
     tmpfs:
       - /var/lib/coturn
-    networks:
-      - coturn-net
+    # networks:
+    #   - coturn-net
     deploy:
       resources:
         limits:
@@ -51,6 +40,8 @@ services:
     restart: always
     env_file:
       - /home/smp/FileFerry/relay-server/.env
+    volumes:
+      - relay-data:/app/db
     network_mode: host
     read_only: true
     deploy:
@@ -62,18 +53,29 @@ services:
   geoip-api:
     image: geoip-api:latest
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - geoip-data:/app/api/db
     environment:
       - ENVIRONMENT=production
     read_only: true
+    deploy:
       resources:
         limits:
           cpus: '0.20'
           memory: 256M
 
+networks:
+  coturn-net:
+    driver: bridge
+    name: coturn-net
+  passphrase-net:
+    driver: bridge
+    name: passphrase-net
+  relay-net:
+    driver: bridge
+    name: relay-net
+
 volumes:
   geoip-data:
-
-
+  relay-data:
