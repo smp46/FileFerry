@@ -17,6 +17,7 @@ import { webRTC, webRTCDirect } from '@libp2p/webrtc';
 import { WebSocketsSecure } from '@multiformats/multiaddr-matcher';
 import { LevelDatastore } from 'datastore-level';
 import { ping } from '@libp2p/ping';
+import { kadDHT } from '@libp2p/kad-dht';
 import { createLibp2p } from 'libp2p';
 
 const ANNOUNCE_HOST = process.env.ANNOUNCE_HOST || '';
@@ -72,7 +73,6 @@ async function main() {
       },
       transports: [
         circuitRelayTransport(),
-        tcp(),
         webRTC(),
         webRTCDirect(),
         webSockets(),
@@ -80,6 +80,9 @@ async function main() {
       connectionEncrypters: [noise(), tls()],
       streamMuxers: [yamux()],
       services: {
+        dht: kadDHT({
+          clientMode: false,
+        }),
         identify: identify(),
         identifyPush: identifyPush(),
         keychain: keychain(),

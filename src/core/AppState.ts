@@ -21,6 +21,7 @@ export class AppState {
   public activePeerId: string | null;
   public activeStream: Stream | null;
   public transferConnectionId: string | null;
+  public reconnected: boolean | null;
 
   /**
    * Initializes the application state.
@@ -34,6 +35,7 @@ export class AppState {
     this.activePeerId = null;
     this.activeStream = null;
     this.transferConnectionId = null;
+    this.reconnected = false;
   }
 
   /**
@@ -209,6 +211,14 @@ export class AppState {
    */
   public getActiveStream(): Stream | null {
     return this.activeStream;
+  }
+
+  public setReconnected(value: boolean): void {
+    this.reconnected = value;
+  }
+
+  public hasReconnected(): boolean {
+    return this.reconnected || false;
   }
 
   public isFinished(): boolean {

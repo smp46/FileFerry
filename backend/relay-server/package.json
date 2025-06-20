@@ -15,6 +15,7 @@
     "@libp2p/config": "^1.1.9",
     "@libp2p/crypto": "^5.1.4",
     "@libp2p/identify": "^3.0.1",
+    "@libp2p/kad-dht": "^15.1.6",
     "@libp2p/keychain": "^5.2.4",
     "@libp2p/mplex": "^11.0.40",
     "@libp2p/peer-id": "^5.1.5",

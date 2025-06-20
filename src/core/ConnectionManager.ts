@@ -51,7 +51,6 @@ export class ConnectionManager {
     this.errorHandler = errorHandler;
     this.config = config;
     this.fileTransferHandler = fileTransferHandler;
-    this.connectionUpgrades = new Map();
     this.retryAttempts = new Map();
   }
 
@@ -83,7 +82,6 @@ export class ConnectionManager {
   ): Promise<void> {
     const remotePeerIdStr = event.detail.remotePeer.toString();
     const connectionId = event.detail.id;
-    this.connectionUpgrades.delete(connectionId);
 
     if (
       this.appState.isTransferActive() &&
@@ -122,6 +120,7 @@ export class ConnectionManager {
         }
       };
       this.node.addEventListener('connection:open', onConnectionOpen);
+      this.appState.setReconnected(true);
     });
 
     const delayPromise = new Promise<void>((resolve) => {
@@ -159,6 +158,7 @@ export class ConnectionManager {
           signal: AbortSignal.timeout(5000),
         });
         this.errorHandler.reconnected();
+        this.appState.setReconnected(true);
         break; // If reconnection is successful, break the loop
       } catch (_) {
         retryAttemptsForThisPeer++;

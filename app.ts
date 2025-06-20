@@ -4,13 +4,14 @@ import { yamux } from '@chainsafe/libp2p-yamux';
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2';
 import { identify, identifyPush } from '@libp2p/identify';
 import { ping } from '@libp2p/ping';
-import { webRTC, webRTCDirect } from '@libp2p/webrtc';
+import { webRTC } from '@libp2p/webrtc';
 import { webSockets } from '@libp2p/websockets';
 import { createLibp2p, type Libp2p, type Libp2pOptions } from 'libp2p';
 import { multiaddr } from '@multiformats/multiaddr';
-import { autoNAT } from '@libp2p/autonat';
 import { keychain } from '@libp2p/keychain';
 import { dcutr } from '@libp2p/dcutr';
+import { kadDHT } from '@libp2p/kad-dht';
+import { bootstrap } from '@libp2p/bootstrap';
 import { WebRTC } from '@multiformats/multiaddr-matcher';
 import * as filters from '@libp2p/websockets/filters';
 
@@ -43,7 +44,6 @@ interface Managers {
   progress: ProgressTracker;
   fileTransfer: FileTransferManager;
   connection: ConnectionManager;
-  // relay: RelayManager;
 }
 
 // Extend the Window interface for global app access
@@ -116,12 +116,10 @@ class FileFerryApp {
       rtcConfiguration: {
         iceServers: [
           {
-            urls: [
-              'stun:stun.l.google.com:19302',
-              stunServer,
-              'turn:relay.fileferry.xyz:3478?transport=udp',
-              'turn:relay.fileferry.xyz:3478?transport=tcp',
-            ],
+            urls: 'stun:stun.l.google.com:19302',
+          },
+          {
+            urls: 'turn:turn.fileferry.xyz:5349',
             username: 'ferryCaptain',
             credential: 'i^YV13eTPOHdVzWm#2t5',
           },
@@ -129,48 +127,50 @@ class FileFerryApp {
       },
     };
 
+    const relayAddr =
+      '/dns4/195-114-14-137.k51qzi5uqu5dlg6rzzu1wamxpip5om9vddzw5dvmw38wp1f4b30yi0q4itxkym.libp2p.direct/tcp/41338/wss/p2p/12D3KooWQ3E3PsbrVnnh34dSggrcTqBKqrA2bbMwTH9EHmea7CfP';
+
     const options: Libp2pOptions = {
       addresses: {
-        listen: ['/p2p-circuit', '/webrtc'],
+        listen: ['/webrtc', '/p2p-circuit'],
       },
       transports: [
-        circuitRelayTransport(),
+        circuitRelayTransport({
+          discoverRelays: 1,
+        }),
         webRTC(iceConfig),
-        webRTCDirect(iceConfig),
         webSockets({
           filter: filters.all,
         }),
       ],
       connectionEncrypters: [noise()],
-      streamMuxers: [
-        yamux({
-          maxStreamWindowSize: 1024 * 1024 * 4,
-        }),
-      ],
-      connectionManager: {
-        maxConnections: 50,
-        dialTimeout: 30000,
-      },
+      streamMuxers: [yamux()],
       connectionGater: {
-        denyDialMultiaddr: () => false,
+        denyDialMultiaddr: (multiaddr) => {
+          const isIPv6 = multiaddr.toString().startsWith('/ip6/');
+          if (isIPv6) {
+            return true;
+          }
+          return false;
+        },
       },
       services: {
-        autoNAT: autoNAT(),
+        dht: kadDHT({
+          clientMode: true,
+        }),
+        peerDiscovery: bootstrap({
+          list: [relayAddr],
+          timeout: 1000,
+        }),
         dcutr: dcutr(),
-        identify: identify({
-          maxMessageSize: 1024 * 1024 * 16, // 10 MB
-          timeout: 10000,
-        }),
-        identifyPush: identifyPush({
-          concurrency: 1,
-        }),
+        identify: identify(),
+        identifyPush: identifyPush(),
         keychain: keychain(),
         ping: ping(),
       },
     };
 
     this.node = await createLibp2p(options);
-
     await this.node.start();
     console.log(`Node started with Peer ID: ${this.node.peerId.toString()}`);
   }
@@ -355,16 +355,6 @@ class FileFerryApp {
       const phraseDisplay = document.getElementById('generatedPhraseDisplay');
       if (phraseDisplay) {
         phraseDisplay.textContent = phrase;
-      }
-
-      // Connect to relay
-      const relayMaddr = multiaddr(this.config.getRelayAddress());
-      if (relayMaddr) {
-        await this.managers.connection?.dialPeer(relayMaddr, {
-          signal: AbortSignal.timeout(5000),
-        });
-      } else {
-        this.managers.ui?.showErrorPopup('Relay address is not configured.');
       }
 
       // Get address

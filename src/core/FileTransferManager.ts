@@ -104,19 +104,24 @@ export class FileTransferManager {
    */
   public setupFileTransferProtocol(): void {
     const handler: StreamHandler = async ({ stream, connection }) => {
+      if (this.appState.isTransferActive() && !this.appState.hasReconnected()) {
+        return;
+      }
       this.getWakelock();
       this.appState.setActivePeer(connection.remotePeer.toString());
       this.appState.setTransferConnectionId(connection.id);
 
-      if (this.appState.isTransferActive()) {
+      if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
-        this.appState.setActiveStream(stream);
-      } else {
-        this.appState.setActiveStream(stream);
-        this.appState.setActiveTransfer();
       }
 
+      this.appState.setActiveStream(stream);
+      this.appState.setActiveTransfer();
       await this.handleFileTransfer();
+
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
+      }
     };
     this.node.handle(this.protocol, handler);
   }
@@ -126,6 +131,9 @@ export class FileTransferManager {
    */
   public async startFileTransfer(): Promise<void> {
     try {
+      if (this.appState.isTransferActive() && !this.appState.hasReconnected()) {
+        return;
+      }
       const activeStream = this.appState.getActiveStream();
       const selectedFile = this.appState.getSelectedFile();
 
@@ -133,13 +141,13 @@ export class FileTransferManager {
         throw new Error('No active stream or file to start transfer.');
       }
 
-      if (this.appState.isTransferActive()) {
+      if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
-        await this.sendFileToStream(activeStream, selectedFile);
       } else {
         this.appState.setActiveTransfer();
-        await this.sendFileToStream(activeStream, selectedFile);
       }
+
+      await this.sendFileToStream(activeStream, selectedFile);
 
       if (this.appState.isFinished()) {
         await this.transferComplete();
@@ -233,7 +241,12 @@ export class FileTransferManager {
         'send',
         true,
       );
-      this.transferProgressBytes = 0;
+
+      // Wait for the receiver to close the stream
+      while (stream.status === 'open' || stream.status === 'closing') {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      this.appState.declareFinished();
     } catch (error) {
       throw error;
     }
@@ -339,20 +352,19 @@ export class FileTransferManager {
             this.fileSizeFromHeader,
           );
 
-          if (this.receivedFileWriter != null) {
-            if (this.hash != this.fileHashFromHeader) {
-              this.uiManager.showErrorPopup(
-                "Sorry mate, the file's hash does not match. The file may be corrupted.",
-              );
-              await this.receivedFileWriter.abort('File hash mismatch');
-            } else {
-              await this.receivedFileWriter.close();
-            }
-            this.receivedFileWriter = null;
+          if (this.hash != this.fileHashFromHeader) {
+            this.uiManager.showErrorPopup(
+              "Sorry mate, the file's hash does not match. The file may be corrupted.\nHash received: " +
+                this.fileHashFromHeader +
+                '\n Computed Hash from Transfer: ' +
+                this.hash,
+            );
           }
 
-          this.appState.clearActiveTransfer();
-          await this.closeActiveStream();
+          this.receivedFileWriter?.close();
+          this.receivedFileWriter = null;
+          await this.closeActiveStream(stream);
+          this.appState.declareFinished();
 
           break;
         }
@@ -366,11 +378,12 @@ export class FileTransferManager {
    * Closes the active file transfer stream.
    * @returns A promise that resolves when the stream is closed.
    */
-  private async closeActiveStream(): Promise<void> {
-    const stream = this.appState.getActiveStream();
+  private async closeActiveStream(stream: Stream): Promise<void> {
     if (stream) {
       await stream.close();
-      this.appState.setActiveStream(null!);
+      if (stream.id === this.appState.getActiveStream()?.id) {
+        this.appState.setActiveStream(null!);
+      }
     }
   }
 
@@ -499,11 +512,10 @@ export class FileTransferManager {
     ) {
       try {
         this.receivedFileWriter?.close();
-        this.closeActiveStream();
+        this.closeActiveStream(this.appState.getActiveStream()!);
       } catch (_) {}
     }
 
-    this.appState.declareFinished();
     await this.node.stop();
     this.releaseWakelock();
   }
