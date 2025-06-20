@@ -105,42 +105,4 @@ export class ErrorHandler {
   private logError(error: Error, context: object): void {
     console.error('Error:', error.message, 'Context:', context);
   }
-
-  /**
-   * Checks if an error is network-related.
-   * @param error - The error object.
-   * @returns True if the error appears to be a network error.
-   * @internal
-   */
-  private isNetworkError(error: Error & { code?: string }): boolean {
-    return (
-      error.message.includes('network') ||
-      error.message.includes('connection') ||
-      error.code === 'NETWORK_ERROR'
-    );
-  }
-
-  /**
-   * Checks if an error is a timeout error.
-   * @param error - The error object.
-   * @returns True if the error appears to be a timeout.
-   * @internal
-   */
-  private isTimeoutError(error: Error & { code?: string }): boolean {
-    return (
-      error.message.includes('timeout') ||
-      error.message.includes('timed out') ||
-      error.code === 'TIMEOUT'
-    );
-  }
-
-  /**
-   * Checks if an error is likely recoverable.
-   * @param error - The error object.
-   * @returns True if the error is a network or timeout error.
-   * @internal
-   */
-  private isRecoverableError(error: Error): boolean {
-    return this.isNetworkError(error) || this.isTimeoutError(error);
-  }
 }

@@ -152,8 +152,9 @@ export class FileTransferManager {
       if (this.appState.isFinished()) {
         await this.transferComplete();
       }
-    } catch (_) {
+    } catch (error) {
       // Let connection management handle the error
+      throw error;
     }
   }
 
@@ -201,6 +202,11 @@ export class FileTransferManager {
         await new Promise((resolve) => setTimeout(resolve, 1));
 
         for (let offset = 0; offset < file.size; offset += chunkSize) {
+          if (channel.readyState !== 'open') {
+            console.log(
+              `Stream is no longer open. Current state: ${channel.readyState}`,
+            );
+          }
           const slice = file.slice(
             offset,
             Math.min(offset + chunkSize, file.size),
@@ -216,10 +222,32 @@ export class FileTransferManager {
           yield new Uint8ArrayList(chunk);
 
           if (channel.bufferedAmount > threshold) {
-            await new Promise<void>((resolve) => {
-              channel.addEventListener('bufferedamountlow', () => resolve(), {
-                once: true,
-              });
+            await new Promise<void>((resolve, reject) => {
+              const onBufferedAmountLow = () => {
+                cleanup();
+                resolve();
+              };
+              const onClose = () => {
+                cleanup();
+                this.closeActiveStream(stream);
+                console.log('Closing active stream due to channel close.');
+                reject();
+              };
+
+              const cleanup = () => {
+                channel.removeEventListener(
+                  'bufferedamountlow',
+                  onBufferedAmountLow,
+                );
+                channel.removeEventListener('close', onClose);
+              };
+
+              channel.addEventListener(
+                'bufferedamountlow',
+                onBufferedAmountLow,
+                { once: true },
+              );
+              channel.addEventListener('close', onClose, { once: true });
             });
           }
 

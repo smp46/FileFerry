@@ -8,17 +8,6 @@ import type { ConfigManager } from '@utils/ConfigManager';
 import type { FileTransferManager } from '@core/FileTransferManager';
 
 /**
- * Interface describing the state of a connection upgrade.
- * @internal
- */
-interface ConnectionUpgradeInfo {
-  relay: Connection | null;
-  webrtc: Connection | null;
-  upgrading: boolean;
-  stable: boolean;
-}
-
-/**
  * Manages peer connections, including dialing, lifecycle events (open/close),
  * and connection upgrades from relay to direct WebRTC.
  */
@@ -28,7 +17,6 @@ export class ConnectionManager {
   private errorHandler: ErrorHandler;
   private config: ConfigManager;
   private fileTransferHandler: FileTransferManager;
-  private connectionUpgrades: Map<string, ConnectionUpgradeInfo>;
   private retryAttempts: Map<string, number>;
 
   /**
@@ -87,11 +75,13 @@ export class ConnectionManager {
       this.appState.isTransferActive() &&
       remotePeerIdStr === this.appState.getActivePeer() &&
       this.appState.getTransferConnectionId() === connectionId &&
-      !this.appState.isFinished()
+      !this.appState.isFinished() &&
+      !this.appState.hasReconnected()
     ) {
+      console.log('LOST CONNECTION');
       this.errorHandler.reconnecting();
       if (this.appState.getMode() === 'sender') {
-        await this.onSenderConnectionError(event);
+        await this.onSenderConnectionError(event.detail.remotePeer);
       } else if (this.appState.getMode() === 'receiver') {
         await this.onReceiverConnectionError(remotePeerIdStr);
       }
@@ -110,6 +100,7 @@ export class ConnectionManager {
     remotePeerIdStr: string,
   ): Promise<void> {
     const reconnectionPromise = new Promise<void>((resolve) => {
+      let event: CustomEvent<Connection> | undefined;
       const onConnectionOpen = (event: CustomEvent<Connection>) => {
         if (
           event.detail.remotePeer.toString() === remotePeerIdStr &&
@@ -121,6 +112,9 @@ export class ConnectionManager {
       };
       this.node.addEventListener('connection:open', onConnectionOpen);
       this.appState.setReconnected(true);
+      if (event != undefined) {
+        this.onConnectionEstablished(event);
+      }
     });
 
     const delayPromise = new Promise<void>((resolve) => {
@@ -144,19 +138,18 @@ export class ConnectionManager {
    * @param event - The 'connection:error' event.
    * @returns A promise that resolves when the reconnection attempts are complete.
    */
-  private async onSenderConnectionError(
-    event: CustomEvent<Connection>,
-  ): Promise<void> {
-    const remotePeerIdStr = event.detail.remotePeer.toString();
+  private async onSenderConnectionError(remotePeerId: PeerId): Promise<void> {
+    const remotePeerIdStr = remotePeerId.toString();
     const retryDelay = 2000;
     let retryAttemptsForThisPeer = this.retryAttempts.get(remotePeerIdStr) || 0;
 
     while (retryAttemptsForThisPeer < 4) {
       console.log(`Attempting to reconnect to ${remotePeerIdStr}...`);
       try {
-        await this.dialPeer(event.detail.remotePeer, {
+        await this.dialPeer(remotePeerId, {
           signal: AbortSignal.timeout(5000),
         });
+        console.log(`Reconnected to ${remotePeerIdStr}`);
         this.errorHandler.reconnected();
         this.appState.setReconnected(true);
         break; // If reconnection is successful, break the loop
@@ -244,7 +237,11 @@ export class ConnectionManager {
         this.appState.setActivePeer(remotePeerIdStr);
         this.appState.setActiveStream(stream);
 
-        this.fileTransferHandler.startFileTransfer();
+        try {
+          await this.fileTransferHandler.startFileTransfer();
+        } catch (error) {
+          this.onSenderConnectionError(connection.remotePeer);
+        }
         console.log('Starting file transfer with', remotePeerIdStr);
       }
     } else if (remoteAddr === relayAddress) {
