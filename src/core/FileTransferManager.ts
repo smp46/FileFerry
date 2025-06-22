@@ -46,6 +46,7 @@ export class FileTransferManager {
   private readonly protocol: string;
   private wakeLock: WakeLockSentinel | null = null;
   private hash: number;
+  private chunkCount: number;
 
   // Sender paramters
   private transferProgressBytes: number;
@@ -82,6 +83,7 @@ export class FileTransferManager {
     this.protocol = '/fileferry/filetransfer/1.0.0';
     this.wakeLock = null;
     this.hash = 0x811c9dc5; // FNV-1a hash initial value
+    this.chunkCount = 0;
 
     // Sender paramters
     this.transferProgressBytes = 0;
@@ -229,8 +231,6 @@ export class FileTransferManager {
         yield new Uint8ArrayList(encodedHeader);
         await new Promise((resolve) => setTimeout(resolve, 1));
 
-        let chunkCount = 0;
-
         for (let offset = 0; offset < file.size; offset += chunkSize) {
           if (channel.readyState !== 'open') {
             console.log(
@@ -249,7 +249,7 @@ export class FileTransferManager {
           }
 
           yield new Uint8ArrayList(chunk);
-          chunkCount++;
+          this.chunkCount++;
 
           if (channel.bufferedAmount > threshold) {
             await new Promise<void>((resolve, reject) => {
@@ -291,7 +291,7 @@ export class FileTransferManager {
 
           // After sending a batch, wait for an ACK
           if (
-            chunkCount % ackFrequency === 0 &&
+            this.chunkCount % ackFrequency === 0 &&
             this.transferProgressBytes <= file.size
           ) {
             await nextAckPromise;
@@ -343,7 +343,6 @@ export class FileTransferManager {
   private async receiveFileFromStream(stream: Stream): Promise<void> {
     const ackFrequency = 200;
     const ackMessage = new TextEncoder().encode('ACK');
-    let chunkCount = 0;
     const ackPushable: Pushable<Uint8Array> = pushable({ objectMode: true });
 
     // Pipe ACKs to the sender in the background
@@ -403,8 +402,8 @@ export class FileTransferManager {
               this.fileSizeFromHeader,
               'receive',
             );
-            chunkCount++;
-            if (chunkCount % ackFrequency === 0) {
+            this.chunkCount++;
+            if (this.chunkCount % ackFrequency === 0) {
               ackPushable.push(ackMessage);
             }
           }
@@ -417,9 +416,9 @@ export class FileTransferManager {
             this.fileSizeFromHeader,
             'receive',
           );
-          chunkCount++;
+          this.chunkCount++;
           if (
-            chunkCount % ackFrequency === 0 &&
+            this.chunkCount % ackFrequency === 0 &&
             this.receivedBytesTotal <= this.fileSizeFromHeader
           ) {
             ackPushable.push(ackMessage);
