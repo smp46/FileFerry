@@ -32,8 +32,8 @@
             window.matchMedia('(prefers-color-scheme: dark)').matches),
       );
     </script>
-    <script type="module" crossorigin src="/staging/assets/index-KZoi96rv.js"></script>
-    <link rel="stylesheet" crossorigin href="/staging/assets/index-Dozzp-8C.css">
+    <script type="module" crossorigin src="/staging/assets/index--04r_06K.js"></script>
+    <link rel="stylesheet" crossorigin href="/staging/assets/index-DumAxJX_.css">
   </head>
 
   <body class="select-none overflow-x-hidden font-[Outfit]">
@@ -461,15 +461,15 @@
                       <div class="flex items-center gap-1 sm:gap-2 mt-1">
                         <div
                           id="generatedPhraseDisplay"
-                          class="flex select-all bg-amber-50/80 h-8 sm:h-10 text-stone-900 p-1 sm:p-2 rounded
-                            border border-stone-600/50 font-mono text-xs sm:text-sm focus:outline-none
-                            ml-auto placeholder-stone-500"
+                          class="select-all bg-amber-50/80 h-8 sm:h-10 text-stone-900 p-1 sm:p-2 rounded border
+                            border-stone-600/50 font-mono text-xs sm:text-sm focus:outline-none
+                            placeholder-stone-500 flex-grow"
                         ></div>
                         <button
                           id="copyPhraseButton"
                           title="Copy Phrase"
                           class="cursor-pointer p-1.5 sm:p-2 bg-amber-700 text-amber-50 rounded
-                            hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-600 mr-auto"
+                            hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-600"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -485,10 +485,54 @@
                             />
                           </svg>
                         </button>
+                        <button
+                          id="shareButton"
+                          title="Share"
+                          class="cursor-pointer p-1.5 sm:p-2 bg-sky-600 text-sky-50 rounded hover:bg-sky-700
+                            focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4 sm:h-5 sm:w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          id="qrCodeButton"
+                          title="QR Code"
+                          class="cursor-pointer p-1.5 sm:p-2 bg-neutral-700 text-neutral-50 rounded
+                            hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4 sm:h-5 sm:w-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <g stroke-width="0"></g>
+                            <g
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            ></g>
+                            <g>
+                              <path
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M20 18v2h-2m2-6h-1l-2 2m-1 2h-2v2M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0v1h1v-1h-1zm3-7h.001M7 7h.001M7 17h.001"
+                              ></path>
+                            </g>
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
-
                   <div
                     id="sendInProgress"
                     class="hidden relative z-20 text-stone-700 space-y-4 w-full text-center p-4 sm:p-6"
@@ -1094,6 +1138,90 @@
         ></div>
       </div>
     </div>
+    <div
+      id="qrCodePopup"
+      class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center
+        z-50 p-4"
+    >
+      <div
+        class="relative w-full max-w-sm bg-amber-100 p-1 rounded-lg border-2 border-transparent
+          transform transition-all opacity-0 translate-y-4 animate-fade-in-up"
+        style="
+          box-shadow:
+            0 0 0 3px #6b4226,
+            /* Inner dark wood border */ 0 0 0 6px #8c5a32,
+            /* Outer light wood border */ 0 0 15px 8px rgba(0, 0, 0, 0.5); /* Outer shadow */
+          background-image: radial-gradient(
+            ellipse at center,
+            rgba(245, 222, 179, 0.8) 0%,
+            rgba(210, 180, 140, 0.9) 100%
+          );
+        "
+      >
+        <button
+          id="closeQrCodePopup"
+          class="absolute -top-3 -right-3 w-9 h-9 bg-amber-700 text-amber-50 rounded-full flex
+            items-center justify-center hover:bg-amber-800 focus:outline-none focus:ring-2
+            focus:ring-offset-2 focus:ring-amber-600 focus:ring-offset-amber-100 z-10
+            shadow-lg"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        <div
+          class="p-5 sm:p-6 text-center border-4 border-amber-700 rounded-sm"
+          style="box-shadow: inset 0 0 10px rgba(101, 67, 33, 0.5)"
+        >
+          <h3 class="text-xl sm:text-2xl font-bold text-stone-800 mb-2">
+            Spyglass View
+          </h3>
+          <p class="text-sm text-stone-600 mb-4 sm:mb-6">
+            Point your camera at the code to chart the course.
+          </p>
+
+          <div
+            class="w-48 h-48 sm:w-56 sm:h-56 mx-auto bg-amber-50/60 border-2 border-dashed
+              border-amber-800/70 rounded p-2 flex items-center justify-center shadow-inner"
+          >
+            <canvas
+              id="qrCodeCanvas"
+              class="w-full h-full rounded-md"
+              style="background-color: transparent; image-rendering: pixelated"
+            ></canvas>
+          </div>
+
+          <div class="mt-4 sm:mt-6">
+            <p
+              class="text-xs text-stone-600 uppercase tracking-wider font-semibold"
+            >
+              Or use the secret phrase
+            </p>
+            <p
+              id="qrCodePhrase"
+              class="font-mono text-base sm:text-lg text-stone-900 bg-amber-50/80 rounded-md px-3
+                py-1.5 mt-2 border border-stone-600/50"
+            >
+              8-drunken-sailors
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style></style>
+
     <script>
       if (window.location.href.includes('staging')) {
         document.getElementById('title').innerText = 'Staging';
