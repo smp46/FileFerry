@@ -1,6 +1,6 @@
 // services/StunService.ts
 
-import geoip from 'geoip-lite';
+import { string } from '@multiformats/multiaddr-matcher/utils';
 
 /**
  * Describes the structure for geographic location data of STUN servers.
@@ -46,29 +46,55 @@ export class StunService {
     this.geoLocUrl =
       'https://raw.githubusercontent.com/pradt2/always-online-stun/master/geoip_cache.txt';
     this.hostUrl =
-      'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_hosts.txt';
+      'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_ipv4s.txt';
     this.geoUserUrl = 'https://geoip.fileferry.xyz';
     this.cacheKey = 'userGeoData';
     this.cacheDuration = 48 * 60 * 60 * 1000; // 48 hours
   }
 
   /**
-   * Fetches all required data and determines the closest STUN server.
-   * @returns A promise that resolves to the address of the closest STUN server, or undefined on failure.
+   * Fetches all required data and determines the closest STUN servers.
+   * @returns A promise that resolves to an array of the closest STUN server addresses, or undefined on failure.
    */
-  public async getClosestStunServer(): Promise<string | undefined> {
+  public async getClosestStunServers(): Promise<string[] | undefined> {
     try {
       const geoLocs = await this.fetchGeoData();
       const userData = await this.getUserGeoData();
       const hostList = await this.fetchStunServers();
 
-      const closestAddr = this.findClosestServer(userData, geoLocs, hostList);
-      return closestAddr;
+      if (
+        typeof userData.lat !== 'number' ||
+        typeof userData.lon !== 'number'
+      ) {
+        throw new Error("User's geographic data is incomplete or invalid.");
+      }
+
+      const closestServers = this.findClosestServers(
+        userData,
+        geoLocs,
+        hostList,
+      );
+
+      if (!closestServers || closestServers.length === 0) {
+        throw new Error('No valid STUN servers could be determined.');
+      }
+
+      const result = this.appendStunString(closestServers);
+
+      return result;
     } catch (error) {
-      console.error('Error in getClosestStunServer:', error);
       this.clearExpiredCache();
       return undefined;
     }
+  }
+
+  /**
+   * Prepends 'stun:' to each server address.
+   * @param addrs - An array of server addresses.
+   * @returns A new array with the modified addresses.
+   */
+  private appendStunString(addrs: string[]): string[] {
+    return addrs.map((addr) => `stun:${addr}`);
   }
 
   /**
@@ -123,21 +149,21 @@ export class StunService {
   }
 
   /**
-   * Finds the closest server from a list based on the user's location.
+   * Finds the three closest servers from a list based on the user's location.
    * @param userData - The user's location data.
    * @param geoLocs - The location data for all servers.
    * @param hostList - A string containing a newline-separated list of server hosts.
-   * @returns The address of the closest server.
+   * @returns An array containing the addresses and distances of the top 3 closest servers.
    * @internal
    */
-  private findClosestServer(
+  private findClosestServers(
     userData: UserGeoData,
     geoLocs: GeoLocs,
     hostList: string,
-  ): string {
+  ): string[] {
     const { lat: userLat, lon: userLon } = userData;
 
-    return hostList
+    const serversWithDistances = hostList
       .trim()
       .split('\n')
       .map((addr): [string, number] => {
@@ -153,11 +179,14 @@ export class StunService {
 
         const dist = this.calculateDistance(userLat, userLon, stunLat, stunLon);
         return [addr, dist];
-      })
-      .reduce(
-        ([addrA, distA]: [string, number], [addrB, distB]: [string, number]) =>
-          distA <= distB ? [addrA, distA] : [addrB, distB],
-      )[0];
+      });
+
+    const closestServers = serversWithDistances
+      .sort(([, distA], [, distB]) => distA - distB)
+      .map(([addr]) => addr)
+      .slice(0, 3);
+
+    return closestServers;
   }
 
   /**

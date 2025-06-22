@@ -6,7 +6,6 @@ import {
   WritableStreamDefaultWriter as PolyfillWritableStreamDefaultWriter,
 } from 'web-streams-polyfill';
 import streamSaver from 'streamsaver';
-import crypto from 'crypto';
 import type { Libp2p } from 'libp2p';
 import type { Stream, StreamHandler } from '@libp2p/interface';
 import type { AppState } from '@/core/AppState';
@@ -21,6 +20,7 @@ interface FileHeader {
   name: string;
   size: number;
   type: string;
+  hash: string;
 }
 
 /**
@@ -43,6 +43,7 @@ export class FileTransferManager {
   private uiManager: UIManager;
   private readonly protocol: string;
   private wakeLock: WakeLockSentinel | null = null;
+  private hash: number;
 
   // Sender paramters
   private transferProgressBytes: number;
@@ -54,6 +55,7 @@ export class FileTransferManager {
   private fileNameFromHeader: string;
   private fileSizeFromHeader: number;
   private fileTypeFromHeader: string;
+  private fileHashFromHeader: number;
   private headerReceived: boolean;
   private receivedBytesTotal: number;
 
@@ -77,6 +79,7 @@ export class FileTransferManager {
     this.uiManager = uiManager;
     this.protocol = '/fileferry/filetransfer/1.0.0';
     this.wakeLock = null;
+    this.hash = 0x811c9dc5; // FNV-1a hash initial value
 
     // Sender paramters
     this.transferProgressBytes = 0;
@@ -87,6 +90,7 @@ export class FileTransferManager {
     this.fileNameFromHeader = 'downloaded_file';
     this.fileSizeFromHeader = 0;
     this.fileTypeFromHeader = 'application/octet-stream';
+    this.fileHashFromHeader = 0;
     this.headerReceived = false;
     this.receivedBytesTotal = 0;
 
@@ -100,19 +104,25 @@ export class FileTransferManager {
    */
   public setupFileTransferProtocol(): void {
     const handler: StreamHandler = async ({ stream, connection }) => {
+      if (this.appState.isTransferActive() && !this.appState.hasReconnected()) {
+        return;
+      }
       this.getWakelock();
       this.appState.setActivePeer(connection.remotePeer.toString());
       this.appState.setTransferConnectionId(connection.id);
 
-      if (this.appState.isTransferActive()) {
+      if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
-        this.appState.setActiveStream(stream);
-      } else {
-        this.appState.setActiveStream(stream);
-        this.appState.setActiveTransfer();
+        this.appState.setReconnected(false);
       }
 
+      this.appState.setActiveStream(stream);
+      this.appState.setActiveTransfer();
       await this.handleFileTransfer();
+
+      if (this.appState.isFinished()) {
+        await this.transferComplete();
+      }
     };
     this.node.handle(this.protocol, handler);
   }
@@ -122,6 +132,9 @@ export class FileTransferManager {
    */
   public async startFileTransfer(): Promise<void> {
     try {
+      if (this.appState.isTransferActive() && !this.appState.hasReconnected()) {
+        return;
+      }
       const activeStream = this.appState.getActiveStream();
       const selectedFile = this.appState.getSelectedFile();
 
@@ -129,19 +142,21 @@ export class FileTransferManager {
         throw new Error('No active stream or file to start transfer.');
       }
 
-      if (this.appState.isTransferActive()) {
+      if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
-        await this.sendFileToStream(activeStream, selectedFile);
+        this.appState.setReconnected(false);
       } else {
         this.appState.setActiveTransfer();
-        await this.sendFileToStream(activeStream, selectedFile);
       }
+
+      await this.sendFileToStream(activeStream, selectedFile);
 
       if (this.appState.isFinished()) {
         await this.transferComplete();
       }
-    } catch (_) {
+    } catch (error) {
       // Let connection management handle the error
+      throw error;
     }
   }
 
@@ -177,7 +192,7 @@ export class FileTransferManager {
     chunkSize: number = 16_384, // the WebRTC default message size
   ): Promise<void> {
     try {
-      const header = this.createFileHeader(file);
+      const header = await this.createFileHeader(file);
       const encodedHeader = new TextEncoder().encode(header + '\n');
 
       let bytesSent = 0;
@@ -189,6 +204,11 @@ export class FileTransferManager {
         await new Promise((resolve) => setTimeout(resolve, 1));
 
         for (let offset = 0; offset < file.size; offset += chunkSize) {
+          if (channel.readyState !== 'open') {
+            console.log(
+              `Stream is no longer open. Current state: ${channel.readyState}`,
+            );
+          }
           const slice = file.slice(
             offset,
             Math.min(offset + chunkSize, file.size),
@@ -204,10 +224,32 @@ export class FileTransferManager {
           yield new Uint8ArrayList(chunk);
 
           if (channel.bufferedAmount > threshold) {
-            await new Promise<void>((resolve) => {
-              channel.addEventListener('bufferedamountlow', () => resolve(), {
-                once: true,
-              });
+            await new Promise<void>((resolve, reject) => {
+              const onBufferedAmountLow = () => {
+                cleanup();
+                resolve();
+              };
+              const onClose = () => {
+                cleanup();
+                this.closeActiveStream(stream);
+                console.log('Closing active stream due to channel close.');
+                reject();
+              };
+
+              const cleanup = () => {
+                channel.removeEventListener(
+                  'bufferedamountlow',
+                  onBufferedAmountLow,
+                );
+                channel.removeEventListener('close', onClose);
+              };
+
+              channel.addEventListener(
+                'bufferedamountlow',
+                onBufferedAmountLow,
+                { once: true },
+              );
+              channel.addEventListener('close', onClose, { once: true });
             });
           }
 
@@ -229,7 +271,12 @@ export class FileTransferManager {
         'send',
         true,
       );
-      this.transferProgressBytes = 0;
+
+      // Wait for the receiver to close the stream
+      while (stream.status === 'open' || stream.status === 'closing') {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      this.appState.declareFinished();
     } catch (error) {
       throw error;
     }
@@ -241,11 +288,12 @@ export class FileTransferManager {
    * @returns The JSON stringified header.
    * @internal
    */
-  private createFileHeader(file: File): string {
+  private async createFileHeader(file: File): Promise<string> {
     return JSON.stringify({
       name: file.name,
       size: file.size,
       type: file.type || 'application/octet-stream',
+      hash: await this.senderHash(),
     });
   }
 
@@ -272,6 +320,8 @@ export class FileTransferManager {
               headerResult.header.size || this.fileSizeFromHeader;
             this.fileTypeFromHeader =
               headerResult.header.type || this.fileTypeFromHeader;
+            this.fileHashFromHeader =
+              Number(headerResult.header.hash) || this.fileHashFromHeader;
             this.headerReceived = true;
 
             console.log(
@@ -306,6 +356,7 @@ export class FileTransferManager {
           }
         } else if (this.receivedFileWriter != null) {
           await this.receivedFileWriter.write(dataChunk);
+          this.hash = this.fnv1aHash(dataChunk, this.hash);
           this.receivedBytesTotal += dataChunk.length;
           this.progressTracker.updateProgress(
             this.receivedBytesTotal,
@@ -331,13 +382,20 @@ export class FileTransferManager {
             this.fileSizeFromHeader,
           );
 
-          if (this.receivedFileWriter != null) {
-            await this.receivedFileWriter.close();
-            this.receivedFileWriter = null;
+          if (this.hash != this.fileHashFromHeader) {
+            this.uiManager.showErrorPopup(
+              "Sorry mate, the file's hash does not match. The file may be corrupted.\nHash received: " +
+                this.fileHashFromHeader +
+                '\n Computed Hash from Transfer: ' +
+                this.hash,
+            );
           }
 
-          this.appState.clearActiveTransfer();
-          await this.closeActiveStream();
+          this.receivedFileWriter?.close();
+          this.receivedFileWriter = null;
+          await this.closeActiveStream(stream);
+          this.appState.declareFinished();
+
           break;
         }
       }
@@ -350,11 +408,12 @@ export class FileTransferManager {
    * Closes the active file transfer stream.
    * @returns A promise that resolves when the stream is closed.
    */
-  private async closeActiveStream(): Promise<void> {
-    const stream = this.appState.getActiveStream();
+  private async closeActiveStream(stream: Stream): Promise<void> {
     if (stream) {
       await stream.close();
-      this.appState.setActiveStream(null!);
+      if (stream.id === this.appState.getActiveStream()?.id) {
+        this.appState.setActiveStream(null!);
+      }
     }
   }
 
@@ -395,6 +454,10 @@ export class FileTransferManager {
     }
   }
 
+  /**
+   * Tries to acquire a wake lock to prevent the device from sleeping during file transfer.
+   * Stores the wake lock sentinel in the `wakeLock` property.
+   */
   private async getWakelock() {
     if ('wakeLock' in navigator) {
       async function requestWakeLock() {
@@ -411,10 +474,67 @@ export class FileTransferManager {
     }
   }
 
+  /**
+   * Releases the held wake lock if it exists.
+   */
   private async releaseWakelock() {
     this.wakeLock?.release().catch((_) => {});
   }
 
+  /**
+   * Computes the FNV-1a hash for a given Uint8Array.
+   *
+   * @param data - The input data to hash.
+   * @param initialHash - The initial hash value (optional).
+   * @returns The updated hash value after processing the data.
+   */
+  private fnv1aHash(data: Uint8Array, initialHash: number): number {
+    let hash = initialHash;
+    for (let byte of data) {
+      hash = ((byte ^ hash) * 0x01000193) & 0xffffffff;
+    }
+    return hash;
+  }
+
+  /**
+   * Computes the FNV-1a hash for a file by processing it in chunks.
+   *
+   * @returns The final FNV-1a hash value of the file, or 0 if no file is selected.
+   */
+  private async senderHash(): Promise<number> {
+    const file = this.appState.getSelectedFile();
+    const chunkSize = 16_384;
+
+    if (file === null) {
+      return 0;
+    }
+
+    // Generator function to yield chunks of the file
+    const fileChunks = async function* (): AsyncGenerator<Uint8Array> {
+      for (let offset = 0; offset < file.size; offset += chunkSize) {
+        const slice = file.slice(
+          offset,
+          Math.min(offset + chunkSize, file.size),
+        );
+        const arrayBuffer = await slice.arrayBuffer();
+        yield new Uint8Array(arrayBuffer);
+      }
+    }.bind(this);
+
+    let finalHash = this.hash;
+
+    // Process each chunk and update the hash
+    for await (const chunk of fileChunks()) {
+      finalHash = this.fnv1aHash(chunk, finalHash);
+    }
+
+    return finalHash;
+  }
+
+  /**
+   * Safely cleanups and exits js-libp2p on transfer completion.
+   * If streamSaver still has an active stream, it will close it.
+   */
   public async transferComplete() {
     if (
       this.appState.isTransferActive() &&
@@ -422,11 +542,10 @@ export class FileTransferManager {
     ) {
       try {
         this.receivedFileWriter?.close();
-        this.closeActiveStream();
+        this.closeActiveStream(this.appState.getActiveStream()!);
       } catch (_) {}
     }
 
-    this.appState.declareFinished();
     await this.node.stop();
     this.releaseWakelock();
   }

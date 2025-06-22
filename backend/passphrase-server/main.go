@@ -6,23 +6,59 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mills.io/bitcask/v2"
-	"gopkg.in/validator.v2" // Added for validation
+	"gopkg.in/validator.v2"
 )
 
-var db *bitcask.Bitcask
+var (
+	db              *bitcask.Bitcask
+	requestsPerHour = 100
+	rateLimit       = make(map[string]int)
+	lastRequestTime = make(map[string]time.Time)
+)
 
 type address_item struct {
-	Phrase string `json:"phrase" validate:"regexp=^([1-9]|[1-9][0-9]|100)-[a-z]+-[a-z]+$"`
+	Phrase string `json:"phrase" validate:"nonzero"`
 	Maddr  string `json:"maddr" validate:"nonzero"`
+}
+
+func validatePhrase(phrase string) bool {
+	re := regexp.MustCompile(`^([0-9]|[1-9][0-9]|100)-[a-z]{3,8}-[a-z]{3,8}$`)
+	return re.MatchString(phrase)
+}
+
+func rateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		now := time.Now()
+
+		if lastRequestTime[ip] != (time.Time{}) && now.Sub(lastRequestTime[ip]) < time.Hour {
+			requestsPerHour := rateLimit[ip]
+			if requestsPerHour >= 100 {
+				c.IndentedJSON(http.StatusTooManyRequests, gin.H{"message": "Rate limit exceeded"})
+				return
+			}
+			rateLimit[ip]++
+		} else {
+			rateLimit[ip] = 1
+			lastRequestTime[ip] = now
+		}
+
+		c.Next()
+	}
 }
 
 func getAddress(c *gin.Context) {
 	dbKeyString := c.Param("phrase")
+	if !validatePhrase(dbKeyString) {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid phrase format"})
+		return
+	}
 
 	valueBytes, err := db.Get([]byte(dbKeyString))
 	if err != nil {
@@ -43,16 +79,19 @@ func getAddress(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, item)
-
 	db.Delete([]byte(dbKeyString))
 }
 
 func addAddress(c *gin.Context) {
 	var newAddress address_item
-
 	if err := c.BindJSON(&newAddress); err != nil {
 		log.Printf("Error binding JSON: %v", err)
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON payload", "details": err.Error()})
+		return
+	}
+
+	if !validatePhrase(newAddress.Phrase) {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid phrase format"})
 		return
 	}
 
@@ -63,12 +102,11 @@ func addAddress(c *gin.Context) {
 	}
 
 	dbKeyBytes := []byte(newAddress.Phrase)
-	// Check if key already exists
+
 	if _, err := db.Get(dbKeyBytes); err == nil {
 		c.IndentedJSON(http.StatusConflict, gin.H{"message": "Phrase already exists"})
 		return
 	} else if err != bitcask.ErrKeyNotFound {
-		// If the error is something other than "key not found", it's an internal server error
 		log.Printf("Error checking existence of key '%s': %v", newAddress.Phrase, err)
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Error processing request"})
 		return
@@ -126,10 +164,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())
-
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174", "https://fileferry.xyz"},
-		AllowWildcard:    true,
+		AllowOrigins:     []string{"https://fileferry.xyz"},
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -137,6 +173,7 @@ func main() {
 		MaxAge:           1 * time.Hour,
 	}))
 
+	router.Use(rateLimitMiddleware())
 	router.GET("/phrase/:phrase", getAddress)
 	router.POST("/phrase", addAddress)
 
@@ -148,7 +185,6 @@ func main() {
 	serverAddr := serverHost + ":" + serverPort
 
 	log.Printf("Starting server on %s", serverAddr)
-
 	srv := &http.Server{
 		Addr:         serverAddr,
 		Handler:      router,

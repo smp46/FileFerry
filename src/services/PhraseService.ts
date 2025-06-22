@@ -32,7 +32,11 @@ export class PhraseService {
    */
   public async generatePhrase(): Promise<string> {
     const randWords = await DashPhraseModule.default.generate(16);
-    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    let randomNumber;
+    do {
+      randomNumber = self.crypto.getRandomValues(new Uint32Array(1))[0];
+    } while (randomNumber >= Math.floor(2 ** 32 / 100) * 100);
+    randomNumber = randomNumber % 100;
     return [randomNumber, ...randWords.split(' ')].join('-');
   }
 
@@ -124,13 +128,22 @@ export class PhraseService {
   }
 
   /**
-   * Validates a given phrase.
+   * Returns a boolean based on if the phrase matches the expected format:
+   * number from 0-100
+   * dash
+   * word from 3 letters to 8 letters long, all lowercase, english
+   * dash
+   * word from 3 letters to 8 letters long, all lowercase, english
+   *
    * @param phrase - The phrase to validate.
    * @returns True if the phrase is considered valid.
    */
   public validatePhrase(phrase: string): boolean {
     if (phrase != undefined && phrase.trim().length > 0) {
-      return true;
+      const regex = /^\d{1,3}-(?:[a-z]{3,8})-(?:[a-z]{3,8})$/;
+      if (regex.test(phrase)) {
+        return true;
+      }
     }
     return false;
   }
