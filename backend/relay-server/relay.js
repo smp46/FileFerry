@@ -9,24 +9,17 @@ import { identify, identifyPush } from '@libp2p/identify';
 import { tls } from '@libp2p/tls';
 import { loadOrCreateSelfKey } from '@libp2p/config';
 import { keychain } from '@libp2p/keychain';
-import { autoNAT } from '@libp2p/autonat';
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls';
 import { kadDHT } from '@libp2p/kad-dht';
 import { webSockets } from '@libp2p/websockets';
-import { webRTC, webRTCDirect } from '@libp2p/webrtc';
+import { webRTC } from '@libp2p/webrtc';
 import { WebSocketsSecure } from '@multiformats/multiaddr-matcher';
 import { LevelDatastore } from 'datastore-level';
 import { ping } from '@libp2p/ping';
 import { createLibp2p } from 'libp2p';
 
-const ANNOUNCE_HOST = process.env.ANNOUNCE_HOST || '';
 const LISTEN_HOST = process.env.LISTEN_HOST || '0.0.0.0';
 const LISTEN_PORT = parseInt(process.env.LISTEN_PORT || 41337);
-const MAX_RESERVATIONS = parseInt(process.env.MAX_RESERVATIONS || '50', 10);
-const RESERVATION_TTL = parseInt(
-  process.env.RESERVATION_TTL || 60 * 60 * 1000,
-  10,
-);
 
 async function main() {
   let serverNode;
@@ -58,10 +51,12 @@ async function main() {
       privateKey: privateKey,
       addresses: {
         listen: [
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/`,
           `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT + 1}/ws`,
           `/p2p-circuit`,
         ],
         announce: [
+          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/`,
           `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT + 1}/ws`,
           `/p2p-circuit`,
         ],
@@ -85,7 +80,7 @@ async function main() {
           hopTimeout: 30 * 1000,
           advertise: true,
           reservations: {
-            maxReservations: 15,
+            maxReservations: 200,
             reservationClearInterval: 300 * 1000,
             applyDefaultLimit: true,
             defaultDurationLimit: 20 * 60 * 1000,
