@@ -222,10 +222,9 @@ Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself!
 - [x] Night mode, with a moon and stars in the sky.
 - [x] Direct links to transfers to facilitate easier sharing.
 - [x] Share links to transfers.
-- [ ] QR Code links to transfers.
+- [x] QR Code links to transfers.
 - [x] Prevent _trigger_ words being generated for passphrase.
 - [x] Validate file integrity after transfer.
-
 
 If you have any ideas or feedback, I would appreciate if you
 [open an Issue](https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md")

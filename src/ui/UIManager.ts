@@ -1,5 +1,6 @@
 // ui/UIManager.ts
 import type { AppState } from '@/core/AppState';
+import { generate } from 'lean-qr';
 
 /**
  * Interface for the collection of UI elements.
@@ -17,6 +18,12 @@ interface UIElements {
   errorWindow: HTMLElement | null;
   closeErrorButton: HTMLElement | null;
   generatedPhraseDisplay: HTMLElement | null;
+  qrCodeButton: HTMLElement | null;
+  qrCodePopup: HTMLElement | null;
+  closePopupButton: HTMLElement | null;
+  qrCodeCanvas: HTMLElement | null;
+  qrCodePhrase: HTMLElement | null;
+  shareButton: HTMLElement | null;
   sun: HTMLElement | null;
   moon: HTMLElement | null;
 }
@@ -343,6 +350,12 @@ export class UIManager {
       'click',
       this.copyPhrase.bind(this),
     );
+
+    this.elements.shareButton?.addEventListener(
+      'click',
+      this.copyShareLink.bind(this),
+    );
+
     this.elements.receiveModeButton?.addEventListener('click', () => {
       const phraseInput = document.getElementById(
         'phraseInput',
@@ -357,6 +370,52 @@ export class UIManager {
       this.showReceiverMode();
       this.onPhraseEntered(phraseValue);
     });
+
+    this.elements.qrCodeButton?.addEventListener(
+      'click',
+      this.showQrCodePopup.bind(this),
+    );
+    this.elements.closePopupButton?.addEventListener(
+      'click',
+      this.hideQrCodePopup.bind(this),
+    );
+
+    this.elements.qrCodePopup?.addEventListener('click', (event) => {
+      if (event.target === this.elements.qrCodePopup) {
+        this.hideQrCodePopup();
+      }
+    });
+  }
+
+  /**
+   * Shows the QR code popup for the generated phrase.
+   * @internal
+   */
+  private showQrCodePopup() {
+    this.showElement('qrCodePopup', 'flex');
+  }
+
+  /**
+   * Hides the QR code popup.
+   */
+  public hideQrCodePopup() {
+    this.hideElement('qrCodePopup');
+  }
+
+  /**
+   * Generates a QR code for the given phrase and stores it in the QR Code canvas.
+   * @param link - The phrase to encode in the QR code.
+   * @internal
+   */
+  private generateQRCode(link: string): void {
+    const qrCode = generate(link);
+
+    if (this.elements.qrCodeCanvas) {
+      qrCode.toCanvas(this.elements.qrCodeCanvas as HTMLCanvasElement);
+      console.log('QR Code generated and displayed.');
+    } else {
+      console.error('QR Code canvas element not found.');
+    }
   }
 
   /**
@@ -435,11 +494,26 @@ export class UIManager {
   }
 
   /**
+   * Copies the generated phrase to the clipboard.
+   */
+  public copyShareLink(): void {
+    if (this.elements.generatedPhraseDisplay?.innerText) {
+      const phrase = this.elements.generatedPhraseDisplay.innerText;
+      const shareLink = `${window.location.origin}/receive?phrase=${phrase}`;
+      navigator.clipboard.writeText(shareLink);
+    }
+  }
+
+  /**
    * Displays a generated phrase to the user.
    * @param phrase - The phrase to display.
    */
   public showPhrase(phrase: string): void {
+    const shareLink = `${window.location.origin}/receive?phrase=${phrase}`;
+    this.generateQRCode(shareLink);
     this.updateElement('generatedPhraseDisplay', phrase);
+    this.updateElement('qrCodePhrase', phrase);
+    this.showElement('qrCodePhrase');
   }
 
   /**
@@ -521,6 +595,12 @@ export class UIManager {
       errorWindow: document.getElementById('errorWindow'),
       closeErrorButton: document.getElementById('closeErrorButton'),
       generatedPhraseDisplay: document.getElementById('generatedPhraseDisplay'),
+      qrCodeButton: document.getElementById('qrCodeButton'),
+      qrCodePopup: document.getElementById('qrCodePopup'),
+      closePopupButton: document.getElementById('closeQrCodePopup'),
+      qrCodeCanvas: document.getElementById('qrCodeCanvas'),
+      qrCodePhrase: document.getElementById('qrCodePhrase'),
+      shareButton: document.getElementById('shareButton'),
       sun: document.getElementById('sun'),
       moon: document.getElementById('moon'),
     };

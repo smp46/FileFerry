@@ -337,10 +337,7 @@ class FileFerryApp {
       console.log(`Generated phrase: ${phrase}`);
 
       // Update UI with phrase
-      const phraseDisplay = document.getElementById('generatedPhraseDisplay');
-      if (phraseDisplay) {
-        phraseDisplay.textContent = phrase;
-      }
+      this.managers.ui?.showPhrase(phrase);
 
       // Get address
       let webRTCMultiAddr;
@@ -386,10 +383,20 @@ class FileFerryApp {
     this.appState.setMode('receiver');
 
     // Lookup phrase
-    const addressData = await this.services.phrase.lookupPhrase(phrase);
+    let addressData;
+    try {
+      addressData = await this.services.phrase.lookupPhrase(phrase);
+    } catch (error) {
+      this.managers.ui?.showErrorPopup(
+        'No address found for the provided phrase.',
+      );
+    }
 
-    if (!addressData.maddr) {
-      throw new Error('No address found for phrase');
+    if (addressData == undefined || !addressData.maddr) {
+      this.managers.ui?.showErrorPopup(
+        'No address found for the provided phrase.',
+      );
+      return;
     }
 
     const peerMultiaddr = multiaddr(addressData.maddr);
@@ -429,6 +436,8 @@ class FileFerryApp {
       } else {
         this.managers.ui?.showErrorPopup('Invalid phrase provided.');
       }
+    } else if (pathname !== '/' && pathname !== '') {
+      this.managers.ui?.showErrorPopup('404 Page Not Found');
     }
   }
 
@@ -453,7 +462,6 @@ class FileFerryApp {
   }
 }
 
-// debugger;
 const app = new FileFerryApp();
 
 document.addEventListener('DOMContentLoaded', async () => {
