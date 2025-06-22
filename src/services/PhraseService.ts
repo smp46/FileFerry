@@ -32,8 +32,11 @@ export class PhraseService {
    */
   public async generatePhrase(): Promise<string> {
     const randWords = await DashPhraseModule.default.generate(16);
-    const randomNumber =
-      self.crypto.getRandomValues(new Uint32Array(1))[0] % 100;
+    let randomNumber;
+    do {
+      randomNumber = self.crypto.getRandomValues(new Uint32Array(1))[0];
+    } while (randomNumber >= Math.floor(2 ** 32 / 100) * 100);
+    randomNumber = randomNumber % 100;
     return [randomNumber, ...randWords.split(' ')].join('-');
   }
 
