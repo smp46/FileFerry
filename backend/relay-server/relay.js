@@ -11,12 +11,12 @@ import { loadOrCreateSelfKey } from '@libp2p/config';
 import { keychain } from '@libp2p/keychain';
 import { autoNAT } from '@libp2p/autonat';
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls';
+import { kadDHT } from '@libp2p/kad-dht';
 import { webSockets } from '@libp2p/websockets';
 import { webRTC, webRTCDirect } from '@libp2p/webrtc';
 import { WebSocketsSecure } from '@multiformats/multiaddr-matcher';
 import { LevelDatastore } from 'datastore-level';
 import { ping } from '@libp2p/ping';
-import { kadDHT } from '@libp2p/kad-dht';
 import { createLibp2p } from 'libp2p';
 
 const ANNOUNCE_HOST = process.env.ANNOUNCE_HOST || '';
@@ -58,24 +58,15 @@ async function main() {
       privateKey: privateKey,
       addresses: {
         listen: [
-          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/`,
           `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT + 1}/ws`,
-          `/ip4/${LISTEN_HOST}/udp/${LISTEN_PORT + 2}/webrtc-direct`,
           `/p2p-circuit`,
         ],
         announce: [
-          `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT}/`,
           `/ip4/${LISTEN_HOST}/tcp/${LISTEN_PORT + 1}/ws`,
-          `/ip4/${LISTEN_HOST}/udp/${LISTEN_PORT + 2}/webrtc-direct`,
           `/p2p-circuit`,
         ],
       },
-      transports: [
-        circuitRelayTransport(),
-        webRTC(),
-        webRTCDirect(),
-        webSockets(),
-      ],
+      transports: [circuitRelayTransport(), webRTC(), webSockets()],
       connectionEncrypters: [noise(), tls()],
       streamMuxers: [yamux()],
       services: {
@@ -90,11 +81,14 @@ async function main() {
           autoConfirmAddress: true,
         }),
         dcutr: dcutr(),
-        autoNAT: autoNAT(),
         relay: circuitRelayServer({
+          hopTimeout: 30 * 1000,
+          advertise: true,
           reservations: {
-            maxReservations: MAX_RESERVATIONS,
-            defaultTtl: RESERVATION_TTL,
+            maxReservations: 15,
+            reservationClearInterval: 300 * 1000,
+            applyDefaultLimit: true,
+            defaultDurationLimit: 20 * 60 * 1000,
           },
         }),
       },

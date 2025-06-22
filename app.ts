@@ -143,11 +143,8 @@ class FileFerryApp {
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
-      connectionGater: this.customConnectionGater,
       services: {
-        dht: kadDHT({
-          clientMode: false,
-        }),
+        dht: kadDHT(),
         peerDiscovery: bootstrap({
           list: [relayAddress],
           timeout: 2000,
@@ -252,19 +249,6 @@ class FileFerryApp {
       ),
     );
   }
-
-  customConnectionGater: ConnectionGater = {
-    /**
-     * Deny dialing of multiaddrs that are IPv6.
-     */
-    denyDialIPv6: (multiaddr: Multiaddr) => {
-      const isIPv6 = multiaddr.toString().startsWith('/ip6/');
-      if (isIPv6) {
-        return true;
-      }
-      return false;
-    },
-  };
 
   /**
    * Gets the best STUN server configuration.
