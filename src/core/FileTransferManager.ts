@@ -135,6 +135,8 @@ export class FileTransferManager {
       if (this.appState.isTransferActive() && !this.appState.hasReconnected()) {
         return;
       }
+
+      this.uiManager.hideQrCodePopup();
       const activeStream = this.appState.getActiveStream();
       const selectedFile = this.appState.getSelectedFile();
 

@@ -41,6 +41,7 @@
     "dashphrase": "github:smp46/DashPhraseButChill",
     "geoip-lite": "^1.4.10",
     "it-pushable": "^3.2.0",
+    "lean-qr": "^2.5.0",
     "libp2p": "^2.0.0",
     "streamsaver": "^2.0.6",
     "tailwindcss": "^4.1.10",
