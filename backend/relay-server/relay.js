@@ -11,7 +11,6 @@ import { loadOrCreateSelfKey } from '@libp2p/config';
 import { keychain } from '@libp2p/keychain';
 import { autoNAT } from '@libp2p/autonat';
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls';
-import { tcp } from '@libp2p/tcp';
 import { webSockets } from '@libp2p/websockets';
 import { webRTC, webRTCDirect } from '@libp2p/webrtc';
 import { WebSocketsSecure } from '@multiformats/multiaddr-matcher';

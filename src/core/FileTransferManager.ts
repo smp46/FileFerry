@@ -113,6 +113,7 @@ export class FileTransferManager {
 
       if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
+        this.appState.setReconnected(false);
       }
 
       this.appState.setActiveStream(stream);
@@ -143,6 +144,7 @@ export class FileTransferManager {
 
       if (this.appState.isTransferActive() && this.appState.hasReconnected()) {
         console.log('Resuming file transfer after reconnection.');
+        this.appState.setReconnected(false);
       } else {
         this.appState.setActiveTransfer();
       }

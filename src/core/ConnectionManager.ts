@@ -99,43 +99,51 @@ export class ConnectionManager {
   private async onReceiverConnectionError(
     remotePeerIdStr: string,
   ): Promise<void> {
-    const reconnectionPromise = new Promise<void>((resolve) => {
-      let event: CustomEvent<Connection> | undefined;
-      const onConnectionOpen = (event: CustomEvent<Connection>) => {
-        if (
-          event.detail.remotePeer.toString() === remotePeerIdStr &&
-          this.appState.isTransferActive()
-        ) {
-          this.node.removeEventListener('connection:open', onConnectionOpen);
-          resolve();
-        }
-      };
-      this.node.addEventListener('connection:open', onConnectionOpen);
-      this.appState.setReconnected(true);
-      if (event != undefined) {
-        this.onConnectionEstablished(event);
-      }
-    });
-
-    const delayPromise = new Promise<void>((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, 30000);
-    });
+    let onConnectionOpen:
+      | ((event: CustomEvent<Connection>) => void)
+      | undefined;
 
     try {
-      await Promise.race([reconnectionPromise, delayPromise]);
-    } catch (_) {}
+      await new Promise<void>((resolve, reject) => {
+        onConnectionOpen = (event: CustomEvent<Connection>) => {
+          if (
+            event.detail.remotePeer.toString() === remotePeerIdStr &&
+            this.appState.isTransferActive()
+          ) {
+            // Reconnection successful, update state and resolve the promise
+            this.appState.setReconnected(true);
+            this.errorHandler.reconnected();
+            this.onConnectionEstablished(event);
+            resolve();
+          }
+        };
+        this.node.addEventListener('connection:open', onConnectionOpen);
 
-    await this.fileTransferHandler.transferComplete();
-    this.errorHandler.tryAgainError();
+        // Set up a timeout that will reject the promise if no reconnection occurs
+        setTimeout(() => {
+          reject(
+            new Error(
+              'Timeout: Waited 30 seconds for reconnection, but none occurred.',
+            ),
+          );
+        }, 30000);
+      });
+    } catch (error) {
+      console.error(error);
+      await this.fileTransferHandler.transferComplete();
+      this.errorHandler.tryAgainError();
+    } finally {
+      if (onConnectionOpen) {
+        this.node.removeEventListener('connection:open', onConnectionOpen);
+      }
+    }
   }
 
   /**
    * Tries to reconnect to peer after a connection error.
    * Gracefully exits after unsuccessful 5 attempts.
    *
-   * @param event - The 'connection:error' event.
+   * @param event - The 'connection:closed' event.
    * @returns A promise that resolves when the reconnection attempts are complete.
    */
   private async onSenderConnectionError(remotePeerId: PeerId): Promise<void> {
@@ -146,12 +154,17 @@ export class ConnectionManager {
     while (retryAttemptsForThisPeer < 4) {
       console.log(`Attempting to reconnect to ${remotePeerIdStr}...`);
       try {
-        await this.dialPeer(remotePeerId, {
+        const connection = await this.dialPeer(remotePeerId, {
           signal: AbortSignal.timeout(5000),
         });
         console.log(`Reconnected to ${remotePeerIdStr}`);
         this.errorHandler.reconnected();
         this.appState.setReconnected(true);
+        this.handleConnectionType(
+          connection,
+          remotePeerIdStr,
+          connection.remoteAddr.toString(),
+        );
         break; // If reconnection is successful, break the loop
       } catch (_) {
         retryAttemptsForThisPeer++;
@@ -238,11 +251,11 @@ export class ConnectionManager {
         this.appState.setActiveStream(stream);
 
         try {
+          console.log('Starting file transfer with', remotePeerIdStr);
           await this.fileTransferHandler.startFileTransfer();
         } catch (error) {
           this.onSenderConnectionError(connection.remotePeer);
         }
-        console.log('Starting file transfer with', remotePeerIdStr);
       }
     } else if (remoteAddr === relayAddress) {
       console.log(`Direct relay connection established for ${remotePeerIdStr}`);

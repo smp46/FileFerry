@@ -14,6 +14,8 @@ import { kadDHT } from '@libp2p/kad-dht';
 import { bootstrap } from '@libp2p/bootstrap';
 import { WebRTC } from '@multiformats/multiaddr-matcher';
 import * as filters from '@libp2p/websockets/filters';
+import type { ConnectionGater } from '@libp2p/interface';
+import type { Multiaddr } from '@multiformats/multiaddr';
 
 import { AppState } from '@/core/AppState';
 import { ConnectionManager } from '@/core/ConnectionManager';
@@ -110,13 +112,14 @@ class FileFerryApp {
    */
   private async setupLibp2pNode(): Promise<void> {
     const stunServer = await this.getStunConfiguration();
+    const relayAddress = this.config.getRelayAddress();
     console.log(stunServer);
 
     const iceConfig = {
       rtcConfiguration: {
         iceServers: [
           {
-            urls: 'stun:stun.l.google.com:19302',
+            urls: stunServer,
           },
           {
             urls: 'turn:turn.fileferry.xyz:5349',
@@ -127,17 +130,12 @@ class FileFerryApp {
       },
     };
 
-    const relayAddr =
-      '/dns4/195-114-14-137.k51qzi5uqu5dlg6rzzu1wamxpip5om9vddzw5dvmw38wp1f4b30yi0q4itxkym.libp2p.direct/tcp/41338/wss/p2p/12D3KooWQ3E3PsbrVnnh34dSggrcTqBKqrA2bbMwTH9EHmea7CfP';
-
     const options: Libp2pOptions = {
       addresses: {
         listen: ['/webrtc', '/p2p-circuit'],
       },
       transports: [
-        circuitRelayTransport({
-          discoverRelays: 1,
-        }),
+        circuitRelayTransport(),
         webRTC(iceConfig),
         webSockets({
           filter: filters.all,
@@ -145,22 +143,14 @@ class FileFerryApp {
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
-      connectionGater: {
-        denyDialMultiaddr: (multiaddr) => {
-          const isIPv6 = multiaddr.toString().startsWith('/ip6/');
-          if (isIPv6) {
-            return true;
-          }
-          return false;
-        },
-      },
+      connectionGater: this.customConnectionGater,
       services: {
         dht: kadDHT({
-          clientMode: true,
+          clientMode: false,
         }),
         peerDiscovery: bootstrap({
-          list: [relayAddr],
-          timeout: 1000,
+          list: [relayAddress],
+          timeout: 2000,
         }),
         dcutr: dcutr(),
         identify: identify(),
@@ -263,23 +253,34 @@ class FileFerryApp {
     );
   }
 
+  customConnectionGater: ConnectionGater = {
+    /**
+     * Deny dialing of multiaddrs that are IPv6.
+     */
+    denyDialIPv6: (multiaddr: Multiaddr) => {
+      const isIPv6 = multiaddr.toString().startsWith('/ip6/');
+      if (isIPv6) {
+        return true;
+      }
+      return false;
+    },
+  };
+
   /**
    * Gets the best STUN server configuration.
    * @returns A promise that resolves to the STUN server URL string.
    * @internal
    */
-  private async getStunConfiguration(): Promise<string> {
+  private async getStunConfiguration(): Promise<string[]> {
     if (!this.services.stun) {
-      return this.config.getStunServers()[0];
+      return this.config.getStunServers();
     }
     try {
-      const closestStun = await this.services.stun.getClosestStunServer();
-      return closestStun
-        ? `stun:${closestStun}`
-        : this.config.getStunServers()[0];
+      const closestStuns = await this.services.stun.getClosestStunServers();
+      return closestStuns ? closestStuns : this.config.getStunServers();
     } catch (error) {
       console.warn('Could not fetch closest STUN server:', error);
-      return this.config.getStunServers()[0];
+      return this.config.getStunServers();
     }
   }
 
