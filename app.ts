@@ -436,7 +436,11 @@ class FileFerryApp {
       } else {
         this.managers.ui?.showErrorPopup('Invalid phrase provided.');
       }
-    } else if (pathname !== '/' && pathname !== '') {
+    } else if (
+      pathname !== '/' &&
+      pathname !== '' &&
+      !pathname.startsWith('/staging')
+    ) {
       this.managers.ui?.showErrorPopup('404 Page Not Found');
     }
   }
