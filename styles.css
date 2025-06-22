@@ -2,6 +2,10 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
+.min-h-screen-dvh {
+  min-height: 100dvh;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
