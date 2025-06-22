@@ -213,18 +213,19 @@ Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself!
 
 ## Roadmap
 
-- [ ] File transfer resumption after broken or interrupted streams.
+- [x] File transfer resumption after broken or interrupted streams.
 - [x] Favicons using the FileFerry logo.
 - [x] Typescript conversion with TypeDoc documentation.
 - [x] Acquire and hold wake lock while transferring.
 - [ ] Make it easier to configure your own FileFerry instance, i.e. centralise
       all variables that need to be changed.
 - [x] Night mode, with a moon and stars in the sky.
-- [ ] Direct links to transfers to facilitate easier sharing.
-- [ ] Share links to transfers.
+- [x] Direct links to transfers to facilitate easier sharing.
+- [x] Share links to transfers.
 - [ ] QR Code links to transfers.
 - [x] Prevent _trigger_ words being generated for passphrase.
 - [x] Validate file integrity after transfer.
+
 
 If you have any ideas or feedback, I would appreciate if you
 [open an Issue](https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md")
