@@ -306,7 +306,7 @@ Project Link:
   https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
 [TailwindCSS-url]: https://tailwindcss.com/
 [Docker]:
-  https://img.shields.io/badge/Dockerfile-384D54?style=for-the-badge&logo=docker&logoColor=white
+  https://img.shields.io/badge/Docker-384D54?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
 [CoTURN]:
   https://img.shields.io/badge/CoTURN-4A4A4A?style=for-the-badge&logo=generic&logoColor=white
