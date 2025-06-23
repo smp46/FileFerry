@@ -2,6 +2,12 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
+.better-scaling {
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  height: var(--js-height);
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;

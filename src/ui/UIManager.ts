@@ -264,9 +264,12 @@ export class UIManager {
 
   public showReconnecting(): void {
     if (this.appState.getMode() === 'sender') {
+      this.hideElement('initialDropUI');
+      this.hideElement('fileInfoArea');
       this.hideElement('sendInProgress');
       this.showElement('reconnectingSend');
     } else if (this.appState.getMode() === 'receiver') {
+      this.hideElement('initialReceiveUI');
       this.hideElement('receiveInProgress');
       this.showElement('reconnectingReceive');
     }

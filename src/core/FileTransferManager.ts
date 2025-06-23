@@ -6,6 +6,8 @@ import {
   WritableStreamDefaultWriter as PolyfillWritableStreamDefaultWriter,
 } from 'web-streams-polyfill';
 import streamSaver from 'streamsaver';
+import { pushable } from 'it-pushable';
+import type { Pushable } from 'it-pushable';
 import type { Libp2p } from 'libp2p';
 import type { Stream, StreamHandler } from '@libp2p/interface';
 import type { AppState } from '@/core/AppState';
@@ -44,6 +46,7 @@ export class FileTransferManager {
   private readonly protocol: string;
   private wakeLock: WakeLockSentinel | null = null;
   private hash: number;
+  private chunkCount: number;
 
   // Sender paramters
   private transferProgressBytes: number;
@@ -80,6 +83,7 @@ export class FileTransferManager {
     this.protocol = '/fileferry/filetransfer/1.0.0';
     this.wakeLock = null;
     this.hash = 0x811c9dc5; // FNV-1a hash initial value
+    this.chunkCount = 0;
 
     // Sender paramters
     this.transferProgressBytes = 0;
@@ -182,16 +186,18 @@ export class FileTransferManager {
   }
 
   /**
-   * Sends a file to a stream, chunk by chunk.
+   * Sends a file to a stream, chunk by chunk, waiting for ACKs.
    * @param stream - The stream to write to.
    * @param file - The file to send.
    * @param chunkSize - The size of each chunk in bytes.
+   * @param ackFrequency - How often to wait for an acknowledgement.
    * @internal
    */
   private async sendFileToStream(
     stream: Stream,
     file: File,
     chunkSize: number = 16_384, // the WebRTC default message size
+    ackFrequency: number = 200, // Wait for ACK every 200 chunks
   ): Promise<void> {
     try {
       const header = await this.createFileHeader(file);
@@ -200,6 +206,26 @@ export class FileTransferManager {
       let bytesSent = 0;
       const channel = (stream as any).channel as RTCDataChannel;
       const threshold = channel.bufferedAmountLowThreshold || 1024 * 64;
+
+      let resolveNextAck: (() => void) | undefined;
+      let nextAckPromise = new Promise<void>((resolve) => {
+        resolveNextAck = resolve;
+      });
+
+      const ackHandler = async (
+        source: AsyncIterable<Uint8ArrayList>,
+      ): Promise<void> => {
+        try {
+          for await (const data of source) {
+            const msg = new TextDecoder().decode(data.subarray()).trim();
+            if (msg === 'ACK' && resolveNextAck) {
+              resolveNextAck();
+            }
+          }
+        } catch (err) {
+          console.error('Error in ACK handler:', err);
+        }
+      };
 
       const fileChunks = async function* (this: FileTransferManager) {
         yield new Uint8ArrayList(encodedHeader);
@@ -217,13 +243,13 @@ export class FileTransferManager {
           );
           const chunk = new Uint8Array(await slice.arrayBuffer());
 
-          // Skip already sent bytes
           if (bytesSent < this.transferProgressBytes) {
             bytesSent += chunk.length;
             continue;
           }
 
           yield new Uint8ArrayList(chunk);
+          this.chunkCount++;
 
           if (channel.bufferedAmount > threshold) {
             await new Promise<void>((resolve, reject) => {
@@ -235,9 +261,8 @@ export class FileTransferManager {
                 cleanup();
                 this.closeActiveStream(stream);
                 console.log('Closing active stream due to channel close.');
-                reject();
+                reject(new Error('Stream closed by remote'));
               };
-
               const cleanup = () => {
                 channel.removeEventListener(
                   'bufferedamountlow',
@@ -245,11 +270,12 @@ export class FileTransferManager {
                 );
                 channel.removeEventListener('close', onClose);
               };
-
               channel.addEventListener(
                 'bufferedamountlow',
                 onBufferedAmountLow,
-                { once: true },
+                {
+                  once: true,
+                },
               );
               channel.addEventListener('close', onClose, { once: true });
             });
@@ -262,10 +288,21 @@ export class FileTransferManager {
             file.size,
             'send',
           );
+
+          // After sending a batch, wait for an ACK
+          if (
+            this.chunkCount % ackFrequency === 0 &&
+            this.transferProgressBytes <= file.size
+          ) {
+            await nextAckPromise;
+            nextAckPromise = new Promise<void>((resolve) => {
+              resolveNextAck = resolve;
+            });
+          }
         }
       }.bind(this);
 
-      await pipe(fileChunks(), stream.sink);
+      await pipe(fileChunks(), stream, ackHandler);
 
       this.progressTracker.updateProgress(
         this.transferProgressBytes,
@@ -274,7 +311,6 @@ export class FileTransferManager {
         true,
       );
 
-      // Wait for the receiver to close the stream
       while (stream.status === 'open' || stream.status === 'closing') {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
@@ -305,6 +341,17 @@ export class FileTransferManager {
    * @internal
    */
   private async receiveFileFromStream(stream: Stream): Promise<void> {
+    const ackFrequency = 200;
+    const ackMessage = new TextEncoder().encode('ACK');
+    const ackPushable: Pushable<Uint8Array> = pushable({ objectMode: true });
+
+    // Pipe ACKs to the sender in the background
+    pipe(ackPushable, stream.sink).catch((err) => {
+      if (err.code !== 'ERR_STREAM_RESET') {
+        console.error('Failed to pipe ACKs to sender:', err);
+      }
+    });
+
     try {
       for await (const ualistChunk of stream.source) {
         if (!ualistChunk || ualistChunk.length === 0) {
@@ -355,6 +402,10 @@ export class FileTransferManager {
               this.fileSizeFromHeader,
               'receive',
             );
+            this.chunkCount++;
+            if (this.chunkCount % ackFrequency === 0) {
+              ackPushable.push(ackMessage);
+            }
           }
         } else if (this.receivedFileWriter != null) {
           await this.receivedFileWriter.write(dataChunk);
@@ -365,6 +416,13 @@ export class FileTransferManager {
             this.fileSizeFromHeader,
             'receive',
           );
+          this.chunkCount++;
+          if (
+            this.chunkCount % ackFrequency === 0 &&
+            this.receivedBytesTotal <= this.fileSizeFromHeader
+          ) {
+            ackPushable.push(ackMessage);
+          }
         }
 
         if (
@@ -397,12 +455,13 @@ export class FileTransferManager {
           this.receivedFileWriter = null;
           await this.closeActiveStream(stream);
           this.appState.declareFinished();
-
           break;
         }
       }
     } catch (error) {
       throw error;
+    } finally {
+      ackPushable.end();
     }
   }
 
