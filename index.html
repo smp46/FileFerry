@@ -31,23 +31,34 @@
           (!('theme' in localStorage) &&
             window.matchMedia('(prefers-color-scheme: dark)').matches),
       );
+
+      smartHeight();
+      function smartHeight() {
+        console.log('Setting smart height');
+        document.documentElement.style.setProperty(
+          '--js-height',
+          `${window.innterHeight}px`,
+        );
+      }
     </script>
-    <script type="module" crossorigin src="/assets/index-DA90USLW.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DumAxJX_.css">
+    <script type="module" crossorigin src="/assets/index-CSuW18pC.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-B0E5rCyd.css">
   </head>
 
-  <body class="select-none overflow-x-hidden font-[Outfit]">
+  <body
+    onresize="smartHeight()"
+    class="select-none overflow-x-hidden font-[Outfit]"
+  >
     <div
-      class="min-h-screen bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500
+      class="better-scaling bg-gradient-to-b from-sky-300 via-sky-400 to-blue-500
         dark:from-slate-900 dark:via-blue-900 dark:to-blue-950 overflow-hidden relative
         flex flex-col pt-8 pb-[350px] sm:pb-[400px] md:pb-[450px]"
     >
       <!-- Stars (Dark Mode) -->
       <div
         id="starField"
-        class="absolute inset-0 overflow-hidden hidden dark:block min-h-screen"
+        class="absolute inset-0 overflow-hidden hidden dark:block"
       >
-        <!-- Stars in the upper half -->
         <div
           class="absolute top-10 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
             opacity-70"
@@ -90,7 +101,6 @@
           style="animation-delay: 0.6s"
         ></div>
 
-        <!-- Stars in the lower half -->
         <div
           class="absolute top-60 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
             opacity-60"
@@ -142,7 +152,6 @@
           style="animation-delay: 2.2s"
         ></div>
 
-        <!-- Stars near the bottom -->
         <div
           class="absolute top-100 left-[10%] w-1 h-1 bg-white rounded-full animate-pulse
             opacity-50"
