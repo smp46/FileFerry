@@ -93,7 +93,7 @@ Here is the software stack used to build FileFerry:
 - [![HTML][HTML]][HTML-url]
 - [![CSS][CSS]][CSS-url]
 - [![TailwindCSS][TailwindCSS]][TailwindCSS-url]
-- [![Dockerfile][Dockerfile]][Dockerfile-url]
+- [![Docker][Docker]][Docker-url]
 - [![Go][Go]][Go-url]
 - [![CoTURN][CoTURN]][CoTURN-url]
 
@@ -305,9 +305,9 @@ Project Link:
 [TailwindCSS]:
   https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
 [TailwindCSS-url]: https://tailwindcss.com/
-[Dockerfile]:
+[Docker]:
   https://img.shields.io/badge/Dockerfile-384D54?style=for-the-badge&logo=docker&logoColor=white
-[Dockerfile-url]: https://docs.docker.com/engine/reference/builder/
+[Docker-url]: https://www.docker.com/
 [CoTURN]:
   https://img.shields.io/badge/CoTURN-4A4A4A?style=for-the-badge&logo=generic&logoColor=white
 [CoTURN-url]: https://github.com/coturn/coturn
