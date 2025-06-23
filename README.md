@@ -199,7 +199,11 @@ Here is what you need to build and run your own instance of FileFerry:
 
 Here's a demo of the site:
 
-<https://github.com/user-attachments/assets/846a40f8-da3e-48e5-a482-eb51a60c7897>
+
+
+https://github.com/user-attachments/assets/5d22f049-fa28-420c-9071-91076ef63763
+
+
 
 Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself!
 
