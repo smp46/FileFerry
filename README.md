@@ -1,5 +1,3 @@
-<a id="readme-top"></a>
-
 <div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -69,23 +67,19 @@ FileFerry is a browser-based application for direct file transfers without the
 need to store the file on a third-party server. Users share files using a simple
 passphrase – the sender creates a unique phrase the receiver enters to connect.
 
-The application utilizes js-libp2p for networking and WebRTC for transfers.
-Senders register their network address with a temporary passphrase through a
-lookup API. Receivers use this passphrase to find and connect to senders, using
-a relay server to establish the connection. Once that initial connection is
-made, both parties establish a direct WebRTC connection.
+The app utilizes js-libp2p for networking and WebRTC for transfers. Senders
+register their p2p network address with a temporary passphrase through a lookup
+API. Receivers use this passphrase to find and connect to senders, using a relay
+server to establish the connection. Once that initial connection is made, both
+parties establish a direct WebRTC connection.
 
-If one or both devices are behind NAT, the application will use a relay to pipe
-the two connections together. However no storage is taking place, and this uses
-little more than the bandwith required for the transfer on the server side. All
-data transferred remains encrypted using the Noise protocol. This uses an x25519
-key pair for authentication and ChaCha20Poly1305 for encryption, ensuring
-privacy throughout the file transfer.
-
-FileFerry aims to work across different networks and device types, requiring
-only a modern web browser. The passphrase system simplifies sharing, while the
-tech keeps transfers private and fast. Your files remain on your device,
-transferring directly to the intended recipient.
+When a direct connection is prevented by Network Address Translation (NAT) on
+one or both ends, the app completes the transfer by using a relay server. This
+server acts as a glue for the two connections, allowing two peers to
+communicate, and uses only the bandwidth needed for the transfer. The entire
+transfer is protected by end-to-end encryption using the Noise framework, with
+x25519 key pairs for authentication and the ChaCha20Poly1305 cipher for data
+encryption, ensuring your data stays private and secure.
 
 ### Built With
 
