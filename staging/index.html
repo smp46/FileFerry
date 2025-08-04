@@ -37,12 +37,12 @@
         console.log('Setting smart height');
         document.documentElement.style.setProperty(
           '--js-height',
-          `${window.innterHeight}px`,
+          `${window.innerHeight}px`,
         );
       }
     </script>
-    <script type="module" crossorigin src="/staging/assets/index-CSuW18pC.js"></script>
-    <link rel="stylesheet" crossorigin href="/staging/assets/index-B0E5rCyd.css">
+    <script type="module" crossorigin src="/staging/assets/index-q_er98k9.js"></script>
+    <link rel="stylesheet" crossorigin href="/staging/assets/index-cRlDPciD.css">
   </head>
 
   <body
@@ -855,7 +855,7 @@
       </div>
 
       <!-- The Ferry -->
-      <div class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 md:p-5">
+      <div class="fixed bottom-0 left-0 right-0 z-20 p-3 pb-6 sm:p-4 md:p-5">
         <div class="float-animation">
           <div class="relative">
             <div
@@ -1229,8 +1229,27 @@
         </div>
       </div>
     </div>
-    <style></style>
 
+    <footer
+      class="fixed bottom-0 left-0 right-0 z-50 p-2 flex justify-between items-center text-sm"
+    >
+      <a
+        href="https://github.com/smp46/fileferry"
+        target="_blank"
+        referrerpolicy="origin"
+        rel="noopener"
+        class="text-white/70 hover:text-white font-semibold transition-colors"
+        >About</a
+      >
+      <a
+        href="https://smp46.me"
+        target="_blank"
+        referrerpolicy="origin"
+        rel="noopener"
+        class="text-white/70 hover:text-white font-semibold transition-colors"
+        >@smp46</a
+      >
+    </footer>
     <script>
       if (window.location.href.includes('staging')) {
         document.getElementById('title').innerText = 'Staging';
