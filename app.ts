@@ -202,11 +202,8 @@ class FileFerryApp {
     // Setup file transfer protocol
     this.managers.fileTransfer.setupFileTransferProtocol();
 
-    //If the URL has a pathname, handle it
-    const pathname = window.location.pathname;
-    if (pathname) {
-      this.actionPathname(pathname);
-    }
+    // Handle SPA routing - check for redirect parameter from 404.html
+    this.handleSpaRouting();
   }
 
   /**
@@ -412,20 +409,51 @@ class FileFerryApp {
   }
 
   /**
+   * Handles SPA routing by checking for redirect parameter from 404.html
+   * and processing the current pathname for client-side routing.
+   * @internal
+   */
+  private handleSpaRouting(): void {
+    // Check if we have a redirect parameter from 404.html
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectPath = urlParams.get('redirect');
+    
+    if (redirectPath) {
+      // Remove the redirect parameter from URL and update history
+      const cleanUrl = window.location.origin + redirectPath;
+      window.history.replaceState({}, '', cleanUrl);
+      
+      // Parse the redirected path for routing
+      const url = new URL(cleanUrl);
+      this.actionPathname(url.pathname + url.search);
+    } else {
+      // Handle normal pathname routing
+      const pathname = window.location.pathname;
+      const search = window.location.search;
+      if (pathname && pathname !== '/') {
+        this.actionPathname(pathname + search);
+      }
+    }
+  }
+
+  /**
    * Conditionally handles the provided pathname of the current URL.
    * If the pathname starts with `/send`, it shows the send window.
    * If it starts with `/receive`, it checks for a phrase in the URL parameters,
    * if the phrase is valid, it starts the receiver mode and shows the receiver window.
    *
-   * @param pathname - The pathname from the current URL.
+   * @param pathWithQuery - The pathname and query string from the current URL.
    * @internal
    */
-  private actionPathname(pathname: string): void {
+  private actionPathname(pathWithQuery: string): void {
+    // Parse pathname and query parameters from the input
+    const [pathname, queryString] = pathWithQuery.split('?');
+    const urlParams = queryString ? new URLSearchParams(queryString) : new URLSearchParams();
+
     if (pathname.startsWith('/send')) {
       this.managers.ui?.showSendWindow();
     } else if (pathname.startsWith('/receive')) {
       this.managers.ui?.showReceiveWindow();
-      const urlParams = new URLSearchParams(window.location.search);
       const phrase = this.services.phrase?.sanitizePhrase(
         urlParams.get('phrase') || '',
       );
@@ -433,7 +461,8 @@ class FileFerryApp {
         this.startReceiverMode(phrase);
         this.managers.ui?.showReceiverMode();
         this.managers.ui?.onPhraseEntered(phrase);
-      } else {
+      } else if (urlParams.get('phrase')) {
+        // Only show error if phrase was provided but invalid
         this.managers.ui?.showErrorPopup('Invalid phrase provided.');
       }
     } else if (
