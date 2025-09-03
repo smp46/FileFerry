@@ -64,8 +64,7 @@
 </div>
 
 FileFerry is a browser-based application for direct file transfers without the
-need to store the file on a third-party server. Users share files using a simple
-passphrase – the sender creates a unique phrase the receiver enters to connect.
+need to store the file on a third-party server. The sender creates a unique phrase the receiver enters to get the file.
 
 The app utilizes js-libp2p for networking and WebRTC for transfers. Senders
 register their p2p network address with a temporary passphrase through a lookup
