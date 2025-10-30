@@ -20,8 +20,7 @@
   <p align="center">
     Peer-to-peer, encrypted file sharing, without leaving your browser!
     <br />
-    <a href="https://fileferry.xyz">View Live Site</a>
-    &middot;
+    <!-- <a href="https://fileferry.xyz">View Live Site</a> &middot; -->
     <a href="https://github.com/smp46/FileFerry/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
     <a href="https://github.com/smp46/FileFerry/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -53,13 +52,16 @@
   </ol>
 </details>
 
+> [!IMPORTANT]
+> Unfortunately, I no longer have the resources to host the backend components required for the live version of the project, _fileferry.xyz_. While this project doesn't store files or log transfers, it is sadly not *server-less* and still requires a few services to support the p2p magic. Follow the <a href="#getting-started">Getting Started</a> guide to host it yourself!
+
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
 
 <div align="center">
 
-[![FileFerry Screenshot][product-screenshot]](https://fileferry.xyz)
+![FileFerry Screenshot][product-screenshot]
 
 </div>
 
@@ -100,11 +102,15 @@ Here is the software stack used to build FileFerry:
 
 ## Getting Started
 
-The recommended way to use FileFerry is via the
+<!-- The recommended way to use FileFerry is via the
 [Github Pages](https://fileferry.xyz) hosted version, it is deployed straight
 from the `gh-pages` branch right here in the repo.
 
 Otherwise, follow these steps to get FileFerry running locally. I run the
+backend externally (on a seperate remote machine) to the front-end, your mileage
+may vary as to how well this would or wouldn't work on a single host. -->
+
+Follow these steps to get FileFerry running locally. I run the
 backend externally (on a seperate remote machine) to the front-end, your mileage
 may vary as to how well this would or wouldn't work on a single host.
 
@@ -204,7 +210,7 @@ https://github.com/user-attachments/assets/5d22f049-fa28-420c-9071-91076ef63763
 
 
 
-Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself!
+<!-- Visit [fileferry.xyz](https://fileferry.xyz) to try it yourself! -->
 
 <!-- ROADMAP -->
 
