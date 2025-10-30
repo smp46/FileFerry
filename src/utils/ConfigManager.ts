@@ -1,4 +1,8 @@
 // utils/ConfigManager.ts
+
+const RELAY_ADDRESS: string = import.meta.env.VITE_RELAY_ADDRESS || '';
+const EXCHANGE_ADDRESS: string = import.meta.env.VITE_EXCHANGE_ADDRESS || '';
+
 /**
  * Interface for the main configuration object.
  * @internal
@@ -30,11 +34,10 @@ export class ConfigManager {
   public constructor() {
     this.config = {
       relay: {
-        address:
-          '/dns4/195-114-14-137.k51qzi5uqu5dlg6rzzu1wamxpip5om9vddzw5dvmw38wp1f4b30yi0q4itxkym.libp2p.direct/tcp/41338/wss/p2p/12D3KooWQ3E3PsbrVnnh34dSggrcTqBKqrA2bbMwTH9EHmea7CfP',
+        address: RELAY_ADDRESS,
       },
       api: {
-        url: 'https://exchange.fileferry.xyz',
+        url: EXCHANGE_ADDRESS,
       },
       transfer: {
         protocol: '/fileferry/filetransfer/1.0.0',

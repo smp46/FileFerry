@@ -2,6 +2,8 @@
 
 import { string } from '@multiformats/multiaddr-matcher/utils';
 
+const GEOIP_URL: string = import.meta.env.VITE_GEOIP_URL || '';
+
 /**
  * Describes the structure for geographic location data of STUN servers.
  * @internal
@@ -47,7 +49,7 @@ export class StunService {
       'https://raw.githubusercontent.com/pradt2/always-online-stun/master/geoip_cache.txt';
     this.hostUrl =
       'https://raw.githubusercontent.com/pradt2/always-online-stun/master/valid_ipv4s.txt';
-    this.geoUserUrl = 'https://geoip.fileferry.xyz';
+    this.geoUserUrl = GEOIP_URL;
     this.cacheKey = 'userGeoData';
     this.cacheDuration = 48 * 60 * 60 * 1000; // 48 hours
   }

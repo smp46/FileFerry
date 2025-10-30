@@ -99,7 +99,7 @@ export class FileTransferManager {
     this.receivedBytesTotal = 0;
 
     streamSaver.WritableStream = PolyfillWritableStream;
-    streamSaver.mitm = 'https://fileferry.xyz/streamsaver/mitm.html';
+    streamSaver.mitm = `https://${window.location.hostname}/streamsaver/mitm.html`;
     window.WritableStream = PolyfillWritableStream;
   }
 
@@ -196,8 +196,8 @@ export class FileTransferManager {
   private async sendFileToStream(
     stream: Stream,
     file: File,
-    chunkSize: number = 16_384, // the WebRTC default message size
-    ackFrequency: number = 200, // Wait for ACK every 200 chunks
+    chunkSize: number = 32_768, // twice the WebRTC default message size
+    ackFrequency: number = 500, // Wait for ACK every 500 chunks
   ): Promise<void> {
     try {
       const header = await this.createFileHeader(file);
@@ -212,6 +212,11 @@ export class FileTransferManager {
         resolveNextAck = resolve;
       });
 
+      let resolveFinalAck: () => void;
+      const finalAckPromise = new Promise<void>((resolve) => {
+        resolveFinalAck = resolve;
+      });
+
       const ackHandler = async (
         source: AsyncIterable<Uint8ArrayList>,
       ): Promise<void> => {
@@ -220,6 +225,8 @@ export class FileTransferManager {
             const msg = new TextDecoder().decode(data.subarray()).trim();
             if (msg === 'ACK' && resolveNextAck) {
               resolveNextAck();
+            } else if (msg === 'final-ack') {
+              resolveFinalAck();
             }
           }
         } catch (err) {
@@ -302,7 +309,8 @@ export class FileTransferManager {
         }
       }.bind(this);
 
-      await pipe(fileChunks(), stream, ackHandler);
+      await pipe(fileChunks(), stream.sink);
+      await pipe(stream.source, ackHandler);
 
       this.progressTracker.updateProgress(
         this.transferProgressBytes,
@@ -311,9 +319,8 @@ export class FileTransferManager {
         true,
       );
 
-      while (stream.status === 'open' || stream.status === 'closing') {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
+      await finalAckPromise;
+
       this.appState.declareFinished();
     } catch (error) {
       throw error;
@@ -341,8 +348,9 @@ export class FileTransferManager {
    * @internal
    */
   private async receiveFileFromStream(stream: Stream): Promise<void> {
-    const ackFrequency = 200;
+    const ackFrequency = 500;
     const ackMessage = new TextEncoder().encode('ACK');
+    const finalAckMessage = new TextEncoder().encode('final-ack');
     const ackPushable: Pushable<Uint8Array> = pushable({ objectMode: true });
 
     // Pipe ACKs to the sender in the background
@@ -449,6 +457,8 @@ export class FileTransferManager {
                 '\n Computed Hash from Transfer: ' +
                 this.hash,
             );
+          } else {
+            ackPushable.push(finalAckMessage);
           }
 
           this.receivedFileWriter?.close();

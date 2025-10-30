@@ -165,7 +165,7 @@ func main() {
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://fileferry.xyz"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},

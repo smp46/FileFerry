@@ -27,6 +27,10 @@ import { ProgressTracker } from '@/ui/ProgressTracker';
 import { ErrorHandler } from '@/utils/ErrorHandler';
 import { ConfigManager } from '@/utils/ConfigManager';
 
+const TURN_SERVER: string = import.meta.env.VITE_TURN_SERVER;
+const TURN_USERNAME: string = import.meta.env.VITE_TURN_USERNAME;
+const TURN_CREDENTIAL: string = import.meta.env.VITE_TURN_CREDENTIAL;
+
 /**
  * Interface for the services container.
  * @internal
@@ -122,9 +126,9 @@ class FileFerryApp {
             urls: stunServer,
           },
           {
-            urls: 'turn:turn.fileferry.xyz:5349',
-            username: 'ferryCaptain',
-            credential: 'i^YV13eTPOHdVzWm#2t5',
+            urls: TURN_SERVER,
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
           },
         ],
       },
@@ -417,12 +421,12 @@ class FileFerryApp {
     // Check if we have a redirect parameter from 404.html
     const urlParams = new URLSearchParams(window.location.search);
     const redirectPath = urlParams.get('redirect');
-    
+
     if (redirectPath) {
       // Remove the redirect parameter from URL and update history
       const cleanUrl = window.location.origin + redirectPath;
       window.history.replaceState({}, '', cleanUrl);
-      
+
       // Parse the redirected path for routing
       const url = new URL(cleanUrl);
       this.actionPathname(url.pathname + url.search);
@@ -448,7 +452,9 @@ class FileFerryApp {
   private actionPathname(pathWithQuery: string): void {
     // Parse pathname and query parameters from the input
     const [pathname, queryString] = pathWithQuery.split('?');
-    const urlParams = queryString ? new URLSearchParams(queryString) : new URLSearchParams();
+    const urlParams = queryString
+      ? new URLSearchParams(queryString)
+      : new URLSearchParams();
 
     if (pathname.startsWith('/send')) {
       this.managers.ui?.showSendWindow();
