@@ -114,9 +114,6 @@ Follow these steps to get FileFerry running locally. I run the
 backend externally (on a seperate remote machine) to the front-end, your mileage
 may vary as to how well this would or wouldn't work on a single host.
 
-**This section requires updating regarding what needs to be changed to get this
-running under a different domain (that isn't fileferry.xyz), stay tuned for
-that.**
 
 ### Prerequisites
 
@@ -155,7 +152,14 @@ Here is what you need to build and run your own instance of FileFerry:
    docker build -t relay-server ./backend/relay-server
    ```
 
-4. **Configure Docker-Compose**
+   Additionally you will need to build the GeoIP service that FileFerry uses to geo-locate the closest STUN servers to the user:
+     ```bash
+     git clone https://github.com/smp46/geoip-api.git
+     cd geoip-api
+     docker build -t geoip-api .
+     ```
+
+5. **Configure Backend Services**
 
    - **Relay Server:** The `relay-server` currently uses a `.env` file for basic
      config, find this in `./backend/relay-server. The only addition you _need_
@@ -164,8 +168,11 @@ Here is what you need to build and run your own instance of FileFerry:
      `my-turnserver.conf` file. `coturn` uses a config file found at
      `./backend/relay-server/my-turnserver.conf`, you can customise this as you
      want/need to to suit your network environment.
+    - **TLS:** Modern browsers require remote connections to be secured, I recommend using a Reverse Proxy
+      such as nginx with seperate domains (or sub-domains) for each service. This can be skipped if the project
+      just being run locally for development or testing, but to be deployed, domains with certs are required.
 
-5. **Start Backend Services with Docker Compose:** Navigate to the `backend`
+6. **Start Backend Services with Docker Compose:** Navigate to the `backend`
    directory and start all services defined in `docker-compose.yaml`. This will
    launch the `coturn` server, `passphrase-server`, and `relay-server`.
 
@@ -177,8 +184,20 @@ Here is what you need to build and run your own instance of FileFerry:
    This command will run the services in detached mode, meaning they will run in
    the background.
 
-6. **Run the Frontend Application:** Once the backend services are running,
-   return to the root of your repo directory and start the frontend application.
+7. **Configure  the Frontend:** To ensure FileFerry knows where to look for it's external services,
+   create a .env file in the root of the project. There is an `example.env` that can be renamed, and contains
+   placeholders for what you'll need:
+   
+   ```env
+   VITE_RELAY_ADDRESS='/dns4/10-10-10-100.k51qzi5uqu5dlg6rzzu1wamxpip5om9vddzw5dvmw38wp1f4b30yi0q4it1234.libp2p.direct/tcp/41338/wss/p2p/12D3KooWQ3E3PsbrVnnh34dSggrcTqBKqrA2bbMwTH9EHmea1234'
+   VITE_EXCHANGE_ADDRESS='https://exchange.example.com' 
+   VITE_TURN_SERVER='turn:turn.example.com:3478'
+   VITE_TURN_USERNAME='admin'
+   VITE_TURN_CREDENTIAL='password'
+   ```
+
+9. **Run the Frontend:** Once the backend services are running and you have modified the frontend environment variables.
+   return to the root of your repo directory and start the website.
 
    ```
    npm start
@@ -188,7 +207,7 @@ Here is what you need to build and run your own instance of FileFerry:
    browser. Look for output in the terminal indicating the local URL (e.g.,
    `http://localhost:5173`).
 
-7. **Optional: Build for Production:** To build the static website files for
+10. **Optional: Build for Production:** To build the static website files for
    deployment, run:
 
    ```
@@ -204,8 +223,6 @@ Here is what you need to build and run your own instance of FileFerry:
 
 Here's a demo of the site:
 
-
-
 https://github.com/user-attachments/assets/5d22f049-fa28-420c-9071-91076ef63763
 
 
@@ -220,7 +237,7 @@ https://github.com/user-attachments/assets/5d22f049-fa28-420c-9071-91076ef63763
 - [x] Favicons using the FileFerry logo.
 - [x] Typescript conversion with TypeDoc documentation.
 - [x] Acquire and hold wake lock while transferring.
-- [ ] Make it easier to configure your own FileFerry instance, i.e. centralise
+- [x] Make it easier to configure your own FileFerry instance, i.e. centralise
       all variables that need to be changed.
 - [x] Night mode, with a moon and stars in the sky.
 - [x] Direct links to transfers to facilitate easier sharing.
